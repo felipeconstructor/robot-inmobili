@@ -1,36 +1,22 @@
 require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
+const { createClient } = require('@supabase/supabase-js')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
 
-const SISTEMA = `
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+
+const SISTEMA_BASE = `
 Eres Nova, asistente virtual experta en bienes raíces y corretaje de propiedades en Chile.
-Tu nombre es Nova y trabajas para una empresa inmobiliaria profesional.
+Tu nombre es Nova y trabajas para Prolig Propiedades.
 Respondes siempre en español, con tono amable, profesional y claro.
 Nunca inventas datos legales ni valores sin aclarar que son aproximados.
 Si necesitan asesoría legal específica, recomienda consultar con un abogado o notario.
 Si el usuario quiere agendar una visita, pídele nombre, teléfono y propiedad de interés.
-
-== TIPOS DE PROPIEDADES ==
-- Casas, departamentos, oficinas, locales comerciales, terrenos, bodegas
-- Propiedades nuevas: en verde, en blanco, entrega inmediata
-- Propiedades usadas y proyectos de inversión
-
-== PROCESO DE VENTA ==
-- Tasación, promesa de compraventa, escritura pública
-- Estudio de títulos: revisión legal últimos 10 años
-- Gastos: notaría 0.2%, CBR 0.2%, impuestos
-- Tiempo promedio: 45 a 90 días desde la promesa
-
-== PROCESO DE ARRIENDO ==
-- Contrato mínimo 12 meses, garantía 1 mes
-- Ley 18.101: regula contratos, desahucios y juicios
-- Desahucio por no pago: proceso judicial 2 a 6 meses
-- Devolución garantía: máximo 30 días tras entrega
 
 == LEYES ==
 - Ley 18.101: Arrendamiento predios urbanos
@@ -43,25 +29,14 @@ Si el usuario quiere agendar una visita, pídele nombre, teléfono y propiedad d
 - Crédito hipotecario: hasta 80%, necesitas 20% de pie
 - Plazos: 10 a 30 años, tasa fija, variable o mixta
 - Subsidios: DS1 clase media, DS19 altura, DS49 sin deuda
-- Seguros obligatorios: desgravamen e incendio
 
 == CORREDOR ==
 - Comisión venta: 2% más IVA por cada parte
 - Comisión arriendo: 1 mes más IVA por cada parte
-- Servicios: tasación, difusión, visitas, notaría
 
 == INVERSIÓN ==
-- Rentabilidad bruta: (arriendo anual / precio) x 100
 - Cap rate bueno en Chile: entre 4% y 6%
 - Comunas rentables: Estación Central, Independencia, Pudahuel
-- Comunas premium: Las Condes, Vitacura, Providencia
-
-== DOCUMENTOS VENTA ==
-- Escritura, certificado hipotecas CBR, no expropiación
-- Contribuciones pagadas, deuda gastos comunes
-
-== DOCUMENTOS ARRIENDO ==
-- 3 últimas liquidaciones de sueldo, carnet vigente
 `
 
 const historial = {}
@@ -70,8 +45,32 @@ app.post('/api/chat', async (req, res) => {
   const { mensaje, sesionId } = req.body
   if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
   if (!historial[sesionId]) historial[sesionId] = []
+
+  const { data: propiedades } = await supabase
+    .from('propiedades')
+    .select('*')
+    .eq('disponible', true)
+
+  let listaPropiedades = '\n== PROPIEDADES DISPONIBLES DE PROLIG PROPIEDADES ==\n'
+  if (propiedades && propiedades.length > 0) {
+    propiedades.forEach((p, i) => {
+      listaPropiedades += `\nPropiedad ${i + 1}:
+- Tipo: ${p.tipo}
+- Operación: ${p.operacion}
+- Dirección: ${p.direccion}, ${p.comuna}
+- Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
+- Dormitorios: ${p.dormitorios} | Baños: ${p.banos} | Metros: ${p.metros}m2
+- Descripción: ${p.descripcion}\n`
+    })
+  } else {
+    listaPropiedades += '\nNo hay propiedades disponibles en este momento.\n'
+  }
+
+  const SISTEMA = SISTEMA_BASE + listaPropiedades
+
   historial[sesionId].push({ role: 'user', content: mensaje })
   if (historial[sesionId].length > 20) historial[sesionId] = historial[sesionId].slice(-20)
+
   try {
     const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
