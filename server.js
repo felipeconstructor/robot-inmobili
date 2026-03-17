@@ -2,7 +2,6 @@ if (process.env.NODE_ENV !== 'production') require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const { createClient } = require('@supabase/supabase-js')
-const twilio = require('twilio')
 
 const app = express()
 app.use(cors())
@@ -12,11 +11,10 @@ app.use(express.static('public'))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
-
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
 Respondes siempre en español, con tono amable, profesional y cercano.
-REGLA MAS IMPORTANTE: Nunca uses markdown. Nada de **, ##, *, #, ---, emojis ni simbolos especiales. Solo texto plano con saltos de linea simples.
+REGLA MAS IMPORTANTE: Nunca uses markdown. Nada de asteriscos, almohadillas, guiones dobles ni simbolos especiales. Solo texto plano con saltos de linea simples.
 Nunca inventes datos legales ni valores sin aclarar que son aproximados.
 Si necesitan asesoria legal, recomienda consultar con un abogado.
 Si el cliente quiere agendar una visita, pidele nombre, telefono y propiedad de interes.
@@ -99,7 +97,6 @@ Descripcion: ${p.descripcion}
   return texto
 }
 
-// Ruta para el chat web
 app.post('/api/chat', async (req, res) => {
   const { mensaje, sesionId } = req.body
   if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
@@ -107,32 +104,39 @@ app.post('/api/chat', async (req, res) => {
     const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
     res.json({ respuesta })
   } catch (err) {
-    console.error('Error:', err)
+    console.error('Error chat:', err)
     res.status(500).json({ error: 'Error del servidor' })
   }
 })
 
-// Ruta webhook para WhatsApp
 app.post('/webhook/whatsapp', async (req, res) => {
   const mensaje = req.body.Body
   const numeroCliente = req.body.From
   const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
 
-  console.log('WhatsApp mensaje de:', numeroCliente, ':', mensaje)
+  console.log('WA de:', numeroCliente, 'mensaje:', mensaje)
+  console.log('SID disponible:', !!process.env.TWILIO_ACCOUNT_SID)
+  console.log('TOKEN disponible:', !!process.env.TWILIO_AUTH_TOKEN)
 
   try {
     const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
 
-    const cliente = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-await cliente.messages.create({
+    const twilio = require('twilio')
+    const tc = new twilio.Twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    )
+
+    await tc.messages.create({
       from: process.env.TWILIO_WHATSAPP_NUMBER,
       to: numeroCliente,
       body: respuesta
     })
 
+    console.log('Respuesta enviada a:', numeroCliente)
     res.status(200).send('<Response></Response>')
   } catch (err) {
-    console.error('Error WhatsApp:', err)
+    console.error('Error WA:', err.message)
     res.status(500).send('<Response></Response>')
   }
 })
@@ -144,5 +148,4 @@ app.post('/api/limpiar', (req, res) => {
 })
 
 const PUERTO = process.env.PORT || 3000
-console.log('Puerto asignado:', PUERTO)
 app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
