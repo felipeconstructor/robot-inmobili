@@ -11,33 +11,34 @@ app.use(express.static('public'))
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
 const SISTEMA_BASE = `
-Eres Nova, asistente virtual experta en bienes raíces y corretaje de propiedades en Chile.
-Tu nombre es Nova y trabajas para Prolig Propiedades.
-Respondes siempre en español, con tono amable, profesional y claro.
-IMPORTANTE: No uses markdown, no uses símbolos como **, ##, *, #, ---, ni ningún formato especial. Responde en texto plano normal con saltos de línea simples.
-Nunca inventas datos legales ni valores sin aclarar que son aproximados.
-Si necesitan asesoría legal específica, recomienda consultar con un abogado o notario.
-Si el usuario quiere agendar una visita, pídele nombre, teléfono y propiedad de interés.
+Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
+Respondes siempre en español, con tono amable, profesional y cercano.
+REGLA MAS IMPORTANTE: Nunca uses markdown. Nada de **, ##, *, #, ---, emojis ni simbolos especiales. Solo texto plano con saltos de linea simples.
+Nunca inventes datos legales ni valores sin aclarar que son aproximados.
+Si necesitan asesoria legal, recomienda consultar con un abogado.
+Si el cliente quiere agendar una visita, pidele nombre, telefono y propiedad de interes.
+Respuestas cortas y directas, maximo 5 parrafos.
 
-== LEYES ==
+LEYES:
 - Ley 18.101: Arrendamiento predios urbanos
 - DFL-2: Beneficios tributarios propiedades bajo 140m2
 - Ley 19.537: Copropiedad inmobiliaria
-- IVA propiedades nuevas: 19% con crédito especial
+- IVA propiedades nuevas: 19% con credito especial
 - Impuesto mayor valor: sobre 8.000 UF tiene impuesto
 
-== FINANCIAMIENTO ==
-- Crédito hipotecario: hasta 80%, necesitas 20% de pie
-- Plazos: 10 a 30 años, tasa fija, variable o mixta
+FINANCIAMIENTO:
+- Credito hipotecario: hasta 80%, necesitas 20% de pie
+- Plazos: 10 a 30 anos, tasa fija, variable o mixta
 - Subsidios: DS1 clase media, DS19 altura, DS49 sin deuda
 
-== CORREDOR ==
-- Comisión venta: 2% más IVA por cada parte
-- Comisión arriendo: 1 mes más IVA por cada parte
+CORREDOR:
+- Comision venta: 2% mas IVA por cada parte
+- Comision arriendo: 1 mes mas IVA por cada parte
 
-== INVERSIÓN ==
+INVERSION:
 - Cap rate bueno en Chile: entre 4% y 6%
-- Comunas rentables: Estación Central, Independencia, Pudahuel
+- Comunas rentables: Estacion Central, Independencia, Pudahuel
+- Comunas premium: Las Condes, Vitacura, Providencia
 `
 
 const historial = {}
@@ -52,19 +53,21 @@ app.post('/api/chat', async (req, res) => {
     .select('*')
     .eq('disponible', true)
 
-  let listaPropiedades = '\n== PROPIEDADES DISPONIBLES DE PROLIG PROPIEDADES ==\n'
+  let listaPropiedades = '\nPROPIEDADES DISPONIBLES:\n'
   if (propiedades && propiedades.length > 0) {
     propiedades.forEach((p, i) => {
-      listaPropiedades += `\nPropiedad ${i + 1}:
-- Tipo: ${p.tipo}
-- Operación: ${p.operacion}
-- Dirección: ${p.direccion}, ${p.comuna}
-- Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
-- Dormitorios: ${p.dormitorios} | Baños: ${p.banos} | Metros: ${p.metros}m2
-- Descripción: ${p.descripcion}\n`
+      listaPropiedades += `
+Propiedad ${i + 1}:
+Tipo: ${p.tipo}
+Operacion: ${p.operacion}
+Direccion: ${p.direccion}, ${p.comuna}
+Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
+Dormitorios: ${p.dormitorios} | Banos: ${p.banos} | Metros: ${p.metros}m2
+Descripcion: ${p.descripcion}
+`
     })
   } else {
-    listaPropiedades += '\nNo hay propiedades disponibles en este momento.\n'
+    listaPropiedades += 'No hay propiedades disponibles.\n'
   }
 
   const SISTEMA = SISTEMA_BASE + listaPropiedades
@@ -108,4 +111,5 @@ app.post('/api/limpiar', (req, res) => {
 })
 
 const PUERTO = process.env.PORT || 3000
-app.listen(PUERTO, () => console.log(`Servidor corriendo en http://localhost:${PUERTO}`))
+console.log('Puerto asignado:', PUERTO)
+app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
