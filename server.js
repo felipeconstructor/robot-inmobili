@@ -2,13 +2,16 @@ if (process.env.NODE_ENV !== 'production') require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const { createClient } = require('@supabase/supabase-js')
+const twilio = require('twilio')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 app.use(express.static('public'))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
 
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
@@ -43,9 +46,7 @@ INVERSION:
 
 const historial = {}
 
-app.post('/api/chat', async (req, res) => {
-  const { mensaje, sesionId } = req.body
-  if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
+async function obtenerRespuestaNova(mensaje, sesionId) {
   if (!historial[sesionId]) historial[sesionId] = []
 
   const { data: propiedades } = await supabase
@@ -75,32 +76,63 @@ Descripcion: ${p.descripcion}
   historial[sesionId].push({ role: 'user', content: mensaje })
   if (historial[sesionId].length > 20) historial[sesionId] = historial[sesionId].slice(-20)
 
-  try {
-    const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-6',
-        max_tokens: 1024,
-        system: SISTEMA,
-        messages: historial[sesionId]
-      })
+  const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 1024,
+      system: SISTEMA,
+      messages: historial[sesionId]
     })
-    const data = await respuesta.json()
-    if (data.error) {
-      console.error('Error Claude:', data.error)
-      return res.status(500).json({ error: 'Error de Claude API' })
-    }
-    const texto = data.content[0].text
-    historial[sesionId].push({ role: 'assistant', content: texto })
-    res.json({ respuesta: texto })
+  })
+
+  const data = await respuesta.json()
+  if (data.error) throw new Error(data.error.message)
+
+  const texto = data.content[0].text
+  historial[sesionId].push({ role: 'assistant', content: texto })
+  return texto
+}
+
+// Ruta para el chat web
+app.post('/api/chat', async (req, res) => {
+  const { mensaje, sesionId } = req.body
+  if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
+  try {
+    const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
+    res.json({ respuesta })
   } catch (err) {
-    console.error('Error servidor:', err)
+    console.error('Error:', err)
     res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+
+// Ruta webhook para WhatsApp
+app.post('/webhook/whatsapp', async (req, res) => {
+  const mensaje = req.body.Body
+  const numeroCliente = req.body.From
+  const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
+
+  console.log('WhatsApp mensaje de:', numeroCliente, ':', mensaje)
+
+  try {
+    const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
+
+    await twilioClient.messages.create({
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      to: numeroCliente,
+      body: respuesta
+    })
+
+    res.status(200).send('<Response></Response>')
+  } catch (err) {
+    console.error('Error WhatsApp:', err)
+    res.status(500).send('<Response></Response>')
   }
 })
 
