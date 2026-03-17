@@ -1,4 +1,17 @@
-require("dotenv").config()
+require('dotenv').config()
+
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_KEY
+const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN
+const TWILIO_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER
+
+console.log('Variables cargadas:')
+console.log('ANTHROPIC:', !!ANTHROPIC_KEY)
+console.log('SUPABASE_URL:', !!SUPABASE_URL)
+console.log('SUPABASE_KEY:', !!SUPABASE_KEY)
+
 const express = require('express')
 const cors = require('cors')
 const { createClient } = require('@supabase/supabase-js')
@@ -9,12 +22,12 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.static('public'))
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
 Respondes siempre en español, con tono amable, profesional y cercano.
-REGLA MAS IMPORTANTE: Nunca uses markdown. Nada de asteriscos, almohadillas, guiones dobles ni simbolos especiales. Solo texto plano con saltos de linea simples.
+REGLA MAS IMPORTANTE: Nunca uses markdown. Solo texto plano con saltos de linea simples.
 Nunca inventes datos legales ni valores sin aclarar que son aproximados.
 Si necesitan asesoria legal, recomienda consultar con un abogado.
 Si el cliente quiere agendar una visita, pidele nombre, telefono y propiedad de interes.
@@ -39,7 +52,6 @@ CORREDOR:
 INVERSION:
 - Cap rate bueno en Chile: entre 4% y 6%
 - Comunas rentables: Estacion Central, Independencia, Pudahuel
-- Comunas premium: Las Condes, Vitacura, Providencia
 `
 
 const historial = {}
@@ -78,7 +90,7 @@ Descripcion: ${p.descripcion}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'x-api-key': ANTHROPIC_KEY,
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
@@ -115,20 +127,15 @@ app.post('/webhook/whatsapp', async (req, res) => {
   const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
 
   console.log('WA de:', numeroCliente, 'mensaje:', mensaje)
-  console.log('SID disponible:', !!process.env.TWILIO_ACCOUNT_SID)
-  console.log('TOKEN disponible:', !!process.env.TWILIO_AUTH_TOKEN)
 
   try {
     const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
 
     const twilio = require('twilio')
-    const tc = new twilio.Twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    )
+    const tc = new twilio.Twilio(TWILIO_SID, TWILIO_TOKEN)
 
     await tc.messages.create({
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      from: TWILIO_NUMBER,
       to: numeroCliente,
       body: respuesta
     })
