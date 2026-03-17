@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: false }))
 app.use(express.static('public'))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+
 
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
@@ -123,7 +123,8 @@ app.post('/webhook/whatsapp', async (req, res) => {
   try {
     const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
 
-    await twilioClient.messages.create({
+    const cliente = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+await cliente.messages.create({
       from: process.env.TWILIO_WHATSAPP_NUMBER,
       to: numeroCliente,
       body: respuesta
