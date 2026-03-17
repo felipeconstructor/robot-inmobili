@@ -95,7 +95,7 @@ Descripcion: ${p.descripcion}
     },
     body: JSON.stringify({
       model: 'claude-opus-4-6',
-      max_tokens: 1024,
+      max_tokens: 500,
       system: SISTEMA,
       messages: historial[sesionId]
     })
