@@ -31,7 +31,7 @@ const HORARIOS_DISPONIBLES = {
 
 // Verificar disponibilidad en Google Calendar
 async function verificarDisponibilidad(fecha, hora) {
-  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00`)
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
   const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
 
   const eventos = await calendar.events.list({
@@ -46,7 +46,7 @@ async function verificarDisponibilidad(fecha, hora) {
 
 // Agendar visita en Google Calendar
 async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
-  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00`)
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
   const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
 
   const evento = await calendar.events.insert({
