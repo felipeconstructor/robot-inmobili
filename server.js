@@ -247,7 +247,7 @@ AGENDAR_CONSULTA|nombre|telefono|tipo_caso|fecha|hora
 CONSULTA PERSONAL:
 Valor: 35.000 pesos chilenos.
 Horario: lunes a viernes 9:00 a 19:00, sabados 10:00 a 14:00.
-Oficina: Esmeralda 265, La Ligua.
+Oficina: Americo Vespucio 2814 OF 32.
 Telefono: +56 9 7888 8794.
 Atiende tambien online por videollamada.
 
