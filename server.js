@@ -1,20 +1,9 @@
 require('dotenv').config()
-
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY
-const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_KEY = process.env.SUPABASE_KEY
-const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID
-const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN
-const TWILIO_NUMBER = process.env.TWILIO_WHATSAPP_NUMBER
-
-console.log('Variables cargadas:')
-console.log('ANTHROPIC:', !!ANTHROPIC_KEY)
-console.log('SUPABASE_URL:', !!SUPABASE_URL)
-console.log('SUPABASE_KEY:', !!SUPABASE_KEY)
-
 const express = require('express')
 const cors = require('cors')
 const { createClient } = require('@supabase/supabase-js')
+const { google } = require('googleapis')
+const path = require('path')
 
 const app = express()
 app.use(cors())
@@ -22,16 +11,77 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.static('public'))
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+// Supabase
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+
+// Google Calendar
+const CALENDAR_ID = 'felipec.constructor@gmail.com'
+const auth = new google.auth.GoogleAuth({
+  keyFile: path.join(__dirname, 'google-credentials.json'),
+  scopes: ['https://www.googleapis.com/auth/calendar']
+})
+const calendar = google.calendar({ version: 'v3', auth })
+
+// Horarios disponibles para visitas (lunes a sabado, 9am a 7pm)
+const HORARIOS_DISPONIBLES = {
+  inicio: 9,  // 9am
+  fin: 19,    // 7pm
+  duracion: 60 // minutos por visita
+}
+
+// Verificar disponibilidad en Google Calendar
+async function verificarDisponibilidad(fecha, hora) {
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00`)
+  const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
+
+  const eventos = await calendar.events.list({
+    calendarId: CALENDAR_ID,
+    timeMin: inicio.toISOString(),
+    timeMax: fin.toISOString(),
+    singleEvents: true
+  })
+
+  return eventos.data.items.length === 0
+}
+
+// Agendar visita en Google Calendar
+async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00`)
+  const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
+
+  const evento = await calendar.events.insert({
+    calendarId: CALENDAR_ID,
+    resource: {
+      summary: `Visita: ${propiedad}`,
+      description: `Cliente: ${nombre}\nTelefono: ${telefono}\nPropiedad: ${propiedad}`,
+      start: { dateTime: inicio.toISOString(), timeZone: 'America/Santiago' },
+      end: { dateTime: fin.toISOString(), timeZone: 'America/Santiago' }
+    }
+  })
+
+  return evento.data
+}
 
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
-Respondes siempre en español, con tono amable, profesional y cercano.
+Respondes siempre en espanol, con tono amable, profesional y cercano.
 REGLA MAS IMPORTANTE Y OBLIGATORIA: JAMAS uses markdown, emojis, asteriscos, bullets, guiones como listas, ni ningun simbolo especial. SOLO texto plano separado por saltos de linea. Sin excepciones.
 Nunca inventes datos legales ni valores sin aclarar que son aproximados.
 Si necesitan asesoria legal, recomienda consultar con un abogado.
-Si el cliente quiere agendar una visita, pidele nombre, telefono y propiedad de interes.
 Respuestas cortas y directas, maximo 5 parrafos.
+
+AGENDA DE VISITAS:
+Cuando un cliente quiera ver una propiedad, debes:
+1. Preguntarle su nombre completo
+2. Preguntarle su telefono
+3. Preguntarle que propiedad quiere ver
+4. Preguntarle que fecha prefiere (formato: YYYY-MM-DD, ejemplo: 2026-03-20)
+5. Preguntarle que hora prefiere entre 9am y 7pm
+6. Cuando tengas todos los datos, responde EXACTAMENTE en este formato (sin nada mas):
+AGENDAR_VISITA|nombre|telefono|propiedad|fecha|hora
+Ejemplo: AGENDAR_VISITA|Juan Perez|56912345678|Depto Providencia|2026-03-20|10
+
+HORARIOS DISPONIBLES: Lunes a Sabado de 9am a 7pm.
 
 LEYES:
 - Ley 18.101: Arrendamiento predios urbanos
@@ -90,7 +140,7 @@ Descripcion: ${p.descripcion}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': ANTHROPIC_KEY,
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
@@ -109,12 +159,41 @@ Descripcion: ${p.descripcion}
   return texto
 }
 
+async function procesarRespuesta(texto, sesionId) {
+  // Detectar si Nova quiere agendar una visita
+  if (texto.includes('AGENDAR_VISITA|')) {
+    const partes = texto.split('AGENDAR_VISITA|')[1].split('|')
+    const [nombre, telefono, propiedad, fecha, hora] = partes
+
+    try {
+      const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
+
+      if (disponible) {
+        await agendarVisita(nombre, telefono, propiedad, fecha, parseInt(hora))
+        return `Listo, agende tu visita correctamente.\n\nResumen de tu cita:\nNombre: ${nombre}\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe esperamos. Si necesitas cambiar la cita escribenos con anticipacion.`
+      } else {
+        historial[sesionId].push({
+          role: 'user',
+          content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario disponible ese mismo dia o sugiere otro dia.`
+        })
+        return await obtenerRespuestaNova('', sesionId)
+      }
+    } catch (err) {
+      console.error('Error agendando:', err)
+      return 'Tuve un problema agendando la visita. Por favor contacta directamente a nuestro equipo.'
+    }
+  }
+
+  return texto
+}
+
 app.post('/api/chat', async (req, res) => {
   const { mensaje, sesionId } = req.body
   if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
   try {
-    const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
-    res.json({ respuesta })
+    const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
+    const respuestaFinal = await procesarRespuesta(respuestaNova, sesionId)
+    res.json({ respuesta: respuestaFinal })
   } catch (err) {
     console.error('Error chat:', err)
     res.status(500).json({ error: 'Error del servidor' })
@@ -129,15 +208,19 @@ app.post('/webhook/whatsapp', async (req, res) => {
   console.log('WA de:', numeroCliente, 'mensaje:', mensaje)
 
   try {
-    const respuesta = await obtenerRespuestaNova(mensaje, sesionId)
+    const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
+    const respuestaFinal = await procesarRespuesta(respuestaNova, sesionId)
 
     const twilio = require('twilio')
-    const tc = new twilio.Twilio(TWILIO_SID, TWILIO_TOKEN)
+    const tc = new twilio.Twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    )
 
     await tc.messages.create({
-      from: TWILIO_NUMBER,
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
       to: numeroCliente,
-      body: respuesta
+      body: respuestaFinal
     })
 
     console.log('Respuesta enviada a:', numeroCliente)
