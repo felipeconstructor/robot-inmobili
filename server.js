@@ -238,5 +238,137 @@ app.post('/api/limpiar', (req, res) => {
   res.json({ ok: true })
 })
 
+
+// ============================================
+// NOVA LEGAL — Asistente para Dagoberto Riffo
+// ============================================
+
+const SISTEMA_LEGAL = `
+Eres Nova, asistente virtual del abogado Dagoberto Riffo Paredes, en La Ligua, Chile.
+Respondes siempre en español, con tono profesional, cercano y claro.
+REGLA OBLIGATORIA: JAMAS uses markdown, emojis, asteriscos, bullets ni simbolos especiales. SOLO texto plano con saltos de linea. Sin excepciones.
+Nunca des asesoría legal definitiva. Tu rol es orientar e invitar a agendar una consulta.
+Respuestas cortas y directas, maximo 4 parrafos.
+
+SOBRE EL ABOGADO:
+Nombre: Dagoberto Riffo Paredes
+Especialidades: Derecho Civil, Derecho Penal, Bienes Raices, Contratos, Representacion legal
+Experiencia: 10 años ejerciendo en Chile
+Egresado de la Universidad Andres Bello
+Ubicacion: Esmeralda 265, La Ligua, V Region
+Telefono: +56 9 7888 8794
+Horario: Lunes a Viernes 9:00 a 19:00, Sabado 10:00 a 14:00
+Atiende tambien de forma online por videollamada
+
+SERVICIOS:
+- Derecho Civil: contratos, responsabilidad civil, propiedades, sucesiones
+- Derecho Penal: defensa de imputados, representacion de victimas
+- Bienes Raices: compraventa, arriendos, estudios de titulos
+- Contratos: redaccion, revision y negociacion de todo tipo de contratos
+- Representacion legal en tribunales
+
+AGENDA DE CONSULTAS:
+Cuando un cliente quiera agendar una consulta, debes:
+1. Preguntarle su nombre completo
+2. Preguntarle su telefono
+3. Preguntarle el tipo de caso (civil, penal, contrato, etc)
+4. Preguntarle que fecha prefiere (formato: YYYY-MM-DD)
+5. Preguntarle que hora prefiere entre 9am y 7pm (lunes a viernes)
+6. Cuando tengas todos los datos, responde EXACTAMENTE asi (sin nada mas):
+AGENDAR_CONSULTA|nombre|telefono|tipo_caso|fecha|hora
+Ejemplo: AGENDAR_CONSULTA|Juan Perez|56978888794|Derecho Penal|2026-04-10|10
+
+PRECIOS:
+El costo de la consulta inicial se informa directamente por WhatsApp o telefono segun el caso.
+No menciones valores especificos.
+
+ORIENTACION LEGAL GENERAL (solo orientacion, siempre recomendar consulta):
+- Arriendo: La Ley 18.101 regula arrendamientos urbanos en Chile
+- Despido: el trabajador tiene derecho a finiquito e indemnizacion segun años de servicio
+- Penal: toda persona tiene derecho a defensa desde la formalizacion
+- Contratos: un contrato mal redactado puede generar conflictos costosos
+- Sucesiones: requieren posesion efectiva ante el Registro Civil o tribunales
+
+INSTRUCCION FINAL:
+Si no sabes algo o el tema es muy especifico, di que lo mejor es agendar una consulta directa con el abogado.
+`
+
+const historialLegal = {}
+
+async function obtenerRespuestaLegal(mensaje, sesionId) {
+  if (!historialLegal[sesionId]) historialLegal[sesionId] = []
+
+  historialLegal[sesionId].push({ role: 'user', content: mensaje })
+  if (historialLegal[sesionId].length > 20)
+    historialLegal[sesionId] = historialLegal[sesionId].slice(-20)
+
+  const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 500,
+      system: SISTEMA_LEGAL,
+      messages: historialLegal[sesionId]
+    })
+  })
+
+  const data = await respuesta.json()
+  if (data.error) throw new Error(data.error.message)
+
+  const texto = data.content[0].text
+  historialLegal[sesionId].push({ role: 'assistant', content: texto })
+  return texto
+}
+
+async function procesarRespuestaLegal(texto, sesionId) {
+  if (texto.includes('AGENDAR_CONSULTA|')) {
+    const partes = texto.split('AGENDAR_CONSULTA|')[1].split('|')
+    const [nombre, telefono, tipoCaso, fecha, hora] = partes
+
+    try {
+      const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
+
+      if (disponible) {
+        await agendarVisita(nombre, telefono, `Consulta Legal: ${tipoCaso}`, fecha, parseInt(hora))
+        return `Listo, agende tu consulta correctamente.\n\nResumen de tu cita:\nNombre: ${nombre}\nTipo de caso: ${tipoCaso}\nFecha: ${fecha}\nHora: ${hora}:00\n\nEl abogado Dagoberto Riffo se comunicara contigo para confirmar. Si necesitas cambiar la hora escribenos con anticipacion.`
+      } else {
+        historialLegal[sesionId].push({
+          role: 'user',
+          content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario ese mismo dia o sugiere otro dia.`
+        })
+        return await obtenerRespuestaLegal('', sesionId)
+      }
+    } catch (err) {
+      console.error('Error agendando consulta legal:', err)
+      return 'Tuve un problema agendando la consulta. Por favor contacta directamente al abogado por WhatsApp al +56 9 7888 8794.'
+    }
+  }
+
+  return texto
+}
+
+app.post('/api/chat-legal', async (req, res) => {
+  const { mensaje, sesionId } = req.body
+  if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
+  try {
+    const respuestaNova = await obtenerRespuestaLegal(mensaje, sesionId)
+    const respuestaFinal = await procesarRespuestaLegal(respuestaNova, sesionId)
+    res.json({ respuesta: respuestaFinal })
+  } catch (err) {
+    console.error('Error chat legal:', err)
+    res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+
+app.post('/api/limpiar-legal', (req, res) => {
+  const { sesionId } = req.body
+  if (sesionId) delete historialLegal[sesionId]
+  res.json({ ok: true })
+})
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
