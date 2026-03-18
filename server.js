@@ -12,10 +12,8 @@ app.use((req, res, next) => { res.setHeader('Content-Type', 'application/json; c
 app.use(express.urlencoded({ extended: false }))
 app.use(express.static('public'))
 
-// Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
-// Google Calendar
 const CALENDAR_ID = 'felipec.constructor@gmail.com'
 const auth = new google.auth.GoogleAuth({
   keyFile: path.join(__dirname, 'google-credentials.json'),
@@ -23,86 +21,103 @@ const auth = new google.auth.GoogleAuth({
 })
 const calendar = google.calendar({ version: 'v3', auth })
 
-// Horarios disponibles para visitas (lunes a sabado, 9am a 7pm)
-const HORARIOS_DISPONIBLES = {
-  inicio: 9,  // 9am
-  fin: 19,    // 7pm
-  duracion: 60 // minutos por visita
-}
+const HORARIOS_DISPONIBLES = { inicio: 9, fin: 19, duracion: 60 }
 
-// Verificar disponibilidad en Google Calendar
 async function verificarDisponibilidad(fecha, hora) {
   const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
   const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
-
   const eventos = await calendar.events.list({
     calendarId: CALENDAR_ID,
     timeMin: inicio.toISOString(),
     timeMax: fin.toISOString(),
     singleEvents: true
   })
-
   return eventos.data.items.length === 0
 }
 
-// Agendar visita en Google Calendar
-async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
+async function agendarEvento(nombre, telefono,
+cat > ~/robot-inmobiliario/server.js << 'ENDOFFILE'
+require('dotenv').config()
+const express = require('express')
+const cors = require('cors')
+const { createClient } = require('@supabase/supabase-js')
+const { google } = require('googleapis')
+const path = require('path')
+
+const app = express()
+app.use(cors())
+app.use(express.json())
+app.use((req, res, next) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); next(); })
+app.use(express.urlencoded({ extended: false }))
+app.use(express.static('public'))
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+
+const CALENDAR_ID = 'felipec.constructor@gmail.com'
+const auth = new google.auth.GoogleAuth({
+  keyFile: path.join(__dirname, 'google-credentials.json'),
+  scopes: ['https://www.googleapis.com/auth/calendar']
+})
+const calendar = google.calendar({ version: 'v3', auth })
+
+const HORARIOS_DISPONIBLES = { inicio: 9, fin: 19, duracion: 60 }
+
+async function verificarDisponibilidad(fecha, hora) {
   const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
   const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
+  const eventos = await calendar.events.list({
+    calendarId: CALENDAR_ID,
+    timeMin: inicio.toISOString(),
+    timeMax: fin.toISOString(),
+    singleEvents: true
+  })
+  return eventos.data.items.length === 0
+}
 
+async function agendarEvento(nombre, telefono, descripcion, fecha, hora) {
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
+  const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
   const evento = await calendar.events.insert({
     calendarId: CALENDAR_ID,
     resource: {
-      summary: `Visita: ${propiedad}`,
-      description: `Cliente: ${nombre}\nTelefono: ${telefono}\nPropiedad: ${propiedad}`,
+      summary: descripcion,
+      description: `Cliente: ${nombre}\nTelefono: ${telefono}`,
       start: { dateTime: inicio.toISOString(), timeZone: 'America/Santiago' },
       end: { dateTime: fin.toISOString(), timeZone: 'America/Santiago' }
     }
   })
-
   return evento.data
 }
+
+// ============================================
+// NOVA INMOBILIARIA — Prolig Propiedades
+// ============================================
 
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
 Respondes siempre en espanol, con tono amable, profesional y cercano.
-REGLA MAS IMPORTANTE Y OBLIGATORIA: JAMAS uses markdown, emojis, asteriscos, bullets, guiones como listas, ni ningun simbolo especial. SOLO texto plano separado por saltos de linea. Sin excepciones.
+REGLA MAS IMPORTANTE: JAMAS uses markdown, emojis, asteriscos, bullets ni simbolos especiales. SOLO texto plano con saltos de linea.
 Nunca inventes datos legales ni valores sin aclarar que son aproximados.
-Si necesitan asesoria legal, recomienda consultar con un abogado.
 Respuestas cortas y directas, maximo 5 parrafos.
 
 AGENDA DE VISITAS:
-Cuando un cliente quiera ver una propiedad, debes:
-1. Preguntarle su nombre completo
-2. Preguntarle su telefono
-3. Preguntarle que propiedad quiere ver
-4. Preguntarle que fecha prefiere (formato: YYYY-MM-DD, ejemplo: 2026-03-20)
-5. Preguntarle que hora prefiere entre 9am y 7pm
-6. Cuando tengas todos los datos, responde EXACTAMENTE en este formato (sin nada mas):
+Cuando un cliente quiera ver una propiedad debes recopilar: nombre completo, telefono, propiedad, fecha (YYYY-MM-DD) y hora (9 a 19).
+Cuando tengas todo responde EXACTAMENTE asi:
 AGENDAR_VISITA|nombre|telefono|propiedad|fecha|hora
-Ejemplo: AGENDAR_VISITA|Juan Perez|56912345678|Depto Providencia|2026-03-20|10
 
-HORARIOS DISPONIBLES: Lunes a Sabado de 9am a 7pm.
+HORARIOS: Lunes a Sabado de 9am a 7pm.
 
 LEYES:
-- Ley 18.101: Arrendamiento predios urbanos
-- DFL-2: Beneficios tributarios propiedades bajo 140m2
-- Ley 19.537: Copropiedad inmobiliaria
-- IVA propiedades nuevas: 19% con credito especial
-- Impuesto mayor valor: sobre 8.000 UF tiene impuesto
+Ley 18.101 arriendos urbanos. DFL-2 beneficios bajo 140m2. Ley 19.537 copropiedad. IVA nuevas 19%. Mayor valor sobre 8000 UF tiene impuesto.
 
 FINANCIAMIENTO:
-- Credito hipotecario: hasta 80%, necesitas 20% de pie
-- Plazos: 10 a 30 anos, tasa fija, variable o mixta
-- Subsidios: DS1 clase media, DS19 altura, DS49 sin deuda
+Hipotecario hasta 80 por ciento, necesitas 20 de pie. Plazos 10 a 30 anos. Subsidios DS1, DS19, DS49.
 
 CORREDOR:
-- Comision venta: 2% mas IVA por cada parte
-- Comision arriendo: 1 mes mas IVA por cada parte
+Venta 2 por ciento mas IVA por parte. Arriendo 1 mes mas IVA por parte.
 
 INVERSION:
-- Cap rate bueno en Chile: entre 4% y 6%
-- Comunas rentables: Estacion Central, Independencia, Pudahuel
+Cap rate bueno entre 4 y 6 por ciento. Comunas rentables Estacion Central, Independencia, Pudahuel.
 `
 
 const historial = {}
@@ -110,29 +125,16 @@ const historial = {}
 async function obtenerRespuestaNova(mensaje, sesionId) {
   if (!historial[sesionId]) historial[sesionId] = []
 
-  const { data: propiedades } = await supabase
-    .from('propiedades')
-    .select('*')
-    .eq('disponible', true)
+  const { data: propiedades } = await supabase.from('propiedades').select('*').eq('disponible', true)
 
   let listaPropiedades = '\nPROPIEDADES DISPONIBLES:\n'
   if (propiedades && propiedades.length > 0) {
     propiedades.forEach((p, i) => {
-      listaPropiedades += `
-Propiedad ${i + 1}:
-Tipo: ${p.tipo}
-Operacion: ${p.operacion}
-Direccion: ${p.direccion}, ${p.comuna}
-Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
-Dormitorios: ${p.dormitorios} | Banos: ${p.banos} | Metros: ${p.metros}m2
-Descripcion: ${p.descripcion}
-`
+      listaPropiedades += `Propiedad ${i+1}: ${p.tipo} en ${p.operacion} - ${p.direccion}, ${p.comuna} - ${p.precio.toLocaleString('es-CL')} ${p.moneda} - ${p.dormitorios}D ${p.banos}B ${p.metros}m2 - ${p.descripcion}\n`
     })
   } else {
     listaPropiedades += 'No hay propiedades disponibles.\n'
   }
-
-  const SISTEMA = SISTEMA_BASE + listaPropiedades
 
   historial[sesionId].push({ role: 'user', content: mensaje })
   if (historial[sesionId].length > 20) historial[sesionId] = historial[sesionId].slice(-20)
@@ -147,44 +149,36 @@ Descripcion: ${p.descripcion}
     body: JSON.stringify({
       model: 'claude-opus-4-6',
       max_tokens: 500,
-      system: SISTEMA,
+      system: SISTEMA_BASE + listaPropiedades,
       messages: historial[sesionId]
     })
   })
 
   const data = await respuesta.json()
   if (data.error) throw new Error(data.error.message)
-
   const texto = data.content[0].text
   historial[sesionId].push({ role: 'assistant', content: texto })
   return texto
 }
 
 async function procesarRespuesta(texto, sesionId) {
-  // Detectar si Nova quiere agendar una visita
   if (texto.includes('AGENDAR_VISITA|')) {
     const partes = texto.split('AGENDAR_VISITA|')[1].split('|')
     const [nombre, telefono, propiedad, fecha, hora] = partes
-
     try {
       const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
-
       if (disponible) {
-        await agendarVisita(nombre, telefono, propiedad, fecha, parseInt(hora))
-        return `Listo, agende tu visita correctamente.\n\nResumen de tu cita:\nNombre: ${nombre}\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe esperamos. Si necesitas cambiar la cita escribenos con anticipacion.`
+        await agendarEvento(nombre, telefono, `Visita: ${propiedad}`, fecha, parseInt(hora))
+        return `Listo, agende tu visita.\n\nNombre: ${nombre}\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe esperamos. Si necesitas cambiar la cita avisanos con anticipacion.`
       } else {
-        historial[sesionId].push({
-          role: 'user',
-          content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario disponible ese mismo dia o sugiere otro dia.`
-        })
+        historial[sesionId].push({ role: 'user', content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario.` })
         return await obtenerRespuestaNova('', sesionId)
       }
     } catch (err) {
-      console.error('Error agendando:', err)
-      return 'Tuve un problema agendando la visita. Por favor contacta directamente a nuestro equipo.'
+      console.error('Error agendando visita:', err)
+      return 'Tuve un problema agendando. Por favor contacta directamente a nuestro equipo.'
     }
   }
-
   return texto
 }
 
@@ -192,9 +186,9 @@ app.post('/api/chat', async (req, res) => {
   const { mensaje, sesionId } = req.body
   if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
   try {
-    const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
-    const respuestaFinal = await procesarRespuesta(respuestaNova, sesionId)
-    res.json({ respuesta: respuestaFinal })
+    const texto = await obtenerRespuestaNova(mensaje, sesionId)
+    const final = await procesarRespuesta(texto, sesionId)
+    res.json({ respuesta: final })
   } catch (err) {
     console.error('Error chat:', err)
     res.status(500).json({ error: 'Error del servidor' })
@@ -205,25 +199,13 @@ app.post('/webhook/whatsapp', async (req, res) => {
   const mensaje = req.body.Body
   const numeroCliente = req.body.From
   const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
-
   console.log('WA de:', numeroCliente, 'mensaje:', mensaje)
-
   try {
-    const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
-    const respuestaFinal = await procesarRespuesta(respuestaNova, sesionId)
-
+    const texto = await obtenerRespuestaNova(mensaje, sesionId)
+    const final = await procesarRespuesta(texto, sesionId)
     const twilio = require('twilio')
-    const tc = new twilio.Twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    )
-
-    await tc.messages.create({
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: numeroCliente,
-      body: respuestaFinal
-    })
-
+    const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    await tc.messages.create({ from: process.env.TWILIO_WHATSAPP_NUMBER, to: numeroCliente, body: final })
     console.log('Respuesta enviada a:', numeroCliente)
     res.status(200).send('<Response></Response>')
   } catch (err) {
@@ -238,59 +220,42 @@ app.post('/api/limpiar', (req, res) => {
   res.json({ ok: true })
 })
 
-
 // ============================================
-// NOVA LEGAL — Asistente para Dagoberto Riffo
+// NOVA LEGAL — Dagoberto Riffo Abogado
 // ============================================
 
 const SISTEMA_LEGAL = `
-Eres Nova, asistente virtual del abogado Dagoberto Riffo Paredes, en La Ligua, Chile.
-Respondes siempre en español, con tono profesional, cercano y claro.
-REGLA OBLIGATORIA: JAMAS uses markdown, emojis, asteriscos, bullets ni simbolos especiales. SOLO texto plano con saltos de linea. Sin excepciones.
-Nunca des asesoría legal definitiva. Tu rol es orientar e invitar a agendar una consulta.
-Respuestas cortas y directas, maximo 4 parrafos.
+Eres Nova, asistente virtual del abogado Dagoberto Riffo Paredes, La Ligua, V Region de Chile.
+Respondes siempre en espanol, tono amable y profesional.
+REGLA OBLIGATORIA: JAMAS uses markdown, asteriscos, bullets, emojis ni simbolos. SOLO texto plano con saltos de linea.
+Respuestas cortas, maximo 3 parrafos.
+No des consejos legales especificos, eso es trabajo del abogado en la consulta.
+El estudio trabaja en toda la V Region de Chile.
 
-SOBRE EL ABOGADO:
-Nombre: Dagoberto Riffo Paredes
-Especialidades: Derecho Civil, Derecho Penal, Bienes Raices, Contratos, Representacion legal
-Experiencia: 10 años ejerciendo en Chile
-Egresado de la Universidad Andres Bello
-Ubicacion: Esmeralda 265, La Ligua, V Region
-Telefono: +56 9 7888 8794
-Horario: Lunes a Viernes 9:00 a 19:00, Sabado 10:00 a 14:00
-Atiende tambien de forma online por videollamada
+EL ABOGADO TRABAJA SOLO EN ESTAS TRES AREAS:
+Si preguntan por otra area, di que el estudio se especializa solo en Herencia, Defensa Penal y Bienes Raices, y ofrece agendar una consulta.
 
-SERVICIOS:
-- Derecho Civil: contratos, responsabilidad civil, propiedades, sucesiones
-- Derecho Penal: defensa de imputados, representacion de victimas
-- Bienes Raices: compraventa, arriendos, estudios de titulos
-- Contratos: redaccion, revision y negociacion de todo tipo de contratos
-- Representacion legal en tribunales
+HERENCIA:
+El abogado gestiona todo el proceso sucesorio en Chile: posesion efectiva ante el Registro Civil o tribunales, distribucion de bienes entre herederos, resolucion de conflictos entre herederos, y regularizacion de propiedades y cuentas bancarias a nombre del causante. Un proceso largo y complejo que requiere asesoria profesional para proteger lo que le corresponde a cada heredero por ley.
 
-AGENDA DE CONSULTAS:
-Cuando un cliente quiera agendar una consulta, debes:
-1. Preguntarle su nombre completo
-2. Preguntarle su telefono
-3. Preguntarle el tipo de caso (civil, penal, contrato, etc)
-4. Preguntarle que fecha prefiere (formato: YYYY-MM-DD)
-5. Preguntarle que hora prefiere entre 9am y 7pm (lunes a viernes)
-6. Cuando tengas todos los datos, responde EXACTAMENTE asi (sin nada mas):
-AGENDAR_CONSULTA|nombre|telefono|tipo_caso|fecha|hora
-Ejemplo: AGENDAR_CONSULTA|Juan Perez|56978888794|Derecho Penal|2026-04-10|10
+DEFENSA PENAL:
+El abogado representa a personas imputadas en causas penales en toda la V Region, desde la primera formalizacion hasta el juicio oral. Elabora una estrategia de defensa solida y tambien representa a victimas que buscan justicia. Todo caso es tratado con absoluta confidencialidad. Nadie deberia enfrentar el sistema penal sin un abogado de confianza.
 
-PRECIOS:
-El costo de la consulta inicial se informa directamente por WhatsApp o telefono segun el caso.
-No menciones valores especificos.
+BIENES RAICES:
+El abogado asesora en compraventa de propiedades, contratos de arriendo, estudio de titulos para verificar que una propiedad no tenga problemas legales, regularizacion de propiedades sin titulos claros, y resolucion de conflictos entre arrendadores y arrendatarios. Trabaja en toda la V Region: La Ligua, Cabildo, Petorca, Los Andes, Valparaiso y alrededores.
 
-ORIENTACION LEGAL GENERAL (solo orientacion, siempre recomendar consulta):
-- Arriendo: La Ley 18.101 regula arrendamientos urbanos en Chile
-- Despido: el trabajador tiene derecho a finiquito e indemnizacion segun años de servicio
-- Penal: toda persona tiene derecho a defensa desde la formalizacion
-- Contratos: un contrato mal redactado puede generar conflictos costosos
-- Sucesiones: requieren posesion efectiva ante el Registro Civil o tribunales
+CONSULTA PERSONAL:
+Valor de la consulta presencial: 35.000 pesos chilenos.
+Horario: lunes a viernes 9:00 a 19:00, sabados 10:00 a 14:00.
+Oficina: Esmeralda 265, La Ligua.
+Telefono: +56 9 7888 8794.
+Atiende tambien online por videollamada.
 
-INSTRUCCION FINAL:
-Si no sabes algo o el tema es muy especifico, di que lo mejor es agendar una consulta directa con el abogado.
+CUANDO PREGUNTEN COSTOS DE CASOS:
+El valor depende de cada caso y se informa en la consulta inicial de 35.000 pesos.
+
+OBJETIVO:
+Explicar las tres areas con claridad y motivar al cliente a agendar una consulta con el abogado.
 `
 
 const historialLegal = {}
@@ -299,8 +264,7 @@ async function obtenerRespuestaLegal(mensaje, sesionId) {
   if (!historialLegal[sesionId]) historialLegal[sesionId] = []
 
   historialLegal[sesionId].push({ role: 'user', content: mensaje })
-  if (historialLegal[sesionId].length > 20)
-    historialLegal[sesionId] = historialLegal[sesionId].slice(-20)
+  if (historialLegal[sesionId].length > 20) historialLegal[sesionId] = historialLegal[sesionId].slice(-20)
 
   const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -311,7 +275,7 @@ async function obtenerRespuestaLegal(mensaje, sesionId) {
     },
     body: JSON.stringify({
       model: 'claude-opus-4-6',
-      max_tokens: 500,
+      max_tokens: 400,
       system: SISTEMA_LEGAL,
       messages: historialLegal[sesionId]
     })
@@ -319,36 +283,8 @@ async function obtenerRespuestaLegal(mensaje, sesionId) {
 
   const data = await respuesta.json()
   if (data.error) throw new Error(data.error.message)
-
   const texto = data.content[0].text
   historialLegal[sesionId].push({ role: 'assistant', content: texto })
-  return texto
-}
-
-async function procesarRespuestaLegal(texto, sesionId) {
-  if (texto.includes('AGENDAR_CONSULTA|')) {
-    const partes = texto.split('AGENDAR_CONSULTA|')[1].split('|')
-    const [nombre, telefono, tipoCaso, fecha, hora] = partes
-
-    try {
-      const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
-
-      if (disponible) {
-        await agendarVisita(nombre, telefono, `Consulta Legal: ${tipoCaso}`, fecha, parseInt(hora))
-        return `Listo, agende tu consulta correctamente.\n\nResumen de tu cita:\nNombre: ${nombre}\nTipo de caso: ${tipoCaso}\nFecha: ${fecha}\nHora: ${hora}:00\n\nEl abogado Dagoberto Riffo se comunicara contigo para confirmar. Si necesitas cambiar la hora escribenos con anticipacion.`
-      } else {
-        historialLegal[sesionId].push({
-          role: 'user',
-          content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario ese mismo dia o sugiere otro dia.`
-        })
-        return await obtenerRespuestaLegal('', sesionId)
-      }
-    } catch (err) {
-      console.error('Error agendando consulta legal:', err)
-      return 'Tuve un problema agendando la consulta. Por favor contacta directamente al abogado por WhatsApp al +56 9 7888 8794.'
-    }
-  }
-
   return texto
 }
 
@@ -356,9 +292,8 @@ app.post('/api/chat-legal', async (req, res) => {
   const { mensaje, sesionId } = req.body
   if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
   try {
-    const respuestaNova = await obtenerRespuestaLegal(mensaje, sesionId)
-    const respuestaFinal = await procesarRespuestaLegal(respuestaNova, sesionId)
-    res.json({ respuesta: respuestaFinal })
+    const respuesta = await obtenerRespuestaLegal(mensaje, sesionId)
+    res.json({ respuesta })
   } catch (err) {
     console.error('Error chat legal:', err)
     res.status(500).json({ error: 'Error del servidor' })
@@ -370,5 +305,286 @@ app.post('/api/limpiar-legal', (req, res) => {
   if (sesionId) delete historialLegal[sesionId]
   res.json({ ok: true })
 })
+
+// ============================================
+// SERVIDOR
+// ============================================
+
+const PUERTO = process.env.PORT || 3000
+app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
+ENDOFFILEcat > ~/robot-inmobiliario/server.js << 'ENDOFFILE'
+require('dotenv').config()
+const express = require('express')
+const cors = require('cors')
+const { createClient } = require('@supabase/supabase-js')
+const { google } = require('googleapis')
+const path = require('path')
+
+const app = express()
+app.use(cors())
+app.use(express.json())
+app.use((req, res, next) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); next(); })
+app.use(express.urlencoded({ extended: false }))
+app.use(express.static('public'))
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+
+const CALENDAR_ID = 'felipec.constructor@gmail.com'
+const auth = new google.auth.GoogleAuth({
+  keyFile: path.join(__dirname, 'google-credentials.json'),
+  scopes: ['https://www.googleapis.com/auth/calendar']
+})
+const calendar = google.calendar({ version: 'v3', auth })
+
+const HORARIOS_DISPONIBLES = { inicio: 9, fin: 19, duracion: 60 }
+
+async function verificarDisponibilidad(fecha, hora) {
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
+  const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
+  const eventos = await calendar.events.list({
+    calendarId: CALENDAR_ID,
+    timeMin: inicio.toISOString(),
+    timeMax: fin.toISOString(),
+    singleEvents: true
+  })
+  return eventos.data.items.length === 0
+}
+
+async function agendarEvento(nombre, telefono, descripcion, fecha, hora) {
+  const inicio = new Date(`${fecha}T${hora.toString().padStart(2,"0")}:00:00-03:00`)
+  const fin = new Date(inicio.getTime() + HORARIOS_DISPONIBLES.duracion * 60000)
+  const evento = await calendar.events.insert({
+    calendarId: CALENDAR_ID,
+    resource: {
+      summary: descripcion,
+      description: `Cliente: ${nombre}\nTelefono: ${telefono}`,
+      start: { dateTime: inicio.toISOString(), timeZone: 'America/Santiago' },
+      end: { dateTime: fin.toISOString(), timeZone: 'America/Santiago' }
+    }
+  })
+  return evento.data
+}
+
+// ============================================
+// NOVA INMOBILIARIA — Prolig Propiedades
+// ============================================
+
+const SISTEMA_BASE = `
+Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
+Respondes siempre en espanol, con tono amable, profesional y cercano.
+REGLA MAS IMPORTANTE: JAMAS uses markdown, emojis, asteriscos, bullets ni simbolos especiales. SOLO texto plano con saltos de linea.
+Nunca inventes datos legales ni valores sin aclarar que son aproximados.
+Respuestas cortas y directas, maximo 5 parrafos.
+
+AGENDA DE VISITAS:
+Cuando un cliente quiera ver una propiedad debes recopilar: nombre completo, telefono, propiedad, fecha (YYYY-MM-DD) y hora (9 a 19).
+Cuando tengas todo responde EXACTAMENTE asi:
+AGENDAR_VISITA|nombre|telefono|propiedad|fecha|hora
+
+HORARIOS: Lunes a Sabado de 9am a 7pm.
+
+LEYES:
+Ley 18.101 arriendos urbanos. DFL-2 beneficios bajo 140m2. Ley 19.537 copropiedad. IVA nuevas 19%. Mayor valor sobre 8000 UF tiene impuesto.
+
+FINANCIAMIENTO:
+Hipotecario hasta 80 por ciento, necesitas 20 de pie. Plazos 10 a 30 anos. Subsidios DS1, DS19, DS49.
+
+CORREDOR:
+Venta 2 por ciento mas IVA por parte. Arriendo 1 mes mas IVA por parte.
+
+INVERSION:
+Cap rate bueno entre 4 y 6 por ciento. Comunas rentables Estacion Central, Independencia, Pudahuel.
+`
+
+const historial = {}
+
+async function obtenerRespuestaNova(mensaje, sesionId) {
+  if (!historial[sesionId]) historial[sesionId] = []
+
+  const { data: propiedades } = await supabase.from('propiedades').select('*').eq('disponible', true)
+
+  let listaPropiedades = '\nPROPIEDADES DISPONIBLES:\n'
+  if (propiedades && propiedades.length > 0) {
+    propiedades.forEach((p, i) => {
+      listaPropiedades += `Propiedad ${i+1}: ${p.tipo} en ${p.operacion} - ${p.direccion}, ${p.comuna} - ${p.precio.toLocaleString('es-CL')} ${p.moneda} - ${p.dormitorios}D ${p.banos}B ${p.metros}m2 - ${p.descripcion}\n`
+    })
+  } else {
+    listaPropiedades += 'No hay propiedades disponibles.\n'
+  }
+
+  historial[sesionId].push({ role: 'user', content: mensaje })
+  if (historial[sesionId].length > 20) historial[sesionId] = historial[sesionId].slice(-20)
+
+  const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 500,
+      system: SISTEMA_BASE + listaPropiedades,
+      messages: historial[sesionId]
+    })
+  })
+
+  const data = await respuesta.json()
+  if (data.error) throw new Error(data.error.message)
+  const texto = data.content[0].text
+  historial[sesionId].push({ role: 'assistant', content: texto })
+  return texto
+}
+
+async function procesarRespuesta(texto, sesionId) {
+  if (texto.includes('AGENDAR_VISITA|')) {
+    const partes = texto.split('AGENDAR_VISITA|')[1].split('|')
+    const [nombre, telefono, propiedad, fecha, hora] = partes
+    try {
+      const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
+      if (disponible) {
+        await agendarEvento(nombre, telefono, `Visita: ${propiedad}`, fecha, parseInt(hora))
+        return `Listo, agende tu visita.\n\nNombre: ${nombre}\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe esperamos. Si necesitas cambiar la cita avisanos con anticipacion.`
+      } else {
+        historial[sesionId].push({ role: 'user', content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario.` })
+        return await obtenerRespuestaNova('', sesionId)
+      }
+    } catch (err) {
+      console.error('Error agendando visita:', err)
+      return 'Tuve un problema agendando. Por favor contacta directamente a nuestro equipo.'
+    }
+  }
+  return texto
+}
+
+app.post('/api/chat', async (req, res) => {
+  const { mensaje, sesionId } = req.body
+  if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
+  try {
+    const texto = await obtenerRespuestaNova(mensaje, sesionId)
+    const final = await procesarRespuesta(texto, sesionId)
+    res.json({ respuesta: final })
+  } catch (err) {
+    console.error('Error chat:', err)
+    res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+
+app.post('/webhook/whatsapp', async (req, res) => {
+  const mensaje = req.body.Body
+  const numeroCliente = req.body.From
+  const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
+  console.log('WA de:', numeroCliente, 'mensaje:', mensaje)
+  try {
+    const texto = await obtenerRespuestaNova(mensaje, sesionId)
+    const final = await procesarRespuesta(texto, sesionId)
+    const twilio = require('twilio')
+    const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    await tc.messages.create({ from: process.env.TWILIO_WHATSAPP_NUMBER, to: numeroCliente, body: final })
+    console.log('Respuesta enviada a:', numeroCliente)
+    res.status(200).send('<Response></Response>')
+  } catch (err) {
+    console.error('Error WA:', err.message)
+    res.status(500).send('<Response></Response>')
+  }
+})
+
+app.post('/api/limpiar', (req, res) => {
+  const { sesionId } = req.body
+  if (sesionId) delete historial[sesionId]
+  res.json({ ok: true })
+})
+
+// ============================================
+// NOVA LEGAL — Dagoberto Riffo Abogado
+// ============================================
+
+const SISTEMA_LEGAL = `
+Eres Nova, asistente virtual del abogado Dagoberto Riffo Paredes, La Ligua, V Region de Chile.
+Respondes siempre en espanol, tono amable y profesional.
+REGLA OBLIGATORIA: JAMAS uses markdown, asteriscos, bullets, emojis ni simbolos. SOLO texto plano con saltos de linea.
+Respuestas cortas, maximo 3 parrafos.
+No des consejos legales especificos, eso es trabajo del abogado en la consulta.
+El estudio trabaja en toda la V Region de Chile.
+
+EL ABOGADO TRABAJA SOLO EN ESTAS TRES AREAS:
+Si preguntan por otra area, di que el estudio se especializa solo en Herencia, Defensa Penal y Bienes Raices, y ofrece agendar una consulta.
+
+HERENCIA:
+El abogado gestiona todo el proceso sucesorio en Chile: posesion efectiva ante el Registro Civil o tribunales, distribucion de bienes entre herederos, resolucion de conflictos entre herederos, y regularizacion de propiedades y cuentas bancarias a nombre del causante. Un proceso largo y complejo que requiere asesoria profesional para proteger lo que le corresponde a cada heredero por ley.
+
+DEFENSA PENAL:
+El abogado representa a personas imputadas en causas penales en toda la V Region, desde la primera formalizacion hasta el juicio oral. Elabora una estrategia de defensa solida y tambien representa a victimas que buscan justicia. Todo caso es tratado con absoluta confidencialidad. Nadie deberia enfrentar el sistema penal sin un abogado de confianza.
+
+BIENES RAICES:
+El abogado asesora en compraventa de propiedades, contratos de arriendo, estudio de titulos para verificar que una propiedad no tenga problemas legales, regularizacion de propiedades sin titulos claros, y resolucion de conflictos entre arrendadores y arrendatarios. Trabaja en toda la V Region: La Ligua, Cabildo, Petorca, Los Andes, Valparaiso y alrededores.
+
+CONSULTA PERSONAL:
+Valor de la consulta presencial: 35.000 pesos chilenos.
+Horario: lunes a viernes 9:00 a 19:00, sabados 10:00 a 14:00.
+Oficina: Esmeralda 265, La Ligua.
+Telefono: +56 9 7888 8794.
+Atiende tambien online por videollamada.
+
+CUANDO PREGUNTEN COSTOS DE CASOS:
+El valor depende de cada caso y se informa en la consulta inicial de 35.000 pesos.
+
+OBJETIVO:
+Explicar las tres areas con claridad y motivar al cliente a agendar una consulta con el abogado.
+`
+
+const historialLegal = {}
+
+async function obtenerRespuestaLegal(mensaje, sesionId) {
+  if (!historialLegal[sesionId]) historialLegal[sesionId] = []
+
+  historialLegal[sesionId].push({ role: 'user', content: mensaje })
+  if (historialLegal[sesionId].length > 20) historialLegal[sesionId] = historialLegal[sesionId].slice(-20)
+
+  const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: 400,
+      system: SISTEMA_LEGAL,
+      messages: historialLegal[sesionId]
+    })
+  })
+
+  const data = await respuesta.json()
+  if (data.error) throw new Error(data.error.message)
+  const texto = data.content[0].text
+  historialLegal[sesionId].push({ role: 'assistant', content: texto })
+  return texto
+}
+
+app.post('/api/chat-legal', async (req, res) => {
+  const { mensaje, sesionId } = req.body
+  if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
+  try {
+    const respuesta = await obtenerRespuestaLegal(mensaje, sesionId)
+    res.json({ respuesta })
+  } catch (err) {
+    console.error('Error chat legal:', err)
+    res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+
+app.post('/api/limpiar-legal', (req, res) => {
+  const { sesionId } = req.body
+  if (sesionId) delete historialLegal[sesionId]
+  res.json({ ok: true })
+})
+
+// ============================================
+// SERVIDOR
+// ============================================
+
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
