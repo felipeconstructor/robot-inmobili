@@ -249,7 +249,7 @@ Valor de la consulta presencial: 35.000 pesos chilenos.
 Horario: lunes a viernes 9:00 a 19:00, sabados 10:00 a 14:00.
 Oficina: Esmeralda 265, La Ligua.
 Telefono: +56 9 7888 8794.
-Atiende tambien online por videollamada.
+Atiende online por Zoom las 24 horas del dia, los 7 dias de la semana.
 
 CUANDO PREGUNTEN COSTOS DE CASOS:
 El valor depende de cada caso y se informa en la consulta inicial de 35.000 pesos.
@@ -525,7 +525,7 @@ Valor de la consulta presencial: 35.000 pesos chilenos.
 Horario: lunes a viernes 9:00 a 19:00, sabados 10:00 a 14:00.
 Oficina: Esmeralda 265, La Ligua.
 Telefono: +56 9 7888 8794.
-Atiende tambien online por videollamada.
+Atiende online por Zoom las 24 horas del dia, los 7 dias de la semana.
 
 CUANDO PREGUNTEN COSTOS DE CASOS:
 El valor depende de cada caso y se informa en la consulta inicial de 35.000 pesos.
