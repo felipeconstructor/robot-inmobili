@@ -150,14 +150,55 @@ app.post('/api/chat', async (req, res) => {
   }
 })
 
+// Registro de sesiones activas por numero
+const sesionesWA = {}
+
 app.post('/webhook/whatsapp', async (req, res) => {
-  const mensaje = req.body.Body
+  const mensaje = req.body.Body ? req.body.Body.trim() : ''
   const numeroCliente = req.body.From
-  const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
-  console.log('WA Inmobiliaria de:', numeroCliente)
+  const numeroLimpio = numeroCliente.replace('whatsapp:+', '')
+
+  console.log('WA de:', numeroCliente, 'mensaje:', mensaje)
+
+  // Detectar si el usuario quiere cambiar de bot
+  if (mensaje.toLowerCase() === 'legal') {
+    sesionesWA[numeroLimpio] = 'legal'
+    const twilio = require('twilio')
+    const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    await tc.messages.create({
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      to: numeroCliente,
+      body: 'Hola, soy Nova, asistente del abogado Dagoberto Riffo Paredes. Trabajamos en Herencia, Defensa Penal y Bienes Raices en toda la V Region. En que le puedo ayudar?'
+    })
+    return res.status(200).send('<Response></Response>')
+  }
+
+  if (mensaje.toLowerCase() === 'inmobiliaria') {
+    sesionesWA[numeroLimpio] = 'inmobiliaria'
+    const twilio = require('twilio')
+    const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    await tc.messages.create({
+      from: process.env.TWILIO_WHATSAPP_NUMBER,
+      to: numeroCliente,
+      body: 'Hola, soy Nova de Prolig Propiedades. En que te puedo ayudar con propiedades hoy?'
+    })
+    return res.status(200).send('<Response></Response>')
+  }
+
+  // Determinar que bot usar segun sesion activa
+  const botActivo = sesionesWA[numeroLimpio] || 'inmobiliaria'
+  const sesionId = botActivo + '_wa_' + numeroLimpio
+
   try {
-    const texto = await obtenerRespuestaNova(mensaje, sesionId)
-    const final = await procesarRespuesta(texto, sesionId)
+    let final
+    if (botActivo === 'legal') {
+      const texto = await obtenerRespuestaLegal(mensaje, sesionId)
+      final = await procesarRespuestaLegal(texto, sesionId)
+    } else {
+      const texto = await obtenerRespuestaNova(mensaje, sesionId)
+      final = await procesarRespuesta(texto, sesionId)
+    }
+
     const twilio = require('twilio')
     const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     await tc.messages.create({ from: process.env.TWILIO_WHATSAPP_NUMBER, to: numeroCliente, body: final })
