@@ -373,6 +373,12 @@ async function enviarInformeSemanal() {
   }
 }
 
+// Ruta debug para verificar variables de entorno
+app.get('/api/debug-env', (req, res) => {
+  const key = process.env.RESEND_API_KEY || 'NO ENCONTRADA'
+  res.json({ key_primeros_10: key.substring(0, 10), largo: key.length })
+})
+
 // Ruta para enviar informe manualmente (para probar)
 app.post('/api/informe-test', async (req, res) => {
   try {
