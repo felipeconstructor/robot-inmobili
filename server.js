@@ -4,7 +4,6 @@ const cors = require('cors')
 const { createClient } = require('@supabase/supabase-js')
 const { google } = require('googleapis')
 const path = require('path')
-const nodemailer = require('nodemailer')
 const cron = require('node-cron')
 
 const app = express()
@@ -240,15 +239,25 @@ app.post('/api/limpiar', (req, res) => {
 // ─── Email ──────────────────────────────────────────────────────────────────
 const GMAIL_USER = 'felipec.constructor@gmail.com'
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-})
+// Enviar email via Resend (HTTP, sin SMTP)
+async function enviarEmail(asunto, html) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'Nova Reportes <onboarding@resend.dev>',
+      to: GMAIL_USER,
+      subject: asunto,
+      html
+    })
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.message || 'Error Resend')
+  return data
+}
 
 async function enviarInformeSemanal() {
   try {
@@ -352,12 +361,10 @@ async function enviarInformeSemanal() {
 
     </div>`
 
-    await transporter.sendMail({
-      from: `"Nova Reportes" <${GMAIL_USER}>`,
-      to: GMAIL_USER,
-      subject: `Informe semanal Nova — ${total} leads | ${calientes} calientes | ${visitas} visitas`,
+    await enviarEmail(
+      `Informe semanal Nova — ${total} leads | ${calientes} calientes | ${visitas} visitas`,
       html
-    })
+    )
 
     console.log('Informe semanal enviado correctamente')
   } catch (err) {
