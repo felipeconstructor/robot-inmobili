@@ -1,0 +1,6 @@
+tipo,operacion,direccion,comuna,precio,moneda,dormitorios,banos,metros,descripcion,disponible,imagen_url
+casa,venta,Av. Las Tortolas 1234,La Florida,4500,UF,3,2,95,Casa amplia con patio trasero y 2 estacionamientos. Cocina remodelada. Cerca del metro San Jose de la Estrella. Ideal familia.,true,
+departamento,arriendo,Av. Providencia 4521 Depto 82,Providencia,550000,CLP,2,1,58,Departamento luminoso con vista despejada. Edificio con gimnasio conserjeria 24hrs y bicicletero. A 2 cuadras del metro Pedro de Valdivia.,true,
+casa,venta,Los Copihues 567,Maipu,3800,UF,4,2,120,Casa de 2 plantas con jardin privado quincho y 3 estacionamientos. Condominio cerrado con seguridad 24hrs en sector residencial tranquilo.,true,
+departamento,venta,Catedral 1850 Depto 34,Santiago,2200,UF,1,1,42,Departamento en Santiago centro ideal para inversion. A 3 cuadras del metro Baquedano. Alta demanda de arriendo en el sector.,true,
+casa,arriendo,Av. Irarrazaval 3210,Nunoa,680000,CLP,3,2,85,Casa en Nunoa en barrio residencial tranquilo. Patio trasero. Sin muebles. Acepta mascotas con garantia adicional.,true,

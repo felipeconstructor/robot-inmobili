@@ -21,6 +21,9 @@ const auth = new google.auth.GoogleAuth({
 })
 const calendar = google.calendar({ version: 'v3', auth })
 
+// Link al catalogo de WhatsApp (publico, no es dato sensible)
+const CATALOGO_URL = process.env.WHATSAPP_CATALOGO_URL || 'https://wa.me/c/56920553288'
+
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora inmobiliaria en Chile.
 Respondes siempre en espanol, con tono amable, profesional y cercano.
@@ -29,6 +32,11 @@ Nunca inventes datos legales ni valores sin aclarar que son aproximados.
 Si necesitan asesoria legal recomienda un abogado.
 Si el cliente quiere agendar una visita pidele nombre, telefono y propiedad de interes.
 Respuestas cortas y directas, maximo 5 parrafos.
+
+IMAGENES DE PROPIEDADES:
+Cuando respondas sobre una propiedad especifica y esta tenga imagen disponible, incluye al final de tu respuesta en una linea separada (sin texto adicional en esa linea):
+IMAGEN_URL|{url_exacta_de_la_imagen}
+Solo una imagen por respuesta. Solo si la propiedad tiene imagen. No inventes URLs.
 
 AGENDA DE VISITAS:
 Cuando un cliente quiera ver una propiedad debes:
@@ -128,11 +136,17 @@ Direccion: ${p.direccion}, ${p.comuna}
 Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
 Dormitorios: ${p.dormitorios} | Banos: ${p.banos} | Metros: ${p.metros}m2
 Descripcion: ${p.descripcion}
+${p.imagen_url ? `Imagen disponible: ${p.imagen_url}` : 'Sin imagen'}
 `
     })
   } else {
     listaPropiedades += 'No hay propiedades disponibles.\n'
   }
+
+  // Agregar link al catalogo de WhatsApp si esta configurado
+  const sistemaDinamico = SISTEMA_BASE +
+    (CATALOGO_URL ? `\nCATALOGO: Cuando el cliente pida ver mas propiedades o el catalogo completo, menciona que puede verlo en: ${CATALOGO_URL}\n` : '') +
+    listaPropiedades
 
   historial[sesionId].push({ role: 'user', content: mensaje })
   if (historial[sesionId].length > 20) historial[sesionId] = historial[sesionId].slice(-20)
@@ -147,7 +161,7 @@ Descripcion: ${p.descripcion}
     body: JSON.stringify({
       model: 'claude-opus-4-6',
       max_tokens: 500,
-      system: SISTEMA_BASE + listaPropiedades,
+      system: sistemaDinamico,
       messages: historial[sesionId]
     })
   })
@@ -162,10 +176,18 @@ Descripcion: ${p.descripcion}
 
 async function procesarRespuesta(texto, sesionId, canal) {
   let respuestaFinal = texto
+  let imagenUrl = null
+
+  // Extraer imagen antes de procesar otras señales
+  const matchImagen = texto.match(/IMAGEN_URL\|([^\n]+)/)
+  if (matchImagen) {
+    imagenUrl = matchImagen[1].trim()
+    respuestaFinal = respuestaFinal.replace(/IMAGEN_URL\|[^\n]+\n?/, '').trim()
+  }
 
   // Detectar y procesar agenda (tiene prioridad sobre LEAD_DATOS)
-  if (texto.includes('AGENDAR_VISITA|')) {
-    const partes = texto.split('AGENDAR_VISITA|')[1].split('|')
+  if (respuestaFinal.includes('AGENDAR_VISITA|')) {
+    const partes = respuestaFinal.split('AGENDAR_VISITA|')[1].split('|')
     const [nombre, telefono, propiedad, fecha, hora] = partes
     await guardarLead(nombre, telefono, propiedad, 'Visita agendada', canal, 'visita')
     try {
@@ -181,15 +203,15 @@ async function procesarRespuesta(texto, sesionId, canal) {
       console.error('Error agenda:', err)
       respuestaFinal = 'Tuve un problema agendando. Por favor contacta directamente a nuestro equipo.'
     }
-  } else if (texto.includes('LEAD_DATOS|')) {
+  } else if (respuestaFinal.includes('LEAD_DATOS|')) {
     // Solo guardar lead si no hubo agenda (evita duplicados)
-    const partes = texto.split('LEAD_DATOS|')[1].split('|')
+    const partes = respuestaFinal.split('LEAD_DATOS|')[1].split('|')
     const [nombre, telefono, propiedad] = partes
     await guardarLead(nombre, telefono, propiedad, '', canal)
-    respuestaFinal = texto.replace(/LEAD_DATOS\|.*/, '').trim()
+    respuestaFinal = respuestaFinal.replace(/LEAD_DATOS\|.*/, '').trim()
   }
 
-  return respuestaFinal
+  return { respuesta: respuestaFinal, imagenUrl }
 }
 
 // Ruta chat web
@@ -198,8 +220,8 @@ app.post('/api/chat', async (req, res) => {
   if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
   try {
     const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
-    const respuestaFinal = await procesarRespuesta(respuestaNova, sesionId, 'web')
-    res.json({ respuesta: respuestaFinal })
+    const resultado = await procesarRespuesta(respuestaNova, sesionId, 'web')
+    res.json({ respuesta: resultado.respuesta })
   } catch (err) {
     console.error('Error chat:', err)
     res.status(500).json({ error: 'Error del servidor' })
@@ -214,14 +236,19 @@ app.post('/webhook/whatsapp', async (req, res) => {
   console.log('WA de:', numeroCliente, ':', mensaje)
   try {
     const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
-    const respuestaFinal = await procesarRespuesta(respuestaNova, sesionId, 'whatsapp')
+    const resultado = await procesarRespuesta(respuestaNova, sesionId, 'whatsapp')
     const twilio = require('twilio')
     const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-    await tc.messages.create({
+    // Armar mensaje con imagen si existe
+    const msgOpts = {
       from: process.env.TWILIO_WHATSAPP_NUMBER,
       to: numeroCliente,
-      body: respuestaFinal
-    })
+      body: resultado.respuesta
+    }
+    if (resultado.imagenUrl) {
+      msgOpts.mediaUrl = [resultado.imagenUrl]
+    }
+    await tc.messages.create(msgOpts)
     console.log('Respuesta enviada a:', numeroCliente)
     res.status(200).send('<Response></Response>')
   } catch (err) {
