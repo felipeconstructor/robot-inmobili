@@ -15,7 +15,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 const CALENDAR_ID = 'felipec.constructor@gmail.com'
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
+  keyFile: path.join(__dirname, 'google-credentials.json'),
   scopes: ['https://www.googleapis.com/auth/calendar']
 })
 const calendar = google.calendar({ version: 'v3', auth })
