@@ -238,10 +238,12 @@ app.post('/api/limpiar', (req, res) => {
 })
 
 // ─── Email ──────────────────────────────────────────────────────────────────
+const GMAIL_USER = 'felipec.constructor@gmail.com'
+
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.GMAIL_USER,
+    user: GMAIL_USER,
     pass: process.env.GMAIL_PASS
   }
 })
@@ -349,8 +351,8 @@ async function enviarInformeSemanal() {
     </div>`
 
     await transporter.sendMail({
-      from: `"Nova Reportes" <${process.env.GMAIL_USER}>`,
-      to: process.env.GMAIL_USER,
+      from: `"Nova Reportes" <${GMAIL_USER}>`,
+      to: GMAIL_USER,
       subject: `Informe semanal Nova — ${total} leads | ${calientes} calientes | ${visitas} visitas`,
       html
     })
@@ -364,7 +366,7 @@ async function enviarInformeSemanal() {
 // Ruta para enviar informe manualmente (para probar)
 app.post('/api/informe-test', async (req, res) => {
   await enviarInformeSemanal()
-  res.json({ ok: true, mensaje: 'Informe enviado a ' + process.env.GMAIL_USER })
+  res.json({ ok: true, mensaje: 'Informe enviado a ' + GMAIL_USER })
 })
 
 // Cron: todos los lunes a las 8:00am hora Santiago
