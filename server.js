@@ -162,15 +162,7 @@ Descripcion: ${p.descripcion}
 async function procesarRespuesta(texto, sesionId, canal) {
   let respuestaFinal = texto
 
-  // Detectar y guardar lead
-  if (texto.includes('LEAD_DATOS|')) {
-    const partes = texto.split('LEAD_DATOS|')[1].split('|')
-    const [nombre, telefono, propiedad] = partes
-    await guardarLead(nombre, telefono, propiedad, '', canal)
-    respuestaFinal = texto.replace(/LEAD_DATOS\|.*/, '').trim()
-  }
-
-  // Detectar y procesar agenda
+  // Detectar y procesar agenda (tiene prioridad sobre LEAD_DATOS)
   if (texto.includes('AGENDAR_VISITA|')) {
     const partes = texto.split('AGENDAR_VISITA|')[1].split('|')
     const [nombre, telefono, propiedad, fecha, hora] = partes
@@ -188,6 +180,12 @@ async function procesarRespuesta(texto, sesionId, canal) {
       console.error('Error agenda:', err)
       respuestaFinal = 'Tuve un problema agendando. Por favor contacta directamente a nuestro equipo.'
     }
+  } else if (texto.includes('LEAD_DATOS|')) {
+    // Solo guardar lead si no hubo agenda (evita duplicados)
+    const partes = texto.split('LEAD_DATOS|')[1].split('|')
+    const [nombre, telefono, propiedad] = partes
+    await guardarLead(nombre, telefono, propiedad, '', canal)
+    respuestaFinal = texto.replace(/LEAD_DATOS\|.*/, '').trim()
   }
 
   return respuestaFinal
