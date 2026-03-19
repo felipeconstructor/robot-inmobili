@@ -360,13 +360,18 @@ async function enviarInformeSemanal() {
     console.log('Informe semanal enviado correctamente')
   } catch (err) {
     console.error('Error enviando informe semanal:', err.message)
+    throw err
   }
 }
 
 // Ruta para enviar informe manualmente (para probar)
 app.post('/api/informe-test', async (req, res) => {
-  await enviarInformeSemanal()
-  res.json({ ok: true, mensaje: 'Informe enviado a ' + GMAIL_USER })
+  try {
+    await enviarInformeSemanal()
+    res.json({ ok: true, mensaje: 'Informe enviado a ' + GMAIL_USER })
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message })
+  }
 })
 
 // Cron: todos los lunes a las 8:00am hora Santiago
