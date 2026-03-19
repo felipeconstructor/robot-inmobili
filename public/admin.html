@@ -333,7 +333,7 @@ function filtrar() {
 // ─── Cargar propiedades ────────────────────────────────
 async function cargarPropiedades() {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
-  const { data, error } = await db.from('propiedades').select('*').order('created_at', { ascending: false })
+  const { data, error } = await db.from('propiedades').select('*').order('id', { ascending: false })
   if (error) { toast('Error cargando propiedades', true); return }
   todasProps = data || []
 
