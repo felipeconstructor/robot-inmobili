@@ -4,6 +4,8 @@ const cors = require('cors')
 const { createClient } = require('@supabase/supabase-js')
 const { google } = require('googleapis')
 const path = require('path')
+const nodemailer = require('nodemailer')
+const cron = require('node-cron')
 
 const app = express()
 app.use(cors())
@@ -234,6 +236,140 @@ app.post('/api/limpiar', (req, res) => {
   if (sesionId) delete historial[sesionId]
   res.json({ ok: true })
 })
+
+// ─── Email ──────────────────────────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+})
+
+async function enviarInformeSemanal() {
+  try {
+    // Rango: últimos 7 días
+    const hace7dias = new Date()
+    hace7dias.setDate(hace7dias.getDate() - 7)
+    hace7dias.setHours(0, 0, 0, 0)
+
+    const { data: leads } = await supabase
+      .from('leads')
+      .select('*')
+      .gte('created_at', hace7dias.toISOString())
+      .order('created_at', { ascending: false })
+
+    const total = leads ? leads.length : 0
+    const calientes = leads ? leads.filter(l => l.estado === 'caliente').length : 0
+    const visitas = leads ? leads.filter(l => l.estado === 'visita').length : 0
+    const porWhatsapp = leads ? leads.filter(l => l.canal === 'whatsapp').length : 0
+    const porWeb = leads ? leads.filter(l => l.canal === 'web').length : 0
+
+    // Tabla HTML de leads de la semana
+    const filas = leads && leads.length > 0
+      ? leads.map(l => {
+          const fecha = new Date(l.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })
+          const estadoColor = { caliente: '#0F6E56', nuevo: '#0C447C', tibio: '#633806', frio: '#791F1F', visita: '#3C3489' }
+          const color = estadoColor[l.estado] || '#333'
+          return `
+            <tr style="border-bottom:1px solid #f0f0f0">
+              <td style="padding:8px 12px">${l.nombre || '-'}</td>
+              <td style="padding:8px 12px">${l.telefono || '-'}</td>
+              <td style="padding:8px 12px">${l.propiedad_interes || '-'}</td>
+              <td style="padding:8px 12px;color:${color};font-weight:500;text-transform:capitalize">${l.estado}</td>
+              <td style="padding:8px 12px;color:#888">${fecha}</td>
+            </tr>`
+        }).join('')
+      : `<tr><td colspan="5" style="padding:16px;text-align:center;color:#aaa">Sin leads esta semana</td></tr>`
+
+    const fechaInicio = hace7dias.toLocaleDateString('es-CL', { day: '2-digit', month: 'long' })
+    const fechaHoy = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    const html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:620px;margin:0 auto;background:#fff">
+
+      <!-- Header -->
+      <div style="background:#1A3A5C;padding:24px 32px;border-radius:12px 12px 0 0">
+        <h1 style="color:#fff;margin:0;font-size:20px;font-weight:500">Informe semanal Nova</h1>
+        <p style="color:#C9A96E;margin:4px 0 0;font-size:13px">${fechaInicio} — ${fechaHoy}</p>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e0e0e0;border:1px solid #e0e0e0">
+        <div style="background:#fff;padding:20px;text-align:center">
+          <div style="font-size:32px;font-weight:600;color:#1A3A5C">${total}</div>
+          <div style="font-size:12px;color:#888;margin-top:4px">Leads totales</div>
+        </div>
+        <div style="background:#fff;padding:20px;text-align:center">
+          <div style="font-size:32px;font-weight:600;color:#0F6E56">${calientes}</div>
+          <div style="font-size:12px;color:#888;margin-top:4px">Leads calientes</div>
+        </div>
+        <div style="background:#fff;padding:20px;text-align:center">
+          <div style="font-size:32px;font-weight:600;color:#3C3489">${visitas}</div>
+          <div style="font-size:12px;color:#888;margin-top:4px">Visitas agendadas</div>
+        </div>
+        <div style="background:#fff;padding:20px;text-align:center">
+          <div style="font-size:32px;font-weight:600;color:#1D9E75">${porWhatsapp}</div>
+          <div style="font-size:12px;color:#888;margin-top:4px">Por WhatsApp</div>
+        </div>
+      </div>
+
+      <!-- Canal breakdown -->
+      <div style="background:#fafafa;padding:16px 32px;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0">
+        <p style="margin:0;font-size:13px;color:#666">
+          Canal web: <strong>${porWeb} leads</strong> &nbsp;|&nbsp; Canal WhatsApp: <strong>${porWhatsapp} leads</strong>
+        </p>
+      </div>
+
+      <!-- Tabla leads -->
+      <div style="border:1px solid #e0e0e0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#fafafa">
+              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;font-weight:500">Nombre</th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;font-weight:500">Telefono</th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;font-weight:500">Propiedad</th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;font-weight:500">Estado</th>
+              <th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;font-weight:500">Fecha</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding:20px 32px;text-align:center">
+        <a href="https://alluring-flow-production-16db.up.railway.app/crm.html"
+           style="display:inline-block;background:#1A3A5C;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-size:13px">
+          Ver CRM completo
+        </a>
+        <p style="margin:16px 0 0;font-size:11px;color:#bbb">Nova — Informe automatico semanal</p>
+      </div>
+
+    </div>`
+
+    await transporter.sendMail({
+      from: `"Nova Reportes" <${process.env.GMAIL_USER}>`,
+      to: process.env.GMAIL_USER,
+      subject: `Informe semanal Nova — ${total} leads | ${calientes} calientes | ${visitas} visitas`,
+      html
+    })
+
+    console.log('Informe semanal enviado correctamente')
+  } catch (err) {
+    console.error('Error enviando informe semanal:', err.message)
+  }
+}
+
+// Ruta para enviar informe manualmente (para probar)
+app.post('/api/informe-test', async (req, res) => {
+  await enviarInformeSemanal()
+  res.json({ ok: true, mensaje: 'Informe enviado a ' + process.env.GMAIL_USER })
+})
+
+// Cron: todos los lunes a las 8:00am hora Santiago
+cron.schedule('0 8 * * 1', enviarInformeSemanal, { timezone: 'America/Santiago' })
+console.log('Cron informe semanal activo — lunes 8:00am Santiago')
 
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
