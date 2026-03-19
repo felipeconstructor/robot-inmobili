@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova Admin — Propiedades</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.header h1{color:#fff;font-size:18px;font-weight:500}
+.header-links{display:flex;gap:1rem;align-items:center}
+.header-links a{color:#C9A96E;font-size:13px;text-decoration:none}
+.header-links a:hover{color:#fff}
+.container{max-width:1300px;margin:0 auto;padding:1.5rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
+.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
+.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
+.panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+select:focus,input:focus{border-color:#1A3A5C}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0}
+td{padding:10px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8;vertical-align:middle}
+tr:hover td{background:#fafcff}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-venta{background:#E6F1FB;color:#0C447C}
+.badge-arriendo{background:#EEEDFE;color:#3C3489}
+.badge-disponible{background:#EAF3DE;color:#0F6E56}
+.badge-nodisponible{background:#FCEBEB;color:#791F1F}
+.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333;transition:background .15s}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
+.btn-primary:hover{background:#0f2540}
+.btn-gold{background:#C9A96E;color:#fff;border-color:#C9A96E;padding:7px 18px;font-size:13px}
+.btn-gold:hover{background:#b8944f}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-danger{background:#fff;color:#c0392b;border-color:#e0a0a0}
+.btn-danger:hover{background:#FCEBEB}
+.btn-toggle{padding:4px 10px;font-size:11px;border-radius:8px;border:1px solid #ddd;cursor:pointer}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.refresh{font-size:11px;color:#aaa;cursor:pointer}
+.refresh:hover{color:#1A3A5C}
+.precio{font-weight:600;color:#1A3A5C;white-space:nowrap}
+.acciones{display:flex;gap:6px}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center}
+.overlay.activo{display:flex}
+.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal h3{font-size:17px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
+.form-full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:12px;font-weight:500;color:#555}
+.form-group input,.form-group select,.form-group textarea{
+  padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;
+  background:#fff;outline:none;font-family:inherit
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
+.form-group textarea{resize:vertical;min-height:72px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
+.toast.activo{opacity:1}
+.toast.error{background:#c0392b}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Nova Admin — Propiedades</h1>
+  <div class="header-links">
+    <a href="/crm.html">CRM Leads</a>
+    <a href="/">Chat</a>
+    <span id="ultimo-update" style="color:#888;font-size:13px">Cargando...</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-lbl">Total propiedades</div>
+      <div class="stat-val" id="s-total">0</div>
+      <div class="stat-sub">en la base de datos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Disponibles</div>
+      <div class="stat-val" id="s-disponibles" style="color:#0F6E56">0</div>
+      <div class="stat-sub">Nova las muestra</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">En venta</div>
+      <div class="stat-val" id="s-venta" style="color:#0C447C">0</div>
+      <div class="stat-sub">activas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">En arriendo</div>
+      <div class="stat-val" id="s-arriendo" style="color:#3C3489">0</div>
+      <div class="stat-sub">activas</div>
+    </div>
+  </div>
+
+  <!-- Panel propiedades -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Todas las propiedades</h2>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="filters">
+          <input type="text" id="f-buscar" placeholder="Buscar direccion o comuna..." oninput="filtrar()" style="width:210px">
+          <select id="f-operacion" onchange="filtrar()">
+            <option value="">Todas las operaciones</option>
+            <option value="venta">Venta</option>
+            <option value="arriendo">Arriendo</option>
+          </select>
+          <select id="f-tipo" onchange="filtrar()">
+            <option value="">Todos los tipos</option>
+            <option value="Casa">Casa</option>
+            <option value="Departamento">Departamento</option>
+            <option value="Oficina">Oficina</option>
+            <option value="Local">Local Comercial</option>
+            <option value="Terreno">Terreno</option>
+            <option value="Bodega">Bodega</option>
+          </select>
+          <select id="f-disponible" onchange="filtrar()">
+            <option value="">Todo</option>
+            <option value="true">Disponibles</option>
+            <option value="false">No disponibles</option>
+          </select>
+          <span class="refresh" onclick="cargarPropiedades()">Actualizar</span>
+        </div>
+        <button class="btn btn-gold" onclick="abrirModal()">+ Nueva propiedad</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Operacion</th>
+          <th>Direccion</th>
+          <th>Comuna</th>
+          <th>Precio</th>
+          <th>Dorm / Banos / m2</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-props">
+        <tr><td colspan="8" class="empty">Cargando propiedades...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Modal agregar / editar -->
+<div class="overlay" id="overlay" onclick="cerrarModalClickFuera(event)">
+  <div class="modal" id="modal">
+    <h3 id="modal-titulo">Nueva propiedad</h3>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Tipo de propiedad</label>
+        <select id="f-mtipo">
+          <option value="Casa">Casa</option>
+          <option value="Departamento">Departamento</option>
+          <option value="Oficina">Oficina</option>
+          <option value="Local">Local Comercial</option>
+          <option value="Terreno">Terreno</option>
+          <option value="Bodega">Bodega</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Operacion</label>
+        <select id="f-moperacion">
+          <option value="venta">Venta</option>
+          <option value="arriendo">Arriendo</option>
+        </select>
+      </div>
+
+      <div class="form-group form-full">
+        <label>Direccion</label>
+        <input type="text" id="f-mdireccion" placeholder="Ej: Av. Independencia 1234">
+      </div>
+
+      <div class="form-group">
+        <label>Comuna</label>
+        <input type="text" id="f-mcomuna" placeholder="Ej: Santiago">
+      </div>
+
+      <div class="form-group">
+        <label>Precio</label>
+        <input type="number" id="f-mprecio" placeholder="Ej: 95000000">
+      </div>
+
+      <div class="form-group">
+        <label>Moneda</label>
+        <select id="f-mmoneda">
+          <option value="CLP">CLP (pesos)</option>
+          <option value="UF">UF</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Dormitorios</label>
+        <input type="number" id="f-mdormitorios" placeholder="Ej: 3" min="0">
+      </div>
+
+      <div class="form-group">
+        <label>Banos</label>
+        <input type="number" id="f-mbanos" placeholder="Ej: 2" min="0">
+      </div>
+
+      <div class="form-group">
+        <label>Metros cuadrados</label>
+        <input type="number" id="f-mmetros" placeholder="Ej: 85" min="0">
+      </div>
+
+      <div class="form-group">
+        <label>Disponible</label>
+        <select id="f-mdisponible">
+          <option value="true">Si — Nova la muestra</option>
+          <option value="false">No — oculta para Nova</option>
+        </select>
+      </div>
+
+      <div class="form-group form-full">
+        <label>Descripcion</label>
+        <textarea id="f-mdescripcion" placeholder="Descripcion breve de la propiedad..."></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-guardar" onclick="guardarPropiedad()">Guardar propiedad</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notificaciones -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://macmgtldsljipknomjpp.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq'
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+let todasProps = []
+let editandoId = null // null = creando, uuid = editando
+
+// ─── Toast ─────────────────────────────────────────────
+function toast(msg, esError = false) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = 'toast activo' + (esError ? ' error' : '')
+  setTimeout(() => t.className = 'toast', 3000)
+}
+
+// ─── Formato precio ────────────────────────────────────
+function formatPrecio(precio, moneda) {
+  if (!precio) return '-'
+  if (moneda === 'UF') return `${Number(precio).toLocaleString('es-CL')} UF`
+  return `$${Number(precio).toLocaleString('es-CL')}`
+}
+
+// ─── Render tabla ──────────────────────────────────────
+function renderTabla(props) {
+  const tbody = document.getElementById('tabla-props')
+  if (!props.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No hay propiedades que coincidan</td></tr>'
+    return
+  }
+  tbody.innerHTML = props.map(p => {
+    const opBadge = p.operacion === 'venta'
+      ? `<span class="badge badge-venta">Venta</span>`
+      : `<span class="badge badge-arriendo">Arriendo</span>`
+    const dispBadge = p.disponible
+      ? `<span class="badge badge-disponible">Disponible</span>`
+      : `<span class="badge badge-nodisponible">No disponible</span>`
+    const toggleLabel = p.disponible ? 'Ocultar' : 'Publicar'
+    const detalle = [
+      p.dormitorios != null ? `${p.dormitorios} dorm` : null,
+      p.banos != null ? `${p.banos} ban` : null,
+      p.metros ? `${p.metros}m2` : null
+    ].filter(Boolean).join(' / ') || '-'
+
+    return `
+    <tr>
+      <td>${p.tipo||'-'}</td>
+      <td>${opBadge}</td>
+      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.direccion||'-'}</td>
+      <td>${p.comuna||'-'}</td>
+      <td class="precio">${formatPrecio(p.precio, p.moneda)}</td>
+      <td style="color:#666">${detalle}</td>
+      <td>${dispBadge}</td>
+      <td>
+        <div class="acciones">
+          <button class="btn btn-sm" onclick="toggleDisponible('${p.id}', ${p.disponible})">${toggleLabel}</button>
+          <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
+        </div>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+// ─── Filtrar ───────────────────────────────────────────
+function filtrar() {
+  const buscar = document.getElementById('f-buscar').value.toLowerCase()
+  const op = document.getElementById('f-operacion').value
+  const tipo = document.getElementById('f-tipo').value
+  const disp = document.getElementById('f-disponible').value
+  const filtrados = todasProps.filter(p => {
+    const matchBuscar = !buscar ||
+      (p.direccion||'').toLowerCase().includes(buscar) ||
+      (p.comuna||'').toLowerCase().includes(buscar)
+    const matchOp = !op || p.operacion === op
+    const matchTipo = !tipo || (p.tipo||'').includes(tipo)
+    const matchDisp = disp === '' ? true : String(p.disponible) === disp
+    return matchBuscar && matchOp && matchTipo && matchDisp
+  })
+  renderTabla(filtrados)
+}
+
+// ─── Cargar propiedades ────────────────────────────────
+async function cargarPropiedades() {
+  document.getElementById('ultimo-update').textContent = 'Actualizando...'
+  const { data, error } = await db.from('propiedades').select('*').order('created_at', { ascending: false })
+  if (error) { toast('Error cargando propiedades', true); return }
+  todasProps = data || []
+
+  const disp = todasProps.filter(p => p.disponible)
+  document.getElementById('s-total').textContent = todasProps.length
+  document.getElementById('s-disponibles').textContent = disp.length
+  document.getElementById('s-venta').textContent = disp.filter(p => p.operacion === 'venta').length
+  document.getElementById('s-arriendo').textContent = disp.filter(p => p.operacion === 'arriendo').length
+  document.getElementById('ultimo-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+
+  filtrar()
+}
+
+// ─── Toggle disponible ─────────────────────────────────
+async function toggleDisponible(id, actual) {
+  const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', id)
+  if (error) { toast('Error al cambiar estado', true); return }
+  toast(!actual ? 'Propiedad publicada — Nova la mostrara' : 'Propiedad ocultada — Nova no la mostrara')
+  await cargarPropiedades()
+}
+
+// ─── Eliminar ──────────────────────────────────────────
+async function eliminarPropiedad(id) {
+  const prop = todasProps.find(p => p.id === id)
+  const nombre = prop ? `${prop.tipo} en ${prop.direccion}` : 'esta propiedad'
+  if (!confirm(`Eliminar ${nombre}?\n\nEsta accion no se puede deshacer.`)) return
+  const { error } = await db.from('propiedades').delete().eq('id', id)
+  if (error) { toast('Error al eliminar', true); return }
+  toast('Propiedad eliminada')
+  await cargarPropiedades()
+}
+
+// ─── Modal abrir / cerrar ──────────────────────────────
+function abrirModal() {
+  editandoId = null
+  document.getElementById('modal-titulo').textContent = 'Nueva propiedad'
+  document.getElementById('btn-guardar').textContent = 'Guardar propiedad'
+  limpiarFormulario()
+  document.getElementById('overlay').classList.add('activo')
+}
+
+function abrirEditar(id) {
+  const p = todasProps.find(x => x.id === id)
+  if (!p) return
+  editandoId = id
+  document.getElementById('modal-titulo').textContent = 'Editar propiedad'
+  document.getElementById('btn-guardar').textContent = 'Guardar cambios'
+
+  document.getElementById('f-mtipo').value = p.tipo || 'Casa'
+  document.getElementById('f-moperacion').value = p.operacion || 'venta'
+  document.getElementById('f-mdireccion').value = p.direccion || ''
+  document.getElementById('f-mcomuna').value = p.comuna || ''
+  document.getElementById('f-mprecio').value = p.precio || ''
+  document.getElementById('f-mmoneda').value = p.moneda || 'CLP'
+  document.getElementById('f-mdormitorios').value = p.dormitorios ?? ''
+  document.getElementById('f-mbanos').value = p.banos ?? ''
+  document.getElementById('f-mmetros').value = p.metros || ''
+  document.getElementById('f-mdisponible').value = String(p.disponible)
+  document.getElementById('f-mdescripcion').value = p.descripcion || ''
+
+  document.getElementById('overlay').classList.add('activo')
+}
+
+function cerrarModal() {
+  document.getElementById('overlay').classList.remove('activo')
+  editandoId = null
+}
+
+function cerrarModalClickFuera(e) {
+  if (e.target.id === 'overlay') cerrarModal()
+}
+
+function limpiarFormulario() {
+  document.getElementById('f-mtipo').value = 'Casa'
+  document.getElementById('f-moperacion').value = 'venta'
+  document.getElementById('f-mdireccion').value = ''
+  document.getElementById('f-mcomuna').value = ''
+  document.getElementById('f-mprecio').value = ''
+  document.getElementById('f-mmoneda').value = 'CLP'
+  document.getElementById('f-mdormitorios').value = ''
+  document.getElementById('f-mbanos').value = ''
+  document.getElementById('f-mmetros').value = ''
+  document.getElementById('f-mdisponible').value = 'true'
+  document.getElementById('f-mdescripcion').value = ''
+}
+
+// ─── Guardar (crear o editar) ──────────────────────────
+async function guardarPropiedad() {
+  const direccion = document.getElementById('f-mdireccion').value.trim()
+  const comuna = document.getElementById('f-mcomuna').value.trim()
+  const precio = document.getElementById('f-mprecio').value
+
+  // Validacion basica
+  if (!direccion || !comuna || !precio) {
+    toast('Completa direccion, comuna y precio', true)
+    return
+  }
+
+  const datos = {
+    tipo: document.getElementById('f-mtipo').value,
+    operacion: document.getElementById('f-moperacion').value,
+    direccion,
+    comuna,
+    precio: Number(precio),
+    moneda: document.getElementById('f-mmoneda').value,
+    dormitorios: document.getElementById('f-mdormitorios').value !== '' ? Number(document.getElementById('f-mdormitorios').value) : null,
+    banos: document.getElementById('f-mbanos').value !== '' ? Number(document.getElementById('f-mbanos').value) : null,
+    metros: document.getElementById('f-mmetros').value !== '' ? Number(document.getElementById('f-mmetros').value) : null,
+    disponible: document.getElementById('f-mdisponible').value === 'true',
+    descripcion: document.getElementById('f-mdescripcion').value.trim()
+  }
+
+  document.getElementById('btn-guardar').textContent = 'Guardando...'
+  document.getElementById('btn-guardar').disabled = true
+
+  let error
+  if (editandoId) {
+    // Editar existente
+    const res = await db.from('propiedades').update(datos).eq('id', editandoId)
+    error = res.error
+  } else {
+    // Crear nuevo
+    const res = await db.from('propiedades').insert(datos)
+    error = res.error
+  }
+
+  document.getElementById('btn-guardar').textContent = editandoId ? 'Guardar cambios' : 'Guardar propiedad'
+  document.getElementById('btn-guardar').disabled = false
+
+  if (error) { toast('Error al guardar: ' + error.message, true); return }
+
+  toast(editandoId ? 'Propiedad actualizada' : 'Propiedad agregada correctamente')
+  cerrarModal()
+  await cargarPropiedades()
+}
+
+// Atajos de teclado
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cerrarModal()
+})
+
+cargarPropiedades()
+</script>
+</body>
+</html>
