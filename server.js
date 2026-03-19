@@ -66,14 +66,14 @@ INVERSION:
 
 const historial = {}
 
-async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, canal) {
+async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, canal, estado = 'nuevo') {
   try {
     await supabase.from('leads').insert({
       nombre: nombre || 'Sin nombre',
       telefono: telefono || 'Sin telefono',
       propiedad_interes: propiedadInteres || 'Consulta general',
       mensaje_inicial: mensajeInicial || '',
-      estado: 'nuevo',
+      estado,
       canal: canal || 'web'
     })
   } catch (err) {
@@ -167,7 +167,7 @@ async function procesarRespuesta(texto, sesionId, canal) {
   if (texto.includes('AGENDAR_VISITA|')) {
     const partes = texto.split('AGENDAR_VISITA|')[1].split('|')
     const [nombre, telefono, propiedad, fecha, hora] = partes
-    await guardarLead(nombre, telefono, propiedad, 'Visita agendada', canal)
+    await guardarLead(nombre, telefono, propiedad, 'Visita agendada', canal, 'visita')
     try {
       const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
       if (disponible) {
