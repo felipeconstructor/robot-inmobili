@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova CRM — Prolig Propiedades</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.header h1{color:#fff;font-size:18px;font-weight:500}
+.header span{color:#C9A96E;font-size:13px}
+.container{max-width:1200px;margin:0 auto;padding:1.5rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
+.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
+.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
+.panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
+.filters{display:flex;gap:8px}
+select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+select:focus,input:focus{border-color:#1A3A5C}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0}
+td{padding:11px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8}
+tr:hover td{background:#fafcff}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-nuevo{background:#E6F1FB;color:#0C447C}
+.badge-caliente{background:#EAF3DE;color:#0F6E56}
+.badge-tibio{background:#FAEEDA;color:#633806}
+.badge-frio{background:#FCEBEB;color:#791F1F}
+.badge-visita{background:#EEEDFE;color:#3C3489}
+.badge-web{background:#f0f0f0;color:#666}
+.badge-whatsapp{background:#E1F5EE;color:#085041}
+.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
+.btn-primary:hover{background:#0f2540}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.refresh{font-size:11px;color:#aaa;cursor:pointer}
+.refresh:hover{color:#1A3A5C}
+.tel a{color:#1A3A5C;text-decoration:none}
+.tel a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Nova CRM — Prolig Propiedades</h1>
+  <span id="ultimo-update">Actualizando...</span>
+</div>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-lbl">Total leads este mes</div>
+      <div class="stat-val" id="s-total">0</div>
+      <div class="stat-sub">desde el 1 del mes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Leads calientes</div>
+      <div class="stat-val" id="s-calientes" style="color:#0F6E56">0</div>
+      <div class="stat-sub">interes confirmado</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Visitas agendadas</div>
+      <div class="stat-val" id="s-visitas" style="color:#534AB7">0</div>
+      <div class="stat-sub">este mes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Por WhatsApp</div>
+      <div class="stat-val" id="s-whatsapp" style="color:#1D9E75">0</div>
+      <div class="stat-sub">canal principal</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Todos los leads</h2>
+      <div class="filters">
+        <input type="text" id="f-buscar" placeholder="Buscar nombre o propiedad..." oninput="filtrar()" style="width:220px">
+        <select id="f-estado" onchange="filtrar()">
+          <option value="">Todos los estados</option>
+          <option value="nuevo">Nuevo</option>
+          <option value="caliente">Caliente</option>
+          <option value="tibio">Tibio</option>
+          <option value="frio">Frio</option>
+          <option value="visita">Visita agendada</option>
+        </select>
+        <select id="f-canal" onchange="filtrar()">
+          <option value="">Todos los canales</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="web">Web</option>
+        </select>
+        <span class="refresh" onclick="cargarLeads()">Actualizar</span>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Telefono</th>
+          <th>Propiedad de interes</th>
+          <th>Canal</th>
+          <th>Estado</th>
+          <th>Fecha y hora</th>
+          <th>Accion</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-leads">
+        <tr><td colspan="7" class="empty">Cargando leads...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://macmgtldsljipknomjpp.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq'
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+let todosLeads = []
+
+function formatFecha(iso) {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  const hoy = new Date()
+  const ayer = new Date(hoy); ayer.setDate(ayer.getDate()-1)
+  const hora = d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+  if (d.toDateString() === hoy.toDateString()) return `Hoy ${hora}`
+  if (d.toDateString() === ayer.toDateString()) return `Ayer ${hora}`
+  return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}) + ` ${hora}`
+}
+
+function badgeEstado(e) {
+  const m = {nuevo:'badge-nuevo',caliente:'badge-caliente',tibio:'badge-tibio',frio:'badge-frio',visita:'badge-visita'}
+  const l = {nuevo:'Nuevo',caliente:'Caliente',tibio:'Tibio',frio:'Frio',visita:'Visita'}
+  return `<span class="badge ${m[e]||'badge-nuevo'}">${l[e]||e}</span>`
+}
+
+function badgeCanal(c) {
+  return c === 'whatsapp'
+    ? `<span class="badge badge-whatsapp">WhatsApp</span>`
+    : `<span class="badge badge-web">Web</span>`
+}
+
+async function cambiarEstado(id, estado) {
+  await db.from('leads').update({ estado, updated_at: new Date().toISOString() }).eq('id', id)
+  await cargarLeads()
+}
+
+function renderTabla(leads) {
+  const tbody = document.getElementById('tabla-leads')
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay leads que coincidan</td></tr>'
+    return
+  }
+  tbody.innerHTML = leads.map(l => `
+    <tr>
+      <td><strong>${l.nombre||'-'}</strong></td>
+      <td class="tel"><a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">${l.telefono||'-'}</a></td>
+      <td>${l.propiedad_interes||'-'}</td>
+      <td>${badgeCanal(l.canal)}</td>
+      <td>
+        <select onchange="cambiarEstado('${l.id}',this.value)" style="padding:3px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fafafa">
+          <option value="nuevo" ${l.estado==='nuevo'?'selected':''}>Nuevo</option>
+          <option value="caliente" ${l.estado==='caliente'?'selected':''}>Caliente</option>
+          <option value="tibio" ${l.estado==='tibio'?'selected':''}>Tibio</option>
+          <option value="frio" ${l.estado==='frio'?'selected':''}>Frio</option>
+          <option value="visita" ${l.estado==='visita'?'selected':''}>Visita</option>
+        </select>
+      </td>
+      <td style="color:#888">${formatFecha(l.created_at)}</td>
+      <td>
+        <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
+          <button class="btn btn-primary">Contactar</button>
+        </a>
+      </td>
+    </tr>
+  `).join('')
+}
+
+function filtrar() {
+  const buscar = document.getElementById('f-buscar').value.toLowerCase()
+  const estado = document.getElementById('f-estado').value
+  const canal = document.getElementById('f-canal').value
+  const filtrados = todosLeads.filter(l => {
+    const matchBuscar = !buscar ||
+      (l.nombre||'').toLowerCase().includes(buscar) ||
+      (l.propiedad_interes||'').toLowerCase().includes(buscar)
+    const matchEstado = !estado || l.estado === estado
+    const matchCanal = !canal || l.canal === canal
+    return matchBuscar && matchEstado && matchCanal
+  })
+  renderTabla(filtrados)
+}
+
+async function cargarLeads() {
+  document.getElementById('ultimo-update').textContent = 'Actualizando...'
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
+  const { data, error } = await db.from('leads')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) { console.error(error); return }
+  todosLeads = data || []
+
+  const esMes = l => new Date(l.created_at) >= inicioMes
+  const delMes = todosLeads.filter(esMes)
+
+  document.getElementById('s-total').textContent = delMes.length
+  document.getElementById('s-calientes').textContent = delMes.filter(l=>l.estado==='caliente').length
+  document.getElementById('s-visitas').textContent = delMes.filter(l=>l.estado==='visita').length
+  document.getElementById('s-whatsapp').textContent = delMes.filter(l=>l.canal==='whatsapp').length
+  document.getElementById('ultimo-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+
+  filtrar()
+}
+
+cargarLeads()
+setInterval(cargarLeads, 30000)
+</script>
+</body>
+</html>
