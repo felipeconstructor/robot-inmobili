@@ -239,12 +239,14 @@ app.post('/api/limpiar', (req, res) => {
 // ─── Email ──────────────────────────────────────────────────────────────────
 const GMAIL_USER = 'felipec.constructor@gmail.com'
 
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS'
+
 // Enviar email via Resend (HTTP, sin SMTP)
 async function enviarEmail(asunto, html) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
