@@ -241,7 +241,9 @@ app.post('/api/limpiar', (req, res) => {
 const GMAIL_USER = 'felipec.constructor@gmail.com'
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
     user: GMAIL_USER,
     pass: process.env.GMAIL_PASS
