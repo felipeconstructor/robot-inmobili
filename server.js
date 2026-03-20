@@ -257,13 +257,15 @@ app.get('/webhook/meta', (req, res) => {
 app.post('/webhook/meta', async (req, res) => {
   res.status(200).send('EVENT_RECEIVED')
   const body = req.body
-  console.log('Meta webhook recibido:', JSON.stringify(body).substring(0, 300))
+  console.log('Meta webhook recibido:', JSON.stringify(body).substring(0, 500))
 
+  // Instagram DM usa object:'instagram', Messenger usa object:'page'
   if (body.object !== 'page' && body.object !== 'instagram') return
   const canal = body.object === 'instagram' ? 'instagram' : 'messenger'
 
   for (const entry of (body.entry || [])) {
-    // Formato Messenger y Instagram DM via Messenger Platform
+    // Formato Messenger Platform: entry.messaging[]
+    // Instagram DM TAMBIEN usa entry.messaging[] (object:'instagram', misma estructura)
     const eventos = entry.messaging || []
     for (const event of eventos) {
       if (!event.message || !event.message.text || event.message.is_echo) continue
@@ -279,45 +281,33 @@ app.post('/webhook/meta', async (req, res) => {
         console.error(`Error Meta (${canal}):`, err.message)
       }
     }
-
-    // Formato alternativo Instagram via changes
-    for (const change of (entry.changes || [])) {
-      const val = change.value
-      if (!val || !val.messages) continue
-      for (const msg of val.messages) {
-        if (msg.type !== 'text') continue
-        const senderId = val.sender?.id || msg.from?.id
-        const texto = msg.text?.body || msg.text
-        if (!senderId || !texto) continue
-        const sesionId = `instagram_${senderId}`
-        console.log(`Instagram DM de ${senderId}: ${texto}`)
-        try {
-          const respuestaNova = await obtenerRespuestaNova(texto, sesionId)
-          const resultado = await procesarRespuesta(respuestaNova, sesionId, 'instagram')
-          await enviarMensajeMeta(senderId, resultado.respuesta, 'instagram')
-        } catch (err) {
-          console.error('Error Instagram DM:', err.message)
-        }
-      }
-    }
   }
 })
 
 // Enviar respuesta via Graph API
+// Tanto Messenger como Instagram DM usan el mismo endpoint /me/messages con Page Access Token
+// Instagram DM: el recipient.id es el IGSID (Instagram-Scoped ID) que llega en event.sender.id
+// El texto para Instagram debe ser <= 1000 caracteres (Messenger tolera hasta 2000)
 async function enviarMensajeMeta(recipientId, texto, canal = 'messenger') {
-  const token = META_PAGE_TOKEN // Page token funciona para Messenger e Instagram via Messenger Platform
+  const token = META_PAGE_TOKEN
   if (!token) { console.error('Token Meta no configurado para canal:', canal); return }
+  // Instagram limita mensajes de texto a 1000 caracteres
+  const limite = canal === 'instagram' ? 1000 : 2000
   try {
-    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
+    const res = await fetch(`https://graph.facebook.com/v21.0/me/messages?access_token=${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: recipientId },
-        message: { text: texto.substring(0, 2000) }
+        message: { text: texto.substring(0, limite) }
       })
     })
     const data = await res.json()
-    if (data.error) console.error(`Error Graph API (${canal}):`, data.error.message)
+    if (data.error) {
+      console.error(`Error Graph API (${canal}):`, JSON.stringify(data.error))
+    } else {
+      console.log(`Mensaje enviado via ${canal} a ${recipientId}, message_id: ${data.message_id}`)
+    }
   } catch (err) {
     console.error('Error enviando mensaje Meta:', err.message)
   }
