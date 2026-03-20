@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
 .panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
 .filters{display:flex;gap:8px;flex-wrap:wrap}
-select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+select,input[type=text],input[type=number]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
 select:focus,input:focus{border-color:#1A3A5C}
 table{width:100%;border-collapse:collapse}
 th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0}
@@ -43,17 +43,18 @@ tr:hover td{background:#fafcff}
 .btn-sm{padding:4px 10px;font-size:11px}
 .btn-danger{background:#fff;color:#c0392b;border-color:#e0a0a0}
 .btn-danger:hover{background:#FCEBEB}
-.btn-toggle{padding:4px 10px;font-size:11px;border-radius:8px;border:1px solid #ddd;cursor:pointer}
 .empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
 .refresh{font-size:11px;color:#aaa;cursor:pointer}
 .refresh:hover{color:#1A3A5C}
 .precio{font-weight:600;color:#1A3A5C;white-space:nowrap}
 .acciones{display:flex;gap:6px}
+.thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e0e0e0}
+.thumb-empty{width:40px;height:40px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:16px;color:#ccc}
 
 /* Modal */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center}
 .overlay.activo{display:flex}
-.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
 .modal h3{font-size:17px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
 .form-full{grid-column:1/-1}
@@ -65,6 +66,16 @@ tr:hover td{background:#fafcff}
 }
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
 .form-group textarea{resize:vertical;min-height:72px}
+
+/* Upload foto */
+.upload-area{border:2px dashed #ddd;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.upload-area:hover{border-color:#1A3A5C}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-area p{font-size:12px;color:#999;margin-top:4px}
+.upload-preview{width:100%;max-height:160px;object-fit:cover;border-radius:8px;display:none;margin-top:8px}
+.upload-label{font-size:13px;color:#1A3A5C;font-weight:500}
+.upload-progress{font-size:11px;color:#888;margin-top:4px;display:none}
+
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
 .toast.activo{opacity:1}
@@ -84,7 +95,6 @@ tr:hover td{background:#fafcff}
 
 <div class="container">
 
-  <!-- Stats -->
   <div class="stats">
     <div class="stat">
       <div class="stat-lbl">Total propiedades</div>
@@ -108,7 +118,6 @@ tr:hover td{background:#fafcff}
     </div>
   </div>
 
-  <!-- Panel propiedades -->
   <div class="panel">
     <div class="panel-header">
       <h2>Todas las propiedades</h2>
@@ -142,18 +151,19 @@ tr:hover td{background:#fafcff}
     <table>
       <thead>
         <tr>
+          <th>Foto</th>
           <th>Tipo</th>
           <th>Operacion</th>
           <th>Direccion</th>
           <th>Comuna</th>
           <th>Precio</th>
-          <th>Dorm / Banos / m2</th>
+          <th>Dorm / Baños / m2</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody id="tabla-props">
-        <tr><td colspan="8" class="empty">Cargando propiedades...</td></tr>
+        <tr><td colspan="9" class="empty">Cargando propiedades...</td></tr>
       </tbody>
     </table>
   </div>
@@ -215,7 +225,7 @@ tr:hover td{background:#fafcff}
       </div>
 
       <div class="form-group">
-        <label>Banos</label>
+        <label>Baños</label>
         <input type="number" id="f-mbanos" placeholder="Ej: 2" min="0">
       </div>
 
@@ -237,6 +247,18 @@ tr:hover td{background:#fafcff}
         <textarea id="f-mdescripcion" placeholder="Descripcion breve de la propiedad..."></textarea>
       </div>
 
+      <!-- Foto de la propiedad -->
+      <div class="form-group form-full">
+        <label>Foto principal</label>
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="f-mfoto" accept="image/*" onchange="previsualizarFoto(event)">
+          <div class="upload-label">Subir foto</div>
+          <p>JPG o PNG — arrastra o haz clic aqui</p>
+        </div>
+        <img id="foto-preview" class="upload-preview" alt="Vista previa">
+        <div class="upload-progress" id="upload-progress">Subiendo foto...</div>
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
@@ -245,7 +267,6 @@ tr:hover td{background:#fafcff}
   </div>
 </div>
 
-<!-- Toast notificaciones -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -254,28 +275,26 @@ const SUPABASE_KEY = 'sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq'
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
 let todasProps = []
-let editandoId = null // null = creando, uuid = editando
+let editandoId = null
+let imagenUrlActual = null // URL de la imagen actual al editar
 
-// ─── Toast ─────────────────────────────────────────────
 function toast(msg, esError = false) {
   const t = document.getElementById('toast')
   t.textContent = msg
   t.className = 'toast activo' + (esError ? ' error' : '')
-  setTimeout(() => t.className = 'toast', 3000)
+  setTimeout(() => t.className = 'toast', 3500)
 }
 
-// ─── Formato precio ────────────────────────────────────
 function formatPrecio(precio, moneda) {
   if (!precio) return '-'
   if (moneda === 'UF') return `${Number(precio).toLocaleString('es-CL')} UF`
   return `$${Number(precio).toLocaleString('es-CL')}`
 }
 
-// ─── Render tabla ──────────────────────────────────────
 function renderTabla(props) {
   const tbody = document.getElementById('tabla-props')
   if (!props.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">No hay propiedades que coincidan</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">No hay propiedades que coincidan</td></tr>'
     return
   }
   tbody.innerHTML = props.map(p => {
@@ -288,15 +307,19 @@ function renderTabla(props) {
     const toggleLabel = p.disponible ? 'Ocultar' : 'Publicar'
     const detalle = [
       p.dormitorios != null ? `${p.dormitorios} dorm` : null,
-      p.banos != null ? `${p.banos} ban` : null,
+      p['baños'] != null ? `${p['baños']} baños` : null,
       p.metros ? `${p.metros}m2` : null
     ].filter(Boolean).join(' / ') || '-'
+    const foto = p.imagen_url
+      ? `<img src="${p.imagen_url}" class="thumb" alt="foto">`
+      : `<div class="thumb-empty">📷</div>`
 
     return `
     <tr>
+      <td>${foto}</td>
       <td>${p.tipo||'-'}</td>
       <td>${opBadge}</td>
-      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.direccion||'-'}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.direccion||'-'}</td>
       <td>${p.comuna||'-'}</td>
       <td class="precio">${formatPrecio(p.precio, p.moneda)}</td>
       <td style="color:#666">${detalle}</td>
@@ -312,7 +335,6 @@ function renderTabla(props) {
   }).join('')
 }
 
-// ─── Filtrar ───────────────────────────────────────────
 function filtrar() {
   const buscar = document.getElementById('f-buscar').value.toLowerCase()
   const op = document.getElementById('f-operacion').value
@@ -330,7 +352,6 @@ function filtrar() {
   renderTabla(filtrados)
 }
 
-// ─── Cargar propiedades ────────────────────────────────
 async function cargarPropiedades() {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
   const { data, error } = await db.from('propiedades').select('*').order('id', { ascending: false })
@@ -343,19 +364,16 @@ async function cargarPropiedades() {
   document.getElementById('s-venta').textContent = disp.filter(p => p.operacion === 'venta').length
   document.getElementById('s-arriendo').textContent = disp.filter(p => p.operacion === 'arriendo').length
   document.getElementById('ultimo-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
-
   filtrar()
 }
 
-// ─── Toggle disponible ─────────────────────────────────
 async function toggleDisponible(id, actual) {
   const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', id)
   if (error) { toast('Error al cambiar estado', true); return }
-  toast(!actual ? 'Propiedad publicada — Nova la mostrara' : 'Propiedad ocultada — Nova no la mostrara')
+  toast(!actual ? 'Propiedad publicada — Nova la mostrara' : 'Propiedad ocultada')
   await cargarPropiedades()
 }
 
-// ─── Eliminar ──────────────────────────────────────────
 async function eliminarPropiedad(id) {
   const prop = todasProps.find(p => p.id === id)
   const nombre = prop ? `${prop.tipo} en ${prop.direccion}` : 'esta propiedad'
@@ -366,9 +384,44 @@ async function eliminarPropiedad(id) {
   await cargarPropiedades()
 }
 
-// ─── Modal abrir / cerrar ──────────────────────────────
+// Previsualizar foto antes de subir
+function previsualizarFoto(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = e => {
+    const preview = document.getElementById('foto-preview')
+    preview.src = e.target.result
+    preview.style.display = 'block'
+  }
+  reader.readAsDataURL(file)
+}
+
+// Subir foto a Supabase Storage y retornar la URL publica
+async function subirFoto(file) {
+  const ext = file.name.split('.').pop()
+  const nombre = `${Date.now()}.${ext}`
+  const progress = document.getElementById('upload-progress')
+  progress.style.display = 'block'
+
+  const { data, error } = await db.storage
+    .from('propiedades')
+    .upload(nombre, file, { upsert: false })
+
+  progress.style.display = 'none'
+
+  if (error) {
+    toast('Error subiendo foto: ' + error.message, true)
+    return null
+  }
+
+  const { data: { publicUrl } } = db.storage.from('propiedades').getPublicUrl(nombre)
+  return publicUrl
+}
+
 function abrirModal() {
   editandoId = null
+  imagenUrlActual = null
   document.getElementById('modal-titulo').textContent = 'Nueva propiedad'
   document.getElementById('btn-guardar').textContent = 'Guardar propiedad'
   limpiarFormulario()
@@ -379,6 +432,7 @@ function abrirEditar(id) {
   const p = todasProps.find(x => x.id === id)
   if (!p) return
   editandoId = id
+  imagenUrlActual = p.imagen_url || null
   document.getElementById('modal-titulo').textContent = 'Editar propiedad'
   document.getElementById('btn-guardar').textContent = 'Guardar cambios'
 
@@ -389,10 +443,19 @@ function abrirEditar(id) {
   document.getElementById('f-mprecio').value = p.precio || ''
   document.getElementById('f-mmoneda').value = p.moneda || 'CLP'
   document.getElementById('f-mdormitorios').value = p.dormitorios ?? ''
-  document.getElementById('f-mbanos').value = p.banos ?? ''
+  document.getElementById('f-mbanos').value = p['baños'] ?? ''
   document.getElementById('f-mmetros').value = p.metros || ''
   document.getElementById('f-mdisponible').value = String(p.disponible)
-  document.getElementById('f-mdescripcion').value = p.descripcion || ''
+  document.getElementById('f-mdescripcion').value = p['descripción'] || ''
+
+  // Mostrar foto actual si existe
+  const preview = document.getElementById('foto-preview')
+  if (p.imagen_url) {
+    preview.src = p.imagen_url
+    preview.style.display = 'block'
+  } else {
+    preview.style.display = 'none'
+  }
 
   document.getElementById('overlay').classList.add('activo')
 }
@@ -400,6 +463,7 @@ function abrirEditar(id) {
 function cerrarModal() {
   document.getElementById('overlay').classList.remove('activo')
   editandoId = null
+  imagenUrlActual = null
 }
 
 function cerrarModalClickFuera(e) {
@@ -418,18 +482,29 @@ function limpiarFormulario() {
   document.getElementById('f-mmetros').value = ''
   document.getElementById('f-mdisponible').value = 'true'
   document.getElementById('f-mdescripcion').value = ''
+  document.getElementById('f-mfoto').value = ''
+  document.getElementById('foto-preview').style.display = 'none'
+  document.getElementById('upload-progress').style.display = 'none'
 }
 
-// ─── Guardar (crear o editar) ──────────────────────────
 async function guardarPropiedad() {
   const direccion = document.getElementById('f-mdireccion').value.trim()
   const comuna = document.getElementById('f-mcomuna').value.trim()
   const precio = document.getElementById('f-mprecio').value
-
-  // Validacion basica
   if (!direccion || !comuna || !precio) {
     toast('Completa direccion, comuna y precio', true)
     return
+  }
+
+  document.getElementById('btn-guardar').textContent = 'Guardando...'
+  document.getElementById('btn-guardar').disabled = true
+
+  // Subir foto si se selecciono una nueva
+  let imagenUrl = imagenUrlActual
+  const archivoFoto = document.getElementById('f-mfoto').files[0]
+  if (archivoFoto) {
+    const urlSubida = await subirFoto(archivoFoto)
+    if (urlSubida) imagenUrl = urlSubida
   }
 
   const datos = {
@@ -440,22 +515,18 @@ async function guardarPropiedad() {
     precio: Number(precio),
     moneda: document.getElementById('f-mmoneda').value,
     dormitorios: document.getElementById('f-mdormitorios').value !== '' ? Number(document.getElementById('f-mdormitorios').value) : null,
-    banos: document.getElementById('f-mbanos').value !== '' ? Number(document.getElementById('f-mbanos').value) : null,
+    'baños': document.getElementById('f-mbanos').value !== '' ? Number(document.getElementById('f-mbanos').value) : null,
     metros: document.getElementById('f-mmetros').value !== '' ? Number(document.getElementById('f-mmetros').value) : null,
     disponible: document.getElementById('f-mdisponible').value === 'true',
-    descripcion: document.getElementById('f-mdescripcion').value.trim()
+    'descripción': document.getElementById('f-mdescripcion').value.trim(),
+    imagen_url: imagenUrl || null
   }
-
-  document.getElementById('btn-guardar').textContent = 'Guardando...'
-  document.getElementById('btn-guardar').disabled = true
 
   let error
   if (editandoId) {
-    // Editar existente
     const res = await db.from('propiedades').update(datos).eq('id', editandoId)
     error = res.error
   } else {
-    // Crear nuevo
     const res = await db.from('propiedades').insert(datos)
     error = res.error
   }
@@ -470,7 +541,6 @@ async function guardarPropiedad() {
   await cargarPropiedades()
 }
 
-// Atajos de teclado
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') cerrarModal()
 })
