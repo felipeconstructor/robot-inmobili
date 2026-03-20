@@ -126,17 +126,30 @@ async function obtenerRespuestaNova(mensaje, sesionId) {
   const { data: propiedades } = await supabase
     .from('propiedades').select('*').eq('disponible', true)
 
+  // Cargar galería de fotos adicionales
+  const { data: fotosGaleria } = await supabase
+    .from('fotos_propiedades').select('propiedad_id, url').order('orden')
+  const fotosPorPropiedad = {}
+  if (fotosGaleria) {
+    fotosGaleria.forEach(f => {
+      if (!fotosPorPropiedad[f.propiedad_id]) fotosPorPropiedad[f.propiedad_id] = []
+      fotosPorPropiedad[f.propiedad_id].push(f.url)
+    })
+  }
+
   let listaPropiedades = '\nPROPIEDADES DISPONIBLES:\n'
   if (propiedades && propiedades.length > 0) {
     propiedades.forEach((p, i) => {
+      const galeria = fotosPorPropiedad[p.id] || []
       listaPropiedades += `
 Propiedad ${i + 1}:
 Tipo: ${p.tipo} | Operacion: ${p.operacion}
 Direccion: ${p.direccion}, ${p.comuna}
 Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
-Dormitorios: ${p.dormitorios} | Banos: ${p.banos} | Metros: ${p.metros}m2
-Descripcion: ${p.descripcion}
-${p.imagen_url ? `Imagen disponible: ${p.imagen_url}` : 'Sin imagen'}
+Dormitorios: ${p.dormitorios} | Banos: ${p['baños']} | Metros: ${p.metros}m2
+Descripcion: ${p['descripción']}
+${p.imagen_url ? `Imagen principal: ${p.imagen_url}` : 'Sin imagen principal'}
+${galeria.length > 0 ? `Galeria adicional (${galeria.length} fotos): ${galeria.join(' | ')}` : 'Sin galeria adicional'}
 `
     })
   } else {
