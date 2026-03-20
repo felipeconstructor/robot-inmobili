@@ -237,7 +237,7 @@ app.get('/propiedad/:id', (req, res) => {
 // ─── Meta Webhook (Messenger + Instagram DM) ─────────────────────────────────
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || 'nova_prolig_2026'
 const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || 'EAF0uhX9idx8BQ35O7feu8Xhezu8QMJnNZBVnCzLJhXxYzusD1vt9FqHOhNnUFNH5X4GzGnDwXuN92VEdZCyn1mZCHmqxc7wZAxoBRGWbFu0KN1TRkuSGW6HujwYfE62Np10GTwlbjBWIJ2yIfFRPZAQdEOByiNLDNEjAWZAkVJOx5xZB8QjzjVeL8WXHTDKwonVbPFAhxDomQZDZD'
-const META_IG_TOKEN = process.env.META_IG_TOKEN || 'IGAASNkhvzuupBZAFlzdVVra09MVjc5TVBqaHVQaXFhYmpIcG1MbUxnRVRCNzJzYm11c1k0Q3lwR05oWlVsQ3U4MUdfMjdQcWVXOVdQMWs4R3JLSWpya1o1X1ZAfT0NGU29pVlF4VWViSDZALcm5iRjFPQnBxcEc1d3dIZA19wQVZA0bwZDZD'
+const META_IG_TOKEN = process.env.META_IG_TOKEN || 'IGAASNkhvzuupBZAGE2WThTc1ZAJcGh6ZATkyQXZAOdGliY3prS2pqMElEOE1DZAzNJdXcwV0N1YVJMVFlGTXB2Y1NJYV9jcl81QjVERmcydUVGamZA6cmlseDBKMDhpVlF5OTRHWjIyR0pmaGlhN2x5cDlmQUlPSllPWFBLWDBMTkVaVQZDZD'
 
 // Verificacion del webhook — Meta hace GET para confirmar la URL
 app.get('/webhook/meta', (req, res) => {
@@ -305,7 +305,7 @@ app.post('/webhook/meta', async (req, res) => {
 
 // Enviar respuesta via Graph API
 async function enviarMensajeMeta(recipientId, texto, canal = 'messenger') {
-  const token = canal === 'instagram' ? META_IG_TOKEN : META_PAGE_TOKEN
+  const token = META_PAGE_TOKEN // Page token funciona para Messenger e Instagram via Messenger Platform
   if (!token) { console.error('Token Meta no configurado para canal:', canal); return }
   try {
     const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${token}`, {
