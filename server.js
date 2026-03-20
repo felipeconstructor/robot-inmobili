@@ -254,16 +254,20 @@ app.get('/webhook/meta', (req, res) => {
 
 // Mensajes entrantes de Messenger e Instagram DM
 app.post('/webhook/meta', async (req, res) => {
-  res.status(200).send('EVENT_RECEIVED') // Responder rapido para que Meta no reintente
+  res.status(200).send('EVENT_RECEIVED')
   const body = req.body
+  console.log('Meta webhook recibido:', JSON.stringify(body).substring(0, 300))
+
   if (body.object !== 'page' && body.object !== 'instagram') return
+  const canal = body.object === 'instagram' ? 'instagram' : 'messenger'
 
   for (const entry of (body.entry || [])) {
-    for (const event of (entry.messaging || [])) {
+    // Formato Messenger y Instagram DM via Messenger Platform
+    const eventos = entry.messaging || []
+    for (const event of eventos) {
       if (!event.message || !event.message.text || event.message.is_echo) continue
       const senderId = event.sender.id
       const texto = event.message.text
-      const canal = body.object === 'instagram' ? 'instagram' : 'messenger'
       const sesionId = `${canal}_${senderId}`
       console.log(`Meta (${canal}) de ${senderId}: ${texto}`)
       try {
@@ -272,6 +276,27 @@ app.post('/webhook/meta', async (req, res) => {
         await enviarMensajeMeta(senderId, resultado.respuesta)
       } catch (err) {
         console.error(`Error Meta (${canal}):`, err.message)
+      }
+    }
+
+    // Formato alternativo Instagram via changes
+    for (const change of (entry.changes || [])) {
+      const val = change.value
+      if (!val || !val.messages) continue
+      for (const msg of val.messages) {
+        if (msg.type !== 'text') continue
+        const senderId = val.sender?.id || msg.from?.id
+        const texto = msg.text?.body || msg.text
+        if (!senderId || !texto) continue
+        const sesionId = `instagram_${senderId}`
+        console.log(`Instagram DM de ${senderId}: ${texto}`)
+        try {
+          const respuestaNova = await obtenerRespuestaNova(texto, sesionId)
+          const resultado = await procesarRespuesta(respuestaNova, sesionId, 'instagram')
+          await enviarMensajeMeta(senderId, resultado.respuesta)
+        } catch (err) {
+          console.error('Error Instagram DM:', err.message)
+        }
       }
     }
   }
