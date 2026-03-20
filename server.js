@@ -234,6 +234,68 @@ app.get('/propiedad/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'propiedad.html'))
 })
 
+// ─── Meta Webhook (Messenger + Instagram DM) ─────────────────────────────────
+const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || 'nova_prolig_2026'
+const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || ''
+
+// Verificacion del webhook — Meta hace GET para confirmar la URL
+app.get('/webhook/meta', (req, res) => {
+  const mode = req.query['hub.mode']
+  const token = req.query['hub.verify_token']
+  const challenge = req.query['hub.challenge']
+  if (mode === 'subscribe' && token === META_VERIFY_TOKEN) {
+    console.log('Webhook Meta verificado correctamente')
+    res.status(200).send(challenge)
+  } else {
+    console.log('Webhook Meta — token incorrecto')
+    res.sendStatus(403)
+  }
+})
+
+// Mensajes entrantes de Messenger e Instagram DM
+app.post('/webhook/meta', async (req, res) => {
+  res.status(200).send('EVENT_RECEIVED') // Responder rapido para que Meta no reintente
+  const body = req.body
+  if (body.object !== 'page' && body.object !== 'instagram') return
+
+  for (const entry of (body.entry || [])) {
+    for (const event of (entry.messaging || [])) {
+      if (!event.message || !event.message.text || event.message.is_echo) continue
+      const senderId = event.sender.id
+      const texto = event.message.text
+      const canal = body.object === 'instagram' ? 'instagram' : 'messenger'
+      const sesionId = `${canal}_${senderId}`
+      console.log(`Meta (${canal}) de ${senderId}: ${texto}`)
+      try {
+        const respuestaNova = await obtenerRespuestaNova(texto, sesionId)
+        const resultado = await procesarRespuesta(respuestaNova, sesionId, canal)
+        await enviarMensajeMeta(senderId, resultado.respuesta)
+      } catch (err) {
+        console.error(`Error Meta (${canal}):`, err.message)
+      }
+    }
+  }
+})
+
+// Enviar respuesta via Graph API
+async function enviarMensajeMeta(recipientId, texto) {
+  if (!META_PAGE_TOKEN) { console.error('META_PAGE_TOKEN no configurado'); return }
+  try {
+    const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${META_PAGE_TOKEN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient: { id: recipientId },
+        message: { text: texto.substring(0, 2000) }
+      })
+    })
+    const data = await res.json()
+    if (data.error) console.error('Error Graph API:', data.error.message)
+  } catch (err) {
+    console.error('Error enviando mensaje Meta:', err.message)
+  }
+}
+
 // Ruta chat web
 app.post('/api/chat', async (req, res) => {
   const { mensaje, sesionId } = req.body
