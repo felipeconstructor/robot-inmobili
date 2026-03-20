@@ -11,16 +11,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
 .header h1{color:#fff;font-size:18px;font-weight:500}
 .header span{color:#C9A96E;font-size:13px}
-.container{max-width:1200px;margin:0 auto;padding:1.5rem}
+.container{max-width:1300px;margin:0 auto;padding:1.5rem}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
 .stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
 .stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
 .stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
 .stat-sub{font-size:11px;color:#aaa;margin-top:2px}
 .panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden}
-.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
-.filters{display:flex;gap:8px}
+.panel-header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
 select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
 select:focus,input:focus{border-color:#1A3A5C}
 table{width:100%;border-collapse:collapse}
@@ -44,6 +45,45 @@ tr:hover td{background:#fafcff}
 .refresh:hover{color:#1A3A5C}
 .tel a{color:#1A3A5C;text-decoration:none}
 .tel a:hover{text-decoration:underline}
+
+/* Toggle vista */
+.view-toggle{display:flex;background:#f0f2f5;border-radius:8px;padding:3px;gap:2px}
+.view-btn{padding:4px 12px;border-radius:6px;border:none;background:transparent;font-size:12px;cursor:pointer;color:#888;font-weight:500;transition:all .15s}
+.view-btn.active{background:#fff;color:#1A3A5C;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* Pipeline Kanban */
+.pipeline{display:none;padding:1.25rem;overflow-x:auto}
+.pipeline.visible{display:flex;gap:12px}
+.pipeline-col{flex:0 0 220px;background:#f7f8fa;border-radius:10px;padding:10px}
+.pipeline-col-header{padding:8px 10px 12px;display:flex;align-items:center;justify-content:space-between}
+.pipeline-col-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.pipeline-col-count{font-size:12px;font-weight:600;background:#fff;border-radius:20px;padding:1px 8px}
+.pipeline-cards{display:flex;flex-direction:column;gap:8px;min-height:60px}
+.card{background:#fff;border-radius:8px;padding:10px 12px;border:0.5px solid #e8e8e8;cursor:default;transition:box-shadow .15s}
+.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card-nombre{font-size:13px;font-weight:500;color:#1A3A5C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-propiedad{font-size:11px;color:#888;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-footer{display:flex;align-items:center;justify-content:space-between}
+.card-fecha{font-size:10px;color:#bbb}
+.card-actions{display:flex;gap:4px}
+.card-actions a{text-decoration:none}
+.card-btn{padding:3px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:10px;cursor:pointer;color:#333}
+.card-btn:hover{background:#f0f0f0}
+.card-btn-wa{background:#E1F5EE;border-color:#c3e8d9;color:#085041}
+.card-btn-wa:hover{background:#c3e8d9}
+.card-estado-select{width:100%;padding:3px 6px;border:1px solid #eee;border-radius:6px;font-size:10px;color:#555;background:#fafafa;margin-bottom:6px}
+
+/* Colores columnas */
+.col-nuevo .pipeline-col-title{color:#0C447C}
+.col-nuevo .pipeline-col-count{color:#0C447C}
+.col-tibio .pipeline-col-title{color:#633806}
+.col-tibio .pipeline-col-count{color:#633806}
+.col-caliente .pipeline-col-title{color:#0F6E56}
+.col-caliente .pipeline-col-count{color:#0F6E56}
+.col-visita .pipeline-col-title{color:#3C3489}
+.col-visita .pipeline-col-count{color:#3C3489}
+.col-frio .pipeline-col-title{color:#791F1F}
+.col-frio .pipeline-col-count{color:#791F1F}
 </style>
 </head>
 <body>
@@ -80,43 +120,92 @@ tr:hover td{background:#fafcff}
 
   <div class="panel">
     <div class="panel-header">
-      <h2>Todos los leads</h2>
-      <div class="filters">
-        <input type="text" id="f-buscar" placeholder="Buscar nombre o propiedad..." oninput="filtrar()" style="width:220px">
-        <select id="f-estado" onchange="filtrar()">
-          <option value="">Todos los estados</option>
-          <option value="nuevo">Nuevo</option>
-          <option value="caliente">Caliente</option>
-          <option value="tibio">Tibio</option>
-          <option value="frio">Frio</option>
-          <option value="visita">Visita agendada</option>
-        </select>
-        <select id="f-canal" onchange="filtrar()">
-          <option value="">Todos los canales</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="web">Web</option>
-        </select>
-        <span class="refresh" onclick="cargarLeads()">Actualizar</span>
+      <h2>Leads</h2>
+      <div class="panel-header-right">
+        <div class="filters" id="filtros-lista">
+          <input type="text" id="f-buscar" placeholder="Buscar nombre o propiedad..." oninput="filtrar()" style="width:200px">
+          <select id="f-estado" onchange="filtrar()">
+            <option value="">Todos los estados</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="caliente">Caliente</option>
+            <option value="tibio">Tibio</option>
+            <option value="frio">Frio</option>
+            <option value="visita">Visita agendada</option>
+          </select>
+          <select id="f-canal" onchange="filtrar()">
+            <option value="">Todos los canales</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="web">Web</option>
+          </select>
+          <span class="refresh" onclick="cargarLeads()">Actualizar</span>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-lista" onclick="setVista('lista')">Lista</button>
+          <button class="view-btn" id="btn-pipeline" onclick="setVista('pipeline')">Pipeline</button>
+        </div>
       </div>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Telefono</th>
-          <th>Propiedad de interes</th>
-          <th>Canal</th>
-          <th>Estado</th>
-          <th>Fecha y hora</th>
-          <th>Accion</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-leads">
-        <tr><td colspan="7" class="empty">Cargando leads...</td></tr>
-      </tbody>
-    </table>
-  </div>
 
+    <!-- Vista Lista -->
+    <div id="vista-lista">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Telefono</th>
+            <th>Propiedad de interes</th>
+            <th>Canal</th>
+            <th>Estado</th>
+            <th>Fecha y hora</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-leads">
+          <tr><td colspan="7" class="empty">Cargando leads...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Vista Pipeline -->
+    <div class="pipeline" id="vista-pipeline">
+      <div class="pipeline-col col-nuevo">
+        <div class="pipeline-col-header">
+          <span class="pipeline-col-title">Nuevo</span>
+          <span class="pipeline-col-count" id="cnt-nuevo">0</span>
+        </div>
+        <div class="pipeline-cards" id="cards-nuevo"></div>
+      </div>
+      <div class="pipeline-col col-tibio">
+        <div class="pipeline-col-header">
+          <span class="pipeline-col-title">Tibio</span>
+          <span class="pipeline-col-count" id="cnt-tibio">0</span>
+        </div>
+        <div class="pipeline-cards" id="cards-tibio"></div>
+      </div>
+      <div class="pipeline-col col-caliente">
+        <div class="pipeline-col-header">
+          <span class="pipeline-col-title">Caliente</span>
+          <span class="pipeline-col-count" id="cnt-caliente">0</span>
+        </div>
+        <div class="pipeline-cards" id="cards-caliente"></div>
+      </div>
+      <div class="pipeline-col col-visita">
+        <div class="pipeline-col-header">
+          <span class="pipeline-col-title">Visita</span>
+          <span class="pipeline-col-count" id="cnt-visita">0</span>
+        </div>
+        <div class="pipeline-cards" id="cards-visita"></div>
+      </div>
+      <div class="pipeline-col col-frio">
+        <div class="pipeline-col-header">
+          <span class="pipeline-col-title">Frio</span>
+          <span class="pipeline-col-count" id="cnt-frio">0</span>
+        </div>
+        <div class="pipeline-cards" id="cards-frio"></div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
@@ -125,6 +214,16 @@ const SUPABASE_KEY = 'sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq'
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
 let todosLeads = []
+let vistaActual = 'lista'
+
+function setVista(v) {
+  vistaActual = v
+  document.getElementById('vista-lista').style.display = v === 'lista' ? '' : 'none'
+  document.getElementById('vista-pipeline').classList.toggle('visible', v === 'pipeline')
+  document.getElementById('filtros-lista').style.display = v === 'lista' ? '' : 'none'
+  document.getElementById('btn-lista').classList.toggle('active', v === 'lista')
+  document.getElementById('btn-pipeline').classList.toggle('active', v === 'pipeline')
+}
 
 function formatFecha(iso) {
   if (!iso) return '-'
@@ -185,6 +284,38 @@ function renderTabla(leads) {
   `).join('')
 }
 
+function renderPipeline(leads) {
+  const estados = ['nuevo','tibio','caliente','visita','frio']
+  estados.forEach(e => {
+    const grupo = leads.filter(l => l.estado === e)
+    document.getElementById('cnt-' + e).textContent = grupo.length
+    document.getElementById('cards-' + e).innerHTML = grupo.length
+      ? grupo.map(l => `
+        <div class="card">
+          <div class="card-nombre">${l.nombre||'Sin nombre'}</div>
+          <div class="card-propiedad">${l.propiedad_interes||'Consulta general'}</div>
+          <select class="card-estado-select" onchange="cambiarEstado('${l.id}',this.value)">
+            <option value="nuevo" ${l.estado==='nuevo'?'selected':''}>Nuevo</option>
+            <option value="tibio" ${l.estado==='tibio'?'selected':''}>Tibio</option>
+            <option value="caliente" ${l.estado==='caliente'?'selected':''}>Caliente</option>
+            <option value="visita" ${l.estado==='visita'?'selected':''}>Visita</option>
+            <option value="frio" ${l.estado==='frio'?'selected':''}>Frio</option>
+          </select>
+          <div class="card-footer">
+            <span class="card-fecha">${formatFecha(l.created_at)}</span>
+            <div class="card-actions">
+              ${badgeCanal(l.canal)}
+              <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
+                <button class="card-btn card-btn-wa">WA</button>
+              </a>
+            </div>
+          </div>
+        </div>
+      `).join('')
+      : '<div style="text-align:center;padding:20px;font-size:12px;color:#ccc">Sin leads</div>'
+  })
+}
+
 function filtrar() {
   const buscar = document.getElementById('f-buscar').value.toLowerCase()
   const estado = document.getElementById('f-estado').value
@@ -219,6 +350,7 @@ async function cargarLeads() {
   document.getElementById('ultimo-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
 
   filtrar()
+  renderPipeline(todosLeads)
 }
 
 cargarLeads()
