@@ -486,12 +486,10 @@ async function enviarInformeSemanal() {
 
 // Ruta debug para verificar variables de entorno
 app.get('/api/debug-env', (req, res) => {
-  const resend = process.env.RESEND_API_KEY || 'NO ENCONTRADA'
-  const meta = process.env.META_PAGE_TOKEN || 'NO ENCONTRADA'
   res.json({
-    resend_primeros_10: resend.substring(0, 10),
-    meta_primeros_10: meta.substring(0, 10),
-    meta_largo: meta.length
+    meta_configurado: META_PAGE_TOKEN.length > 20,
+    meta_primeros_10: META_PAGE_TOKEN.substring(0, 10),
+    meta_largo: META_PAGE_TOKEN.length
   })
 })
 
