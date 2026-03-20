@@ -259,18 +259,6 @@ tr:hover td{background:#fafcff}
         <div class="upload-progress" id="upload-progress">Subiendo foto...</div>
       </div>
 
-      <!-- Galería de fotos (solo visible al editar) -->
-      <div class="form-group form-full" id="galeria-seccion" style="display:none">
-        <label>Galería de fotos adicionales</label>
-        <div id="galeria-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:40px"></div>
-        <div class="upload-area" id="upload-galeria-area">
-          <input type="file" id="f-galeria-foto" accept="image/*" multiple onchange="subirFotosGaleria(event)">
-          <div class="upload-label">Agregar fotos a la galería</div>
-          <p>Puedes seleccionar varias fotos a la vez</p>
-        </div>
-        <div class="upload-progress" id="galeria-progress">Subiendo...</div>
-      </div>
-
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
@@ -288,8 +276,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
 let todasProps = []
 let editandoId = null
-let imagenUrlActual = null // URL de la imagen actual al editar
-let galeriaFotos = []     // Fotos actuales de la galería al editar
+let imagenUrlActual = null
 
 function toast(msg, esError = false) {
   const t = document.getElementById('toast')
@@ -341,6 +328,7 @@ function renderTabla(props) {
         <div class="acciones">
           <button class="btn btn-sm" onclick="toggleDisponible('${p.id}', ${p.disponible})">${toggleLabel}</button>
           <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
+          <a class="btn btn-sm" href="/propiedad/${p.id}" target="_blank">Ficha</a>
           <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
         </div>
       </td>
@@ -436,15 +424,13 @@ async function subirFoto(file, progressElId = 'upload-progress') {
 function abrirModal() {
   editandoId = null
   imagenUrlActual = null
-  galeriaFotos = []
   document.getElementById('modal-titulo').textContent = 'Nueva propiedad'
   document.getElementById('btn-guardar').textContent = 'Guardar propiedad'
-  document.getElementById('galeria-seccion').style.display = 'none'
   limpiarFormulario()
   document.getElementById('overlay').classList.add('activo')
 }
 
-async function abrirEditar(id) {
+function abrirEditar(id) {
   const p = todasProps.find(x => String(x.id) === String(id))
   if (!p) return
   editandoId = id
@@ -464,7 +450,6 @@ async function abrirEditar(id) {
   document.getElementById('f-mdisponible').value = String(p.disponible)
   document.getElementById('f-mdescripcion').value = p['descripción'] || ''
 
-  // Mostrar foto principal si existe
   const preview = document.getElementById('foto-preview')
   if (p.imagen_url) {
     preview.src = p.imagen_url
@@ -473,10 +458,6 @@ async function abrirEditar(id) {
     preview.style.display = 'none'
   }
 
-  // Mostrar sección galería y cargar fotos
-  document.getElementById('galeria-seccion').style.display = 'block'
-  await cargarGaleria(id)
-
   document.getElementById('overlay').classList.add('activo')
 }
 
@@ -484,69 +465,6 @@ function cerrarModal() {
   document.getElementById('overlay').classList.remove('activo')
   editandoId = null
   imagenUrlActual = null
-  galeriaFotos = []
-}
-
-// ─── Galería ─────────────────────────────────────────────────────────────────
-
-async function cargarGaleria(propiedadId) {
-  const { data } = await db.from('fotos_propiedades')
-    .select('*')
-    .eq('propiedad_id', propiedadId)
-    .order('orden')
-  galeriaFotos = data || []
-  renderGaleria()
-}
-
-function renderGaleria() {
-  const grid = document.getElementById('galeria-grid')
-  if (!galeriaFotos.length) {
-    grid.innerHTML = '<p style="font-size:12px;color:#aaa;padding:4px 0">Sin fotos adicionales aun — agrega las que quieras</p>'
-    return
-  }
-  grid.innerHTML = galeriaFotos.map(f => `
-    <div style="position:relative;display:inline-block">
-      <img src="${f.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">
-      <button onclick="eliminarFotoGaleria(${f.id})"
-        style="position:absolute;top:-6px;right:-6px;background:#c0392b;color:#fff;border:none;
-               border-radius:50%;width:20px;height:20px;font-size:13px;cursor:pointer;
-               line-height:18px;text-align:center;padding:0">×</button>
-    </div>
-  `).join('')
-}
-
-async function subirFotosGaleria(event) {
-  const files = Array.from(event.target.files)
-  if (!files.length || !editandoId) return
-  const progress = document.getElementById('galeria-progress')
-  progress.style.display = 'block'
-
-  for (let i = 0; i < files.length; i++) {
-    progress.textContent = `Subiendo foto ${i + 1} de ${files.length}...`
-    const url = await subirFoto(files[i], 'galeria-progress')
-    if (url) {
-      const { data } = await db.from('fotos_propiedades').insert({
-        propiedad_id: Number(editandoId),
-        url,
-        orden: galeriaFotos.length
-      }).select().single()
-      if (data) galeriaFotos.push(data)
-    }
-  }
-
-  progress.style.display = 'none'
-  document.getElementById('f-galeria-foto').value = ''
-  renderGaleria()
-  toast(`${files.length} foto(s) agregadas a la galeria`)
-}
-
-async function eliminarFotoGaleria(fotoId) {
-  if (!confirm('Eliminar esta foto de la galeria?')) return
-  const { error } = await db.from('fotos_propiedades').delete().eq('id', fotoId)
-  if (error) { toast('Error al eliminar', true); return }
-  galeriaFotos = galeriaFotos.filter(f => f.id !== fotoId)
-  renderGaleria()
-  toast('Foto eliminada de la galeria')
 }
 
 function cerrarModalClickFuera(e) {

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propiedad — Nova Inmobiliario</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
+
+/* Header */
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.header-brand{color:#fff;font-size:16px;font-weight:500;letter-spacing:.3px}
+.header-sub{color:#C9A96E;font-size:12px}
+
+/* Contenedor principal */
+.container{max-width:820px;margin:0 auto;padding:1.5rem 1rem 3rem}
+
+/* Loading / error */
+.loading{text-align:center;padding:4rem 1rem;color:#888;font-size:15px}
+.not-found{text-align:center;padding:4rem 1rem}
+.not-found h2{color:#1A3A5C;margin-bottom:.5rem}
+.not-found p{color:#888;font-size:14px}
+
+/* Galería */
+.galeria{background:#000;border-radius:16px;overflow:hidden;margin-bottom:1rem;position:relative}
+.foto-hero{width:100%;max-height:480px;object-fit:cover;display:block;cursor:pointer}
+.foto-hero-placeholder{width:100%;height:300px;background:#e0e0e0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:14px}
+.thumbnails{display:flex;gap:8px;padding:.75rem;background:#111;overflow-x:auto}
+.thumbnails:empty{display:none}
+.thumb{width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.6;border:2px solid transparent;flex-shrink:0;transition:opacity .2s,border-color .2s}
+.thumb.activo{opacity:1;border-color:#C9A96E}
+.thumb:hover{opacity:.9}
+
+/* Tarjeta de detalles */
+.card{background:#fff;border-radius:16px;border:.5px solid #e0e0e0;padding:1.5rem;margin-bottom:1rem}
+.badges{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-venta{background:#E6F1FB;color:#0C447C}
+.badge-arriendo{background:#EEEDFE;color:#3C3489}
+.badge-disponible{background:#EAF3DE;color:#0F6E56}
+.titulo{font-size:22px;font-weight:600;color:#1A3A5C;margin-bottom:.375rem;line-height:1.3}
+.direccion{font-size:14px;color:#888;margin-bottom:1.25rem}
+.precio{font-size:28px;font-weight:700;color:#1A3A5C;margin-bottom:1.25rem}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
+.stat{background:#f7f8fa;border-radius:10px;padding:.875rem;text-align:center}
+.stat-val{font-size:22px;font-weight:600;color:#1A3A5C}
+.stat-lbl{font-size:11px;color:#999;margin-top:3px}
+
+/* Descripción */
+.desc-titulo{font-size:13px;font-weight:600;color:#555;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
+.descripcion{font-size:14px;color:#555;line-height:1.65}
+
+/* CTA */
+.cta{background:#fff;border-radius:16px;border:.5px solid #e0e0e0;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.875rem}
+.btn-wa{display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;text-decoration:none;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:500;transition:background .2s}
+.btn-wa:hover{background:#1ebe5d}
+.btn-wa svg{width:22px;height:22px;fill:#fff;flex-shrink:0}
+.btn-visita{display:flex;align-items:center;justify-content:center;background:#1A3A5C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;border:none;width:100%;transition:background .2s}
+.btn-visita:hover{background:#0f2540}
+
+/* Footer */
+.footer{text-align:center;padding:2rem 1rem 1rem;color:#aaa;font-size:12px}
+.footer span{color:#C9A96E;font-weight:500}
+
+/* Responsive */
+@media(max-width:500px){
+  .stats-grid{grid-template-columns:repeat(3,1fr)}
+  .titulo{font-size:18px}
+  .precio{font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-brand">Nova Inmobiliario</div>
+    <div class="header-sub">Prolig Propiedades</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="loading" id="loading">Cargando propiedad...</div>
+  <div id="not-found" style="display:none" class="not-found">
+    <h2>Propiedad no encontrada</h2>
+    <p>Es posible que ya no este disponible o el link sea incorrecto.</p>
+  </div>
+
+  <div id="contenido" style="display:none">
+
+    <!-- Galería -->
+    <div class="galeria" id="galeria">
+      <img id="foto-hero" class="foto-hero" src="" alt="Foto de la propiedad">
+      <div class="thumbnails" id="thumbnails"></div>
+    </div>
+
+    <!-- Detalles -->
+    <div class="card">
+      <div class="badges" id="badges"></div>
+      <div class="titulo" id="titulo"></div>
+      <div class="direccion" id="direccion"></div>
+      <div class="precio" id="precio"></div>
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="desc-titulo">Descripcion</div>
+      <div class="descripcion" id="descripcion"></div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+      <a class="btn-wa" id="btn-wa" href="" target="_blank">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        Consultar por WhatsApp
+      </a>
+      <button class="btn-visita" id="btn-visita">Agendar visita</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">Ficha generada por <span>Nova Inmobiliario</span></div>
+
+<script>
+const SUPABASE_URL = 'https://macmgtldsljipknomjpp.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq'
+const WHATSAPP_NUMBER = '56920553288'
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+// Obtener ID desde la URL: /propiedad/3
+const propiedadId = window.location.pathname.split('/').filter(Boolean).pop()
+
+function formatPrecio(precio, moneda) {
+  if (!precio) return '-'
+  if (moneda === 'UF') return `${Number(precio).toLocaleString('es-CL')} UF`
+  return `$${Number(precio).toLocaleString('es-CL')}`
+}
+
+function cambiarHero(url, thumbEl) {
+  document.getElementById('foto-hero').src = url
+  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('activo'))
+  if (thumbEl) thumbEl.classList.add('activo')
+}
+
+async function cargar() {
+  if (!propiedadId || isNaN(Number(propiedadId))) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('not-found').style.display = 'block'
+    return
+  }
+
+  const { data: prop, error } = await db.from('propiedades')
+    .select('*').eq('id', Number(propiedadId)).single()
+
+  if (error || !prop) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('not-found').style.display = 'block'
+    return
+  }
+
+  // Cargar fotos de galería
+  const { data: galeria } = await db.from('fotos_propiedades')
+    .select('*').eq('propiedad_id', prop.id).order('orden')
+
+  // Actualizar título de página
+  document.title = `${prop.tipo} en ${prop.direccion} — Nova`
+
+  // Foto hero
+  const todasFotos = []
+  if (prop.imagen_url) todasFotos.push(prop.imagen_url)
+  if (galeria) galeria.forEach(f => { if (f.url !== prop.imagen_url) todasFotos.push(f.url) })
+
+  const heroEl = document.getElementById('foto-hero')
+  const galeriaEl = document.getElementById('galeria')
+
+  if (todasFotos.length > 0) {
+    heroEl.src = todasFotos[0]
+    heroEl.style.display = 'block'
+  } else {
+    heroEl.style.display = 'none'
+    galeriaEl.style.background = '#e0e0e0'
+    galeriaEl.innerHTML = '<div class="foto-hero-placeholder">Sin fotos disponibles</div>'
+  }
+
+  // Thumbnails (solo si hay mas de 1 foto)
+  if (todasFotos.length > 1) {
+    const thumbsEl = document.getElementById('thumbnails')
+    thumbsEl.innerHTML = todasFotos.map((url, i) => `
+      <img src="${url}" class="thumb ${i === 0 ? 'activo' : ''}"
+        onclick="cambiarHero('${url}', this)" alt="Foto ${i+1}">
+    `).join('')
+  }
+
+  // Badges
+  const opBadge = prop.operacion === 'venta'
+    ? `<span class="badge badge-venta">Venta</span>`
+    : `<span class="badge badge-arriendo">Arriendo</span>`
+  document.getElementById('badges').innerHTML = opBadge +
+    (prop.disponible ? '<span class="badge badge-disponible">Disponible</span>' : '')
+
+  // Texto
+  document.getElementById('titulo').textContent = `${prop.tipo} en ${prop.direccion}`
+  document.getElementById('direccion').textContent = prop.comuna || ''
+  document.getElementById('precio').textContent = formatPrecio(prop.precio, prop.moneda)
+  document.getElementById('descripcion').textContent = prop['descripción'] || 'Sin descripcion disponible.'
+
+  // Stats
+  const stats = []
+  if (prop.dormitorios != null) stats.push({ val: prop.dormitorios, lbl: 'Dormitorios' })
+  if (prop['baños'] != null) stats.push({ val: prop['baños'], lbl: 'Baños' })
+  if (prop.metros) stats.push({ val: prop.metros + ' m²', lbl: 'Metros' })
+  document.getElementById('stats-grid').innerHTML = stats.map(s =>
+    `<div class="stat"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`
+  ).join('')
+
+  // Botones
+  const msg = encodeURIComponent(`Hola, vi la ficha de la propiedad: ${prop.tipo} en ${prop.direccion}, ${prop.comuna}. Precio: ${formatPrecio(prop.precio, prop.moneda)}. Me gustaria mas informacion.`)
+  document.getElementById('btn-wa').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`
+
+  document.getElementById('btn-visita').addEventListener('click', () => {
+    const msgVisita = encodeURIComponent(`Hola, quiero agendar una visita para ver: ${prop.tipo} en ${prop.direccion}, ${prop.comuna}.`)
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msgVisita}`, '_blank')
+  })
+
+  // Mostrar todo
+  document.getElementById('loading').style.display = 'none'
+  document.getElementById('contenido').style.display = 'block'
+}
+
+cargar()
+</script>
+</body>
+</html>

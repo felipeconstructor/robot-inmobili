@@ -33,10 +33,11 @@ Si necesitan asesoria legal recomienda un abogado.
 Si el cliente quiere agendar una visita pidele nombre, telefono y propiedad de interes.
 Respuestas cortas y directas, maximo 5 parrafos.
 
-IMAGENES DE PROPIEDADES:
+IMAGENES Y FICHA DE PROPIEDADES:
 Cuando respondas sobre una propiedad especifica y esta tenga imagen disponible, incluye al final de tu respuesta en una linea separada (sin texto adicional en esa linea):
 IMAGEN_URL|{url_exacta_de_la_imagen}
 Solo una imagen por respuesta. Solo si la propiedad tiene imagen. No inventes URLs.
+Ademas, cuando el cliente pida ver mas fotos o mas informacion de una propiedad, comparte el link de la ficha completa que aparece en los datos de la propiedad. Ejemplo: "Puedes ver todas las fotos y detalles aqui: https://alluring-flow-production-16db.up.railway.app/propiedad/3"
 
 AGENDA DE VISITAS:
 Cuando un cliente quiera ver una propiedad debes:
@@ -150,6 +151,7 @@ Dormitorios: ${p.dormitorios} | Banos: ${p['baños']} | Metros: ${p.metros}m2
 Descripcion: ${p['descripción']}
 ${p.imagen_url ? `Imagen principal: ${p.imagen_url}` : 'Sin imagen principal'}
 ${galeria.length > 0 ? `Galeria adicional (${galeria.length} fotos): ${galeria.join(' | ')}` : 'Sin galeria adicional'}
+Ficha completa con fotos: https://alluring-flow-production-16db.up.railway.app/propiedad/${p.id}
 `
     })
   } else {
@@ -226,6 +228,11 @@ async function procesarRespuesta(texto, sesionId, canal) {
 
   return { respuesta: respuestaFinal, imagenUrl }
 }
+
+// Ficha individual de propiedad
+app.get('/propiedad/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'propiedad.html'))
+})
 
 // Ruta chat web
 app.post('/api/chat', async (req, res) => {
