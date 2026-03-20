@@ -411,17 +411,18 @@ function previsualizarFoto(event) {
 }
 
 // Subir foto a Supabase Storage y retornar la URL publica
-async function subirFoto(file) {
+// progressElId: ID del elemento de progreso a mostrar (opcional)
+async function subirFoto(file, progressElId = 'upload-progress') {
   const ext = file.name.split('.').pop()
   const nombre = `${Date.now()}.${ext}`
-  const progress = document.getElementById('upload-progress')
-  progress.style.display = 'block'
+  const progress = document.getElementById(progressElId)
+  if (progress) progress.style.display = 'block'
 
   const { data, error } = await db.storage
     .from('propiedades')
     .upload(nombre, file, { upsert: false })
 
-  progress.style.display = 'none'
+  if (progress) progress.style.display = 'none'
 
   if (error) {
     toast('Error subiendo foto: ' + error.message, true)
@@ -522,7 +523,7 @@ async function subirFotosGaleria(event) {
 
   for (let i = 0; i < files.length; i++) {
     progress.textContent = `Subiendo foto ${i + 1} de ${files.length}...`
-    const url = await subirFoto(files[i])
+    const url = await subirFoto(files[i], 'galeria-progress')
     if (url) {
       const { data } = await db.from('fotos_propiedades').insert({
         propiedad_id: Number(editandoId),
