@@ -368,17 +368,17 @@ async function cargarPropiedades() {
 }
 
 async function toggleDisponible(id, actual) {
-  const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', id)
+  const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', Number(id))
   if (error) { toast('Error al cambiar estado', true); return }
   toast(!actual ? 'Propiedad publicada — Nova la mostrara' : 'Propiedad ocultada')
   await cargarPropiedades()
 }
 
 async function eliminarPropiedad(id) {
-  const prop = todasProps.find(p => p.id === id)
+  const prop = todasProps.find(p => String(p.id) === String(id))
   const nombre = prop ? `${prop.tipo} en ${prop.direccion}` : 'esta propiedad'
   if (!confirm(`Eliminar ${nombre}?\n\nEsta accion no se puede deshacer.`)) return
-  const { error } = await db.from('propiedades').delete().eq('id', id)
+  const { error } = await db.from('propiedades').delete().eq('id', Number(id))
   if (error) { toast('Error al eliminar', true); return }
   toast('Propiedad eliminada')
   await cargarPropiedades()
@@ -429,7 +429,7 @@ function abrirModal() {
 }
 
 function abrirEditar(id) {
-  const p = todasProps.find(x => x.id === id)
+  const p = todasProps.find(x => String(x.id) === String(id))
   if (!p) return
   editandoId = id
   imagenUrlActual = p.imagen_url || null
@@ -524,7 +524,7 @@ async function guardarPropiedad() {
 
   let error
   if (editandoId) {
-    const res = await db.from('propiedades').update(datos).eq('id', editandoId)
+    const res = await db.from('propiedades').update(datos).eq('id', Number(editandoId))
     error = res.error
   } else {
     const res = await db.from('propiedades').insert(datos)
