@@ -236,7 +236,7 @@ app.get('/propiedad/:id', (req, res) => {
 
 // ─── Meta Webhook (Messenger + Instagram DM) ─────────────────────────────────
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || 'nova_prolig_2026'
-const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || ''
+const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || 'EAF0uhX9idx8BQ35O7feu8Xhezu8QMJnNZBVnCzLJhXxYzusD1vt9FqHOhNnUFNH5X4GzGnDwXuN92VEdZCyn1mZCHmqxc7wZAxoBRGWbFu0KN1TRkuSGW6HujwYfE62Np10GTwlbjBWIJ2yIfFRPZAQdEOByiNLDNEjAWZAkVJOx5xZB8QjzjVeL8WXHTDKwonVbPFAhxDomQZDZD'
 
 // Verificacion del webhook — Meta hace GET para confirmar la URL
 app.get('/webhook/meta', (req, res) => {
