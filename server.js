@@ -10,6 +10,58 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
+
+// ─── Autenticacion paneles ────────────────────────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'nova2026'
+const sesionesActivas = new Set()
+
+function parseCookies(req) {
+  const cookies = {}
+  const header = req.headers.cookie
+  if (header) {
+    header.split(';').forEach(c => {
+      const [k, ...v] = c.split('=')
+      cookies[k.trim()] = decodeURIComponent(v.join('=').trim())
+    })
+  }
+  return cookies
+}
+
+function requireAuth(req, res, next) {
+  const cookies = parseCookies(req)
+  if (sesionesActivas.has(cookies.nova_session)) return next()
+  const destino = encodeURIComponent(req.path)
+  res.redirect('/login.html?next=' + destino)
+}
+
+// Rutas protegidas — ANTES de express.static
+app.get('/admin.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'))
+})
+app.get('/crm.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'crm.html'))
+})
+
+app.post('/api/login', (req, res) => {
+  const { password } = req.body
+  if (!password || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Contrasena incorrecta' })
+  }
+  const token = require('crypto').randomBytes(32).toString('hex')
+  sesionesActivas.add(token)
+  const maxAge = 7 * 24 * 3600 // 7 dias
+  res.setHeader('Set-Cookie', `nova_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`)
+  res.json({ ok: true })
+})
+
+app.get('/api/logout', (req, res) => {
+  const cookies = parseCookies(req)
+  sesionesActivas.delete(cookies.nova_session)
+  res.setHeader('Set-Cookie', 'nova_session=; Path=/; HttpOnly; Max-Age=0')
+  res.redirect('/login.html')
+})
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.use(express.static(path.join(__dirname, 'public')))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
