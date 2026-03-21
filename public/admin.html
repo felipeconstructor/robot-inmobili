@@ -653,8 +653,8 @@ async function guardarPropiedad() {
   cerrarModal()
   await cargarPropiedades()
 
-  // Publicar en redes solo si es propiedad nueva y tiene imagen
-  if (!editandoId && imagenUrl) {
+  // Publicar en redes si es propiedad nueva
+  if (!editandoId) {
     const nuevaPropiedad = todasProps[0] // la mas reciente
     if (nuevaPropiedad) {
       fetch('/api/publicar-propiedad', {
