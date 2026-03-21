@@ -80,6 +80,34 @@ tr:hover td{background:#fafcff}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
 .toast.activo{opacity:1}
 .toast.error{background:#c0392b}
+
+/* Tabla con scroll horizontal */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* Mobile */
+@media (max-width:768px){
+  .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
+  .header h1{font-size:15px}
+  .header-links{flex-wrap:wrap;gap:.5rem}
+  .container{padding:1rem .75rem}
+  .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
+  .stat{padding:.875rem 1rem}
+  .stat-val{font-size:22px}
+  .panel-header{flex-direction:column;align-items:flex-start}
+  .panel-header>div{width:100%}
+  .filters{width:100%}
+  .filters input[type=text]{width:100% !important}
+  .filters select{flex:1;min-width:0}
+  .btn-gold{width:100%;text-align:center;margin-top:.25rem}
+  th{font-size:11px;padding:8px 10px;white-space:nowrap}
+  td{font-size:12px;padding:8px 10px;white-space:nowrap}
+  .acciones{flex-wrap:wrap;gap:4px}
+  .modal{border-radius:12px;padding:1.25rem;margin:.75rem;width:calc(100% - 1.5rem);max-height:95vh}
+  .form-grid{grid-template-columns:1fr}
+  .form-full{grid-column:1}
+  .modal-footer{flex-direction:column-reverse;gap:8px}
+  .modal-footer .btn{width:100%;text-align:center;padding:10px}
+}
 </style>
 </head>
 <body>
@@ -123,7 +151,7 @@ tr:hover td{background:#fafcff}
       <h2>Todas las propiedades</h2>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div class="filters">
-          <input type="text" id="f-buscar" placeholder="Buscar direccion o comuna..." oninput="filtrar()" style="width:210px">
+          <input type="text" id="f-buscar" placeholder="Buscar direccion o comuna..." oninput="filtrar()">
           <select id="f-operacion" onchange="filtrar()">
             <option value="">Todas las operaciones</option>
             <option value="venta">Venta</option>
@@ -148,6 +176,7 @@ tr:hover td{background:#fafcff}
         <button class="btn btn-gold" onclick="abrirModal()">+ Nueva propiedad</button>
       </div>
     </div>
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -166,6 +195,7 @@ tr:hover td{background:#fafcff}
         <tr><td colspan="9" class="empty">Cargando propiedades...</td></tr>
       </tbody>
     </table>
+    </div>
   </div>
 
 </div>

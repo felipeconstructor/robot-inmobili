@@ -84,6 +84,28 @@ tr:hover td{background:#fafcff}
 .col-visita .pipeline-col-count{color:#3C3489}
 .col-frio .pipeline-col-title{color:#791F1F}
 .col-frio .pipeline-col-count{color:#791F1F}
+
+/* Tabla con scroll horizontal */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* Mobile */
+@media (max-width:768px){
+  .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
+  .header h1{font-size:15px}
+  .container{padding:1rem .75rem}
+  .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
+  .stat{padding:.875rem 1rem}
+  .stat-val{font-size:22px}
+  .panel-header{flex-direction:column;align-items:flex-start;gap:.75rem}
+  .panel-header-right{width:100%;flex-direction:column;align-items:flex-start}
+  .filters{width:100%}
+  .filters input[type=text]{width:100% !important}
+  .filters select{flex:1;min-width:0}
+  .view-toggle{align-self:flex-end}
+  th{font-size:11px;padding:8px 10px;white-space:nowrap}
+  td{font-size:12px;padding:8px 10px;white-space:nowrap}
+  .pipeline{padding:.875rem .75rem}
+}
 </style>
 </head>
 <body>
@@ -123,7 +145,7 @@ tr:hover td{background:#fafcff}
       <h2>Leads</h2>
       <div class="panel-header-right">
         <div class="filters" id="filtros-lista">
-          <input type="text" id="f-buscar" placeholder="Buscar nombre o propiedad..." oninput="filtrar()" style="width:200px">
+          <input type="text" id="f-buscar" placeholder="Buscar nombre o propiedad..." oninput="filtrar()">
           <select id="f-estado" onchange="filtrar()">
             <option value="">Todos los estados</option>
             <option value="nuevo">Nuevo</option>
@@ -148,6 +170,7 @@ tr:hover td{background:#fafcff}
 
     <!-- Vista Lista -->
     <div id="vista-lista">
+      <div class="table-wrap">
       <table>
         <thead>
           <tr>
@@ -164,6 +187,7 @@ tr:hover td{background:#fafcff}
           <tr><td colspan="7" class="empty">Cargando leads...</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- Vista Pipeline -->
