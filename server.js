@@ -365,6 +365,68 @@ async function enviarMensajeMeta(recipientId, texto, canal = 'messenger') {
   }
 }
 
+// ─── Chat legal — Abogado Dagoberto Riffo ────────────────────────────────────
+const SISTEMA_LEGAL = `
+Eres Nova, asistente legal del Abogado Dagoberto Riffo Paredes, en La Ligua, Chile.
+Respondes siempre en espanol, con tono profesional, serio y empático.
+REGLA OBLIGATORIA: Nunca uses markdown, emojis, asteriscos ni simbolos especiales. Solo texto plano.
+
+AREAS DE PRACTICA:
+- Bienes raices: compraventa, arriendos, promesas, regularizacion, posesion efectiva
+- Derecho penal: defensa imputados, representacion victimas, delitos comunes y economicos
+- Herencias: posesion efectiva, particion de bienes, testamentos, sucesion intestada
+
+CONTACTO DEL ABOGADO:
+- Telefono y WhatsApp: +56 9 7888 8794
+- Direccion: Americo Vespucio 2814 OF 32, La Ligua
+- Horario: lunes a viernes 9:00 a 19:00, sabados 10:00 a 14:00, Zoom disponible
+
+INSTRUCCIONES:
+- Escucha el problema del usuario y entrega orientacion general sobre el area legal correspondiente
+- Nunca entregues asesorla legal especifica ni digas que algo es legal o ilegal sin reserva
+- Siempre aclara que la orientacion es general y que deben consultar al abogado para su caso especifico
+- Si el usuario quiere agendar o tiene urgencia, proporciona el numero de WhatsApp del abogado
+- Respuestas cortas, maximo 4 parrafos
+- Si el usuario entrega su nombre y telefono, agradece y dile que el abogado los contactara a la brevedad
+- No inventes leyes ni datos que no conozcas con certeza
+`
+
+const historialLegal = {}
+
+async function obtenerRespuestaLegal(mensaje, sesionId) {
+  if (!historialLegal[sesionId]) historialLegal[sesionId] = []
+
+  historialLegal[sesionId].push({ role: 'user', content: mensaje })
+  if (historialLegal[sesionId].length > 20) historialLegal[sesionId].shift()
+
+  const Anthropic = require('@anthropic-ai/sdk')
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  const response = await anthropic.messages.create({
+    model: 'claude-opus-4-6',
+    max_tokens: 400,
+    system: SISTEMA_LEGAL,
+    messages: historialLegal[sesionId]
+  })
+
+  const respuesta = response.content[0].text
+  historialLegal[sesionId].push({ role: 'assistant', content: respuesta })
+  return respuesta
+}
+
+app.post('/api/chat-legal', async (req, res) => {
+  const { mensaje, sesionId } = req.body
+  if (!mensaje || !sesionId) return res.status(400).json({ error: 'Datos incompletos' })
+  try {
+    const respuesta = await obtenerRespuestaLegal(mensaje, sesionId)
+    res.json({ respuesta })
+  } catch (err) {
+    console.error('Error chat-legal:', err)
+    res.status(500).json({ error: 'Error del servidor' })
+  }
+})
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Ruta chat web
 app.post('/api/chat', async (req, res) => {
   const { mensaje, sesionId } = req.body
