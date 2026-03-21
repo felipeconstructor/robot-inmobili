@@ -277,6 +277,25 @@ function badgeCanal(c) {
 
 async function cambiarEstado(id, estado) {
   await db.from('leads').update({ estado, updated_at: new Date().toISOString() }).eq('id', id)
+
+  // Notificar si el nuevo estado es caliente
+  if (estado === 'caliente') {
+    const lead = todosLeads.find(l => String(l.id) === String(id))
+    if (lead) {
+      fetch('/api/notificar-lead-caliente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: lead.nombre,
+          telefono: lead.telefono,
+          propiedad_interes: lead.propiedad_interes,
+          canal: lead.canal,
+          created_at: lead.created_at
+        })
+      }).catch(() => {})
+    }
+  }
+
   await cargarLeads()
 }
 

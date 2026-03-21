@@ -470,6 +470,67 @@ app.post('/webhook/whatsapp', async (req, res) => {
   }
 })
 
+// ─── Notificacion lead caliente ───────────────────────────────────────────────
+const NOTIFY_PHONE = process.env.NOTIFY_PHONE // numero personal de Felipe ej: whatsapp:+56912345678
+
+app.post('/api/notificar-lead-caliente', async (req, res) => {
+  const { nombre, telefono, propiedad_interes, canal, created_at } = req.body
+  if (!nombre) return res.status(400).json({ error: 'Datos incompletos' })
+
+  const fecha = created_at
+    ? new Date(created_at).toLocaleString('es-CL', { timeZone: 'America/Santiago', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+    : new Date().toLocaleString('es-CL', { timeZone: 'America/Santiago', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+
+  const waLink = telefono ? `https://wa.me/${(telefono).replace(/\D/g,'')}` : null
+
+  // Email via Resend
+  try {
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#f7f8fa;border-radius:12px;overflow:hidden">
+        <div style="background:#1A3A5C;padding:20px 28px">
+          <h2 style="color:#C9A96E;margin:0;font-size:18px">🔥 Lead Caliente — Nova</h2>
+        </div>
+        <div style="padding:24px 28px;background:#fff">
+          <p style="margin:0 0 16px;font-size:15px;color:#333">Un lead fue marcado como <strong style="color:#0F6E56">caliente</strong>. Contactalo ahora.</p>
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:8px 0;color:#888;font-size:13px;width:130px">Nombre</td><td style="padding:8px 0;font-size:14px;font-weight:600;color:#1A3A5C">${nombre}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Telefono</td><td style="padding:8px 0;font-size:14px">${telefono || '-'}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Interes</td><td style="padding:8px 0;font-size:14px">${propiedad_interes || 'Consulta general'}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Canal</td><td style="padding:8px 0;font-size:14px">${canal || '-'}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Fecha</td><td style="padding:8px 0;font-size:14px">${fecha}</td></tr>
+          </table>
+          ${waLink ? `<a href="${waLink}" style="display:inline-block;margin-top:20px;background:#25D366;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Contactar por WhatsApp</a>` : ''}
+        </div>
+        <div style="padding:12px 28px;background:#f7f8fa;font-size:11px;color:#aaa">Nova Prolig Propiedades — notificacion automatica</div>
+      </div>`
+
+    await enviarEmail(`🔥 Lead caliente: ${nombre}`, html)
+    console.log('Notificacion email enviada — lead caliente:', nombre)
+  } catch (err) {
+    console.error('Error email notificacion:', err.message)
+  }
+
+  // WhatsApp personal via Twilio
+  if (NOTIFY_PHONE) {
+    try {
+      const twilio = require('twilio')
+      const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+      const msg = `🔥 LEAD CALIENTE\n\nNombre: ${nombre}\nTelefono: ${telefono || '-'}\nInteres: ${propiedad_interes || 'Consulta general'}\nCanal: ${canal || '-'}\n\n${waLink ? 'Contactar: ' + waLink : ''}`
+      await tc.messages.create({
+        from: process.env.TWILIO_WHATSAPP_NUMBER,
+        to: NOTIFY_PHONE,
+        body: msg
+      })
+      console.log('Notificacion WhatsApp enviada — lead caliente:', nombre)
+    } catch (err) {
+      console.error('Error WhatsApp notificacion:', err.message)
+    }
+  }
+
+  res.json({ ok: true })
+})
+// ─────────────────────────────────────────────────────────────────────────────
+
 app.post('/api/limpiar', (req, res) => {
   const { sesionId } = req.body
   if (sesionId) delete historial[sesionId]
