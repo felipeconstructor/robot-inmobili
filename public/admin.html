@@ -652,6 +652,28 @@ async function guardarPropiedad() {
   toast(editandoId ? 'Propiedad actualizada' : 'Propiedad agregada correctamente')
   cerrarModal()
   await cargarPropiedades()
+
+  // Publicar en redes solo si es propiedad nueva y tiene imagen
+  if (!editandoId && imagenUrl) {
+    const nuevaPropiedad = todasProps[0] // la mas reciente
+    if (nuevaPropiedad) {
+      fetch('/api/publicar-propiedad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: nuevaPropiedad.id,
+          tipo: nuevaPropiedad.tipo,
+          operacion: nuevaPropiedad.operacion,
+          direccion: nuevaPropiedad.direccion,
+          comuna: nuevaPropiedad.comuna,
+          precio: nuevaPropiedad.precio,
+          moneda: nuevaPropiedad.moneda,
+          descripcion: nuevaPropiedad['descripción'],
+          imagen_url: nuevaPropiedad.imagen_url
+        })
+      }).then(() => toast('Publicando en redes sociales...')).catch(() => {})
+    }
+  }
 }
 
 document.addEventListener('keydown', e => {

@@ -470,6 +470,49 @@ app.post('/webhook/whatsapp', async (req, res) => {
   }
 })
 
+// ─── Webhook Make.com — nueva propiedad ──────────────────────────────────────
+const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/6v5wkenkgiyecu16r9v42hrlmfncey8m'
+
+app.post('/api/publicar-propiedad', async (req, res) => {
+  const { tipo, operacion, direccion, comuna, precio, moneda, descripcion, imagen_url, id } = req.body
+  if (!id) return res.status(400).json({ error: 'Datos incompletos' })
+
+  try {
+    const precioFormateado = moneda === 'UF'
+      ? `${Number(precio).toLocaleString('es-CL')} UF`
+      : `$${Number(precio).toLocaleString('es-CL')}`
+
+    const fichaUrl = `https://alluring-flow-production-16db.up.railway.app/propiedad/${id}`
+
+    const texto = `${tipo} en ${operacion} — ${direccion}, ${comuna}\nPrecio: ${precioFormateado}\n\n${descripcion || ''}\n\nVer ficha completa: ${fichaUrl}`
+
+    const payload = {
+      tipo,
+      operacion,
+      direccion,
+      comuna,
+      precio: precioFormateado,
+      descripcion: descripcion || '',
+      imagen_url: imagen_url || '',
+      ficha_url: fichaUrl,
+      texto_publicacion: texto
+    }
+
+    const resp = await fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+
+    console.log('Webhook Make enviado — propiedad:', id, '— status:', resp.status)
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('Error webhook Make:', err.message)
+    res.status(500).json({ error: 'Error enviando a Make' })
+  }
+})
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Notificacion lead caliente ───────────────────────────────────────────────
 const NOTIFY_PHONE = process.env.NOTIFY_PHONE // numero personal de Felipe ej: whatsapp:+56912345678
 
