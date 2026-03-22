@@ -471,7 +471,7 @@ app.post('/webhook/whatsapp', async (req, res) => {
 })
 
 // ─── Webhook Make.com — nueva propiedad ──────────────────────────────────────
-const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/6v5wkenkgiyecu16r9v42hrlmfncey8m'
+const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/sa1uuc3w8sw6vl5agnj2t3bwe5b7sm52'
 
 app.post('/api/publicar-propiedad', async (req, res) => {
   const { tipo, operacion, direccion, comuna, precio, moneda, descripcion, imagen_url, id } = req.body
