@@ -282,8 +282,39 @@ async function procesarRespuesta(texto, sesionId, canal) {
 }
 
 // Ficha individual de propiedad
-app.get('/propiedad/:id', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'propiedad.html'))
+app.get('/propiedad/:id', async (req, res) => {
+  const { id } = req.params
+  try {
+    // Obtener datos de la propiedad para las OG tags (Facebook, WhatsApp, etc.)
+    const { data: prop } = await supabase.from('propiedades').select('*').eq('id', id).single()
+    const fs = require('fs')
+    let html = fs.readFileSync(path.join(__dirname, 'public', 'propiedad.html'), 'utf8')
+
+    if (prop) {
+      const titulo = `${prop.tipo} en ${prop.operacion} — ${prop.direccion}, ${prop.comuna}`
+      const descripcion = prop['descripción'] || prop.descripcion || `${prop.dormitorios || ''} dorm. ${prop.metros || ''} m²`
+      const imagen = prop.imagen_url || ''
+      const url = `https://alluring-flow-production-16db.up.railway.app/propiedad/${id}`
+
+      // Inyectar OG tags antes de </head>
+      const ogTags = `
+  <meta property="og:title" content="${titulo}" />
+  <meta property="og:description" content="${descripcion}" />
+  <meta property="og:image" content="${imagen}" />
+  <meta property="og:url" content="${url}" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${titulo}" />
+  <meta name="twitter:description" content="${descripcion}" />
+  <meta name="twitter:image" content="${imagen}" />`
+
+      html = html.replace('</head>', ogTags + '\n</head>')
+    }
+
+    res.send(html)
+  } catch (err) {
+    res.sendFile(path.join(__dirname, 'public', 'propiedad.html'))
+  }
 })
 
 // ─── Meta Webhook (Messenger + Instagram DM) ─────────────────────────────────
