@@ -515,7 +515,7 @@ app.post('/api/publicar-propiedad', async (req, res) => {
 
     const fichaUrl = `https://alluring-flow-production-16db.up.railway.app/propiedad/${id}`
 
-    const texto = `${tipo} en ${operacion} — ${direccion}, ${comuna}\nPrecio: ${precioFormateado}\n\n${descripcion || ''}\n\nVer ficha completa: ${fichaUrl}`
+    const texto = `${tipo} en ${operacion} — ${direccion}, ${comuna}\nPrecio: ${precioFormateado}\n\n${descripcion || ''}\n\nEscríbenos por mensaje directo para más información.`
 
     const payload = {
       tipo,
