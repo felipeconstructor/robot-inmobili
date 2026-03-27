@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nova Admin — Propiedades</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
@@ -80,6 +81,17 @@ tr:hover td{background:#fafcff}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
 .toast.activo{opacity:1}
 .toast.error{background:#c0392b}
+
+/* Modal importar */
+.import-preview{max-height:300px;overflow-y:auto;margin-top:1rem;border:1px solid #e0e0e0;border-radius:8px}
+.import-preview table{width:100%;border-collapse:collapse;font-size:11px}
+.import-preview th{background:#f5f5f5;padding:6px 8px;text-align:left;font-weight:500;color:#555;position:sticky;top:0}
+.import-preview td{padding:5px 8px;border-top:1px solid #f0f0f0;color:#333}
+.import-preview tr.fila-error td{background:#FFF3F3;color:#c0392b}
+.btn-outline{background:#fff;color:#1A3A5C;border:1px solid #1A3A5C;padding:7px 18px;font-size:13px;border-radius:8px;cursor:pointer}
+.btn-outline:hover{background:#f0f4f8}
+.import-info{font-size:12px;color:#666;margin-top:.75rem;padding:.75rem;background:#f9f9f9;border-radius:8px;line-height:1.6}
+.import-info strong{color:#1A3A5C}
 
 /* Tabla con scroll horizontal */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -174,6 +186,7 @@ tr:hover td{background:#fafcff}
           </select>
           <span class="refresh" onclick="cargarPropiedades()">Actualizar</span>
         </div>
+        <button class="btn btn-outline" onclick="abrirImportar()">Importar Excel</button>
         <button class="btn btn-gold" onclick="abrirModal()">+ Nueva propiedad</button>
       </div>
     </div>
@@ -306,6 +319,52 @@ tr:hover td{background:#fafcff}
     <div class="modal-footer">
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
       <button class="btn btn-primary" id="btn-guardar" onclick="guardarPropiedad()">Guardar propiedad</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal importar Excel -->
+<div class="overlay" id="overlay-import" onclick="cerrarImportarClickFuera(event)">
+  <div class="modal" id="modal-import" style="max-width:750px">
+    <h3>Importar propiedades desde Excel</h3>
+
+    <div class="import-info">
+      <strong>Columnas requeridas (en orden):</strong> tipo, operacion, direccion, comuna, precio, moneda, dormitorios, banos, metros, descripcion, disponible<br>
+      <strong>Valores tipo:</strong> Casa / Departamento / Oficina / Local / Terreno / Bodega<br>
+      <strong>Valores operacion:</strong> venta / arriendo<br>
+      <strong>Valores moneda:</strong> CLP / UF<br>
+      <strong>Valores disponible:</strong> si / no (o 1 / 0)
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-outline" onclick="descargarPlantilla()">Descargar plantilla .xlsx</button>
+      <div class="upload-area" style="flex:1;min-width:200px;padding:10px 16px">
+        <input type="file" id="f-import-excel" accept=".xlsx,.xls,.csv" onchange="leerExcel(event)">
+        <div class="upload-label" style="font-size:12px">Seleccionar archivo Excel o CSV</div>
+      </div>
+    </div>
+
+    <div id="import-preview-wrap" style="display:none">
+      <div style="margin-top:1rem;font-size:13px;color:#333">
+        Vista previa: <strong id="import-count">0</strong> propiedades encontradas
+        <span id="import-errors-badge" style="display:none;margin-left:8px;background:#FCEBEB;color:#c0392b;padding:2px 8px;border-radius:10px;font-size:11px">filas con error</span>
+      </div>
+      <div class="import-preview">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Tipo</th><th>Operacion</th><th>Direccion</th><th>Comuna</th>
+              <th>Precio</th><th>Moneda</th><th>Dorm</th><th>Banos</th><th>m2</th><th>Disponible</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="import-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarImportar()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-import-confirmar" style="display:none" onclick="confirmarImporte()">Importar propiedades</button>
     </div>
   </div>
 </div>
@@ -682,8 +741,188 @@ async function guardarPropiedad() {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') cerrarModal()
+  if (e.key === 'Escape') { cerrarModal(); cerrarImportar() }
 })
+
+// ─── Importar Excel ───────────────────────────────────────────────────────────
+
+let filasImportar = []
+
+function abrirImportar() {
+  filasImportar = []
+  document.getElementById('f-import-excel').value = ''
+  document.getElementById('import-preview-wrap').style.display = 'none'
+  document.getElementById('btn-import-confirmar').style.display = 'none'
+  document.getElementById('overlay-import').classList.add('activo')
+}
+
+function cerrarImportar() {
+  document.getElementById('overlay-import').classList.remove('activo')
+  filasImportar = []
+}
+
+function cerrarImportarClickFuera(e) {
+  if (e.target.id === 'overlay-import') cerrarImportar()
+}
+
+function descargarPlantilla() {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['tipo','operacion','direccion','comuna','precio','moneda','dormitorios','banos','metros','descripcion','disponible'],
+    ['Casa','venta','Av. Ejemplo 123','La Ligua','95000000','CLP','3','2','85','Casa con jardin y estacionamiento','si'],
+    ['Departamento','arriendo','Calle Los Arrayanes 456','Cabildo','350000','CLP','2','1','60','Departamento luminoso, 2do piso','si'],
+  ])
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Propiedades')
+  XLSX.writeFile(wb, 'plantilla_propiedades_nova.xlsx')
+}
+
+function normalizar(val, campo) {
+  if (val === undefined || val === null || val === '') return null
+  const s = String(val).trim()
+  if (campo === 'tipo') {
+    const mapa = { casa:'Casa', departamento:'Departamento', oficina:'Oficina', local:'Local', terreno:'Terreno', bodega:'Bodega' }
+    return mapa[s.toLowerCase()] || s
+  }
+  if (campo === 'operacion') {
+    if (s.toLowerCase() === 'venta') return 'venta'
+    if (s.toLowerCase() === 'arriendo') return 'arriendo'
+    return s.toLowerCase()
+  }
+  if (campo === 'moneda') {
+    return s.toUpperCase() === 'UF' ? 'UF' : 'CLP'
+  }
+  if (campo === 'disponible') {
+    return ['si','1','true','yes','sí'].includes(s.toLowerCase())
+  }
+  if (['dormitorios','banos','metros','precio'].includes(campo)) {
+    const n = Number(s.replace(/[^0-9.]/g,''))
+    return isNaN(n) ? null : n
+  }
+  return s
+}
+
+function validarFila(f) {
+  const errores = []
+  if (!f.direccion) errores.push('sin direccion')
+  if (!f.comuna) errores.push('sin comuna')
+  if (!f.precio) errores.push('sin precio')
+  const tiposValidos = ['Casa','Departamento','Oficina','Local','Terreno','Bodega']
+  if (!tiposValidos.includes(f.tipo)) errores.push('tipo invalido')
+  if (!['venta','arriendo'].includes(f.operacion)) errores.push('operacion invalida')
+  return errores
+}
+
+function leerExcel(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const filas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+
+    if (filas.length < 2) {
+      toast('El archivo esta vacio o no tiene datos', true)
+      return
+    }
+
+    // Detectar si la primera fila es encabezado
+    const primera = filas[0].map(c => String(c).toLowerCase().trim())
+    const esEncabezado = primera.includes('tipo') || primera.includes('direccion') || primera.includes('operacion')
+    const datosFilas = esEncabezado ? filas.slice(1) : filas
+
+    filasImportar = []
+    const tbody = document.getElementById('import-tbody')
+    let html = ''
+    let errCount = 0
+
+    datosFilas.forEach((fila, i) => {
+      if (fila.every(c => c === '' || c === null || c === undefined)) return // fila vacia
+
+      const f = {
+        tipo:         normalizar(fila[0], 'tipo') || 'Casa',
+        operacion:    normalizar(fila[1], 'operacion') || 'venta',
+        direccion:    normalizar(fila[2], 'texto'),
+        comuna:       normalizar(fila[3], 'texto'),
+        precio:       normalizar(fila[4], 'precio'),
+        moneda:       normalizar(fila[5], 'moneda') || 'CLP',
+        dormitorios:  normalizar(fila[6], 'dormitorios'),
+        'baños':      normalizar(fila[7], 'banos'),
+        metros:       normalizar(fila[8], 'metros'),
+        'descripción':normalizar(fila[9], 'texto') || '',
+        disponible:   fila[10] !== undefined ? normalizar(fila[10], 'disponible') : true
+      }
+
+      const errores = validarFila(f)
+      const tieneError = errores.length > 0
+      if (tieneError) errCount++
+      else filasImportar.push(f)
+
+      html += `<tr class="${tieneError ? 'fila-error' : ''}">
+        <td>${i + 1}</td>
+        <td>${f.tipo||'-'}</td>
+        <td>${f.operacion||'-'}</td>
+        <td>${f.direccion||'-'}</td>
+        <td>${f.comuna||'-'}</td>
+        <td>${f.precio ? Number(f.precio).toLocaleString('es-CL') : '-'}</td>
+        <td>${f.moneda}</td>
+        <td>${f.dormitorios??'-'}</td>
+        <td>${f['baños']??'-'}</td>
+        <td>${f.metros??'-'}</td>
+        <td>${f.disponible ? 'Si' : 'No'}</td>
+        <td style="color:${tieneError?'#c0392b':'#0F6E56'}">${tieneError ? errores.join(', ') : 'OK'}</td>
+      </tr>`
+    })
+
+    tbody.innerHTML = html || '<tr><td colspan="12" style="text-align:center;color:#aaa;padding:1rem">Sin filas validas</td></tr>'
+    document.getElementById('import-count').textContent = filasImportar.length
+    const badge = document.getElementById('import-errors-badge')
+    if (errCount > 0) {
+      badge.textContent = `${errCount} fila(s) con error (seran omitidas)`
+      badge.style.display = 'inline'
+    } else {
+      badge.style.display = 'none'
+    }
+    document.getElementById('import-preview-wrap').style.display = 'block'
+    document.getElementById('btn-import-confirmar').style.display = filasImportar.length ? 'inline-block' : 'none'
+    document.getElementById('btn-import-confirmar').textContent = `Importar ${filasImportar.length} propiedades`
+  }
+  reader.readAsArrayBuffer(file)
+}
+
+async function confirmarImporte() {
+  if (!filasImportar.length) return
+  const btn = document.getElementById('btn-import-confirmar')
+  btn.disabled = true
+  btn.textContent = 'Importando...'
+
+  const LOTE = 50
+  let insertadas = 0
+  let errores = 0
+
+  for (let i = 0; i < filasImportar.length; i += LOTE) {
+    const lote = filasImportar.slice(i, i + LOTE)
+    const { error } = await db.from('propiedades').insert(lote)
+    if (error) {
+      errores += lote.length
+    } else {
+      insertadas += lote.length
+    }
+    btn.textContent = `Importando... ${Math.min(i + LOTE, filasImportar.length)}/${filasImportar.length}`
+  }
+
+  btn.disabled = false
+  cerrarImportar()
+  await cargarPropiedades()
+
+  if (errores === 0) {
+    toast(`${insertadas} propiedades importadas correctamente`)
+  } else {
+    toast(`${insertadas} importadas, ${errores} fallaron`, errores > 0 && insertadas === 0)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 cargarPropiedades()
 </script>
