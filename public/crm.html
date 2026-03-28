@@ -52,38 +52,57 @@ tr:hover td{background:#fafcff}
 .view-btn.active{background:#fff;color:#1A3A5C;box-shadow:0 1px 3px rgba(0,0,0,.1)}
 
 /* Pipeline Kanban */
-.pipeline{display:none;padding:1.25rem;overflow-x:auto}
-.pipeline.visible{display:flex;gap:12px}
-.pipeline-col{flex:0 0 220px;background:#f7f8fa;border-radius:10px;padding:10px}
-.pipeline-col-header{padding:8px 10px 12px;display:flex;align-items:center;justify-content:space-between}
-.pipeline-col-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.pipeline-col-count{font-size:12px;font-weight:600;background:#fff;border-radius:20px;padding:1px 8px}
-.pipeline-cards{display:flex;flex-direction:column;gap:8px;min-height:60px}
-.card{background:#fff;border-radius:8px;padding:10px 12px;border:0.5px solid #e8e8e8;cursor:default;transition:box-shadow .15s}
-.card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.card-nombre{font-size:13px;font-weight:500;color:#1A3A5C;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-propiedad{font-size:11px;color:#888;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-footer{display:flex;align-items:center;justify-content:space-between}
-.card-fecha{font-size:10px;color:#bbb}
-.card-actions{display:flex;gap:4px}
+.pipeline{display:none;padding:1.25rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pipeline.visible{display:flex;gap:14px}
+.pipeline-col{flex:0 0 260px;background:#f4f6f9;border-radius:12px;overflow:hidden}
+.pipeline-col-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.06)}
+.pipeline-col-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.pipeline-col-count{font-size:12px;font-weight:700;background:#fff;border-radius:20px;padding:2px 10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pipeline-cards{display:flex;flex-direction:column;gap:10px;min-height:80px;padding:12px 10px}
+
+/* Cards pipeline */
+.card{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #ebebeb;transition:box-shadow .15s;border-left:4px solid #ddd}
+.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.card-nombre{font-size:14px;font-weight:600;color:#1A3A5C;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-telefono{font-size:12px;color:#555;margin-bottom:4px}
+.card-telefono a{color:#1A3A5C;text-decoration:none;font-weight:500}
+.card-telefono a:hover{text-decoration:underline}
+.card-propiedad{font-size:11px;color:#999;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f8f8f8;padding:3px 7px;border-radius:5px}
+.card-divider{border:none;border-top:1px solid #f0f0f0;margin:8px 0}
+.card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.card-fecha{font-size:10px;color:#bbb;white-space:nowrap}
+.card-actions{display:flex;gap:5px;align-items:center}
 .card-actions a{text-decoration:none}
-.card-btn{padding:3px 8px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:10px;cursor:pointer;color:#333}
-.card-btn:hover{background:#f0f0f0}
-.card-btn-wa{background:#E1F5EE;border-color:#c3e8d9;color:#085041}
-.card-btn-wa:hover{background:#c3e8d9}
-.card-estado-select{width:100%;padding:3px 6px;border:1px solid #eee;border-radius:6px;font-size:10px;color:#555;background:#fafafa;margin-bottom:6px}
+.card-btn-wa{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:none;background:#25D366;font-size:11px;font-weight:600;cursor:pointer;color:#fff}
+.card-btn-wa:hover{background:#1dbd5a}
+.card-btn-nota{padding:4px 8px;border-radius:7px;border:1px solid #ddd;background:#fff;font-size:10px;cursor:pointer;color:#888}
+.card-btn-nota:hover{background:#f5f5f5}
+.card-btn-nota.tiene{border-color:#C9A96E;color:#a07840;background:#fffbf5}
+.card-estado-wrap{margin-bottom:8px}
+.card-estado-select{width:100%;padding:5px 8px;border:1px solid #e0e0e0;border-radius:7px;font-size:11px;color:#555;background:#fafafa;cursor:pointer}
+.card-estado-select:focus{outline:none;border-color:#1A3A5C}
 
 /* Colores columnas */
+.col-nuevo .pipeline-col-header{background:#EBF3FD}
 .col-nuevo .pipeline-col-title{color:#0C447C}
 .col-nuevo .pipeline-col-count{color:#0C447C}
-.col-tibio .pipeline-col-title{color:#633806}
-.col-tibio .pipeline-col-count{color:#633806}
+.col-nuevo .card{border-left-color:#0C447C}
+.col-tibio .pipeline-col-header{background:#FEF3E7}
+.col-tibio .pipeline-col-title{color:#C05C00}
+.col-tibio .pipeline-col-count{color:#C05C00}
+.col-tibio .card{border-left-color:#E67E22}
+.col-caliente .pipeline-col-header{background:#E8F8F0}
 .col-caliente .pipeline-col-title{color:#0F6E56}
 .col-caliente .pipeline-col-count{color:#0F6E56}
+.col-caliente .card{border-left-color:#0F6E56}
+.col-visita .pipeline-col-header{background:#EEEDFE}
 .col-visita .pipeline-col-title{color:#3C3489}
 .col-visita .pipeline-col-count{color:#3C3489}
+.col-visita .card{border-left-color:#534AB7}
+.col-frio .pipeline-col-header{background:#FDECEA}
 .col-frio .pipeline-col-title{color:#791F1F}
 .col-frio .pipeline-col-count{color:#791F1F}
+.col-frio .card{border-left-color:#C0392B}
 
 /* Tabla con scroll horizontal */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -120,7 +139,10 @@ tr:hover td{background:#fafcff}
   .view-toggle{align-self:flex-end}
   th{font-size:11px;padding:8px 10px;white-space:nowrap}
   td{font-size:12px;padding:8px 10px;white-space:nowrap}
-  .pipeline{padding:.875rem .75rem}
+  .pipeline{padding:.75rem .5rem}
+  .pipeline-col{flex:0 0 82vw}
+  .card-nombre{font-size:15px}
+  .card-telefono{font-size:13px}
 }
 </style>
 </head>
@@ -376,29 +398,38 @@ function renderPipeline(leads) {
     const grupo = leads.filter(l => l.estado === e)
     document.getElementById('cnt-' + e).textContent = grupo.length
     document.getElementById('cards-' + e).innerHTML = grupo.length
-      ? grupo.map(l => `
-        <div class="card">
-          <div class="card-nombre">${l.nombre||'Sin nombre'}</div>
-          <div class="card-propiedad">${l.propiedad_interes||'Consulta general'}</div>
-          <select class="card-estado-select" onchange="cambiarEstado('${l.id}',this.value)">
-            <option value="nuevo" ${l.estado==='nuevo'?'selected':''}>Nuevo</option>
-            <option value="tibio" ${l.estado==='tibio'?'selected':''}>Tibio</option>
-            <option value="caliente" ${l.estado==='caliente'?'selected':''}>Caliente</option>
-            <option value="visita" ${l.estado==='visita'?'selected':''}>Visita</option>
-            <option value="frio" ${l.estado==='frio'?'selected':''}>Frio</option>
-          </select>
-          <div class="card-footer">
-            <span class="card-fecha">${formatFecha(l.created_at)}</span>
-            <div class="card-actions">
-              ${badgeCanal(l.canal)}
-              <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
-                <button class="card-btn card-btn-wa">WA</button>
-              </a>
+      ? grupo.map(l => {
+          const tieneNota = l.notas && l.notas.trim() !== ''
+          const wa = (l.telefono||'').replace(/\D/g,'')
+          return `
+          <div class="card">
+            <div class="card-nombre">${l.nombre||'Sin nombre'}</div>
+            <div class="card-telefono"><a href="https://wa.me/${wa}" target="_blank">${l.telefono||'Sin telefono'}</a></div>
+            <div class="card-propiedad">${l.propiedad_interes||'Consulta general'}</div>
+            <div class="card-estado-wrap">
+              <select class="card-estado-select" onchange="cambiarEstado('${l.id}',this.value)">
+                <option value="nuevo" ${l.estado==='nuevo'?'selected':''}>Nuevo</option>
+                <option value="tibio" ${l.estado==='tibio'?'selected':''}>Tibio</option>
+                <option value="caliente" ${l.estado==='caliente'?'selected':''}>Caliente</option>
+                <option value="visita" ${l.estado==='visita'?'selected':''}>Visita agendada</option>
+                <option value="frio" ${l.estado==='frio'?'selected':''}>Frio</option>
+              </select>
             </div>
-          </div>
-        </div>
-      `).join('')
-      : '<div style="text-align:center;padding:20px;font-size:12px;color:#ccc">Sin leads</div>'
+            <hr class="card-divider">
+            <div class="card-footer">
+              <span class="card-fecha">${formatFecha(l.created_at)}</span>
+              <div class="card-actions">
+                <button class="card-btn-nota ${tieneNota?'tiene':''}" onclick="abrirNotas('${l.id}','${(l.notas||'').replace(/'/g,"\\'")}','${(l.nombre||'').replace(/'/g,"\\'")}')">
+                  ${tieneNota ? 'Nota' : '+ Nota'}
+                </button>
+                <a href="https://wa.me/${wa}" target="_blank">
+                  <button class="card-btn-wa">WhatsApp</button>
+                </a>
+              </div>
+            </div>
+          </div>`
+        }).join('')
+      : '<div style="text-align:center;padding:24px;font-size:12px;color:#ccc">Sin leads aqui</div>'
   })
 }
 
