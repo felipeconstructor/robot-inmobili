@@ -384,9 +384,12 @@ function renderTabla(leads) {
       <td style="color:#888">${formatFecha(l.created_at)}</td>
       <td>${notaBtn}</td>
       <td>
-        <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
-          <button class="btn btn-primary">Contactar</button>
-        </a>
+        <div style="display:flex;gap:5px">
+          <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
+            <button class="btn btn-primary">Contactar</button>
+          </a>
+          <button class="btn" style="color:#c0392b;border-color:#e0a0a0" onclick="eliminarLead('${l.id}','${(l.nombre||'').replace(/'/g,"\\'")}')">Eliminar</button>
+        </div>
       </td>
     </tr>`
   }).join('')
@@ -468,6 +471,14 @@ async function cargarLeads() {
 
   filtrar()
   renderPipeline(todosLeads)
+}
+
+async function eliminarLead(id, nombre) {
+  if (!confirm(`Eliminar a ${nombre||'este lead'}?\n\nEsta accion no se puede deshacer.`)) return
+  const { error } = await db.from('leads').delete().eq('id', id)
+  if (error) { toast('Error al eliminar'); return }
+  toast('Lead eliminado')
+  await cargarLeads()
 }
 
 // ─── Notas ────────────────────────────────────────────────────────────────────
