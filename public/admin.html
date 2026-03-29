@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Broker Inmobiliaria — Admin Propiedades</title>
+<title>Nova Admin — Propiedades</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -125,7 +125,7 @@ tr:hover td{background:#fafcff}
 <body>
 
 <div class="header">
-  <h1>Broker Inmobiliaria — Admin Propiedades</h1>
+  <h1>Nova Admin — Propiedades</h1>
   <div class="header-links">
     <a href="/crm.html">CRM Leads</a>
     <a href="/">Chat</a>
@@ -145,7 +145,7 @@ tr:hover td{background:#fafcff}
     <div class="stat">
       <div class="stat-lbl">Disponibles</div>
       <div class="stat-val" id="s-disponibles" style="color:#0F6E56">0</div>
-      <div class="stat-sub">Carolina la muestra</div>
+      <div class="stat-sub">Nova las muestra</div>
     </div>
     <div class="stat">
       <div class="stat-lbl">En venta</div>
@@ -281,8 +281,8 @@ tr:hover td{background:#fafcff}
       <div class="form-group">
         <label>Disponible</label>
         <select id="f-mdisponible">
-          <option value="true">Si — Carolina la muestra</option>
-          <option value="false">No — oculta para Carolina</option>
+          <option value="true">Si — Nova las muestra</option>
+          <option value="false">No — oculta para Nova</option>
         </select>
       </div>
 
@@ -471,7 +471,7 @@ async function cargarPropiedades() {
 async function toggleDisponible(id, actual) {
   const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', Number(id))
   if (error) { toast('Error al cambiar estado', true); return }
-  toast(!actual ? 'Propiedad publicada — Carolina la mostrara' : 'Propiedad ocultada')
+  toast(!actual ? 'Propiedad publicada — Nova la mostrara' : 'Propiedad ocultada')
   await cargarPropiedades()
 }
 

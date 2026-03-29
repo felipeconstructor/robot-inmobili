@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Propiedad — Broker Inmobiliaria</title>
+<title>Propiedad — Nova Inmobiliario</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -78,8 +78,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div class="header">
   <div>
-    <div class="header-brand">Broker Inmobiliaria</div>
-    <div class="header-sub">Broker Inmobiliaria</div>
+    <div class="header-brand">Nova Inmobiliario</div>
+    <div class="header-sub">Prolig Propiedades</div>
   </div>
 </div>
 
@@ -123,7 +123,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<div class="footer">Ficha generada por <span>Broker Inmobiliaria</span></div>
+<div class="footer">Ficha generada por <span>Nova Inmobiliario</span></div>
 
 <script>
 const WHATSAPP_NUMBER = '14155238886'
@@ -165,7 +165,7 @@ async function cargar() {
     .select('*').eq('propiedad_id', prop.id).order('orden')
 
   // Actualizar título de página
-  document.title = `${prop.tipo} en ${prop.direccion} — Broker Inmobiliaria`
+  document.title = `${prop.tipo} en ${prop.direccion} — Nova Inmobiliario`
 
   // Foto hero
   const todasFotos = []
