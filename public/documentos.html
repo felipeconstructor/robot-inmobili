@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova — Documentos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.header-brand{color:#fff;font-size:16px;font-weight:500}
+.header-sub{color:#C9A96E;font-size:12px}
+.nav{display:flex;gap:8px}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid #C9A96E;border-radius:6px;transition:all .2s}
+.nav a:hover{background:#C9A96E;color:#1A3A5C}
+.container{max-width:900px;margin:0 auto;padding:2rem 1rem}
+h1{font-size:22px;color:#1A3A5C;margin-bottom:8px}
+.subtitle{font-size:13px;color:#888;margin-bottom:2rem}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;margin-bottom:2rem}
+.doc-card{background:#fff;border-radius:14px;padding:1.5rem;border:1px solid #e0e0e0;cursor:pointer;transition:all .2s;text-align:center}
+.doc-card:hover{border-color:#1A3A5C;box-shadow:0 4px 20px rgba(26,58,92,.1);transform:translateY(-2px)}
+.doc-icon{font-size:36px;margin-bottom:.75rem}
+.doc-title{font-size:15px;font-weight:600;color:#1A3A5C;margin-bottom:4px}
+.doc-desc{font-size:12px;color:#888}
+/* Modal */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto;padding:1rem}
+.modal.active{display:flex;align-items:flex-start;justify-content:center;padding-top:2rem}
+.modal-box{background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:600px;position:relative}
+.modal-title{font-size:18px;font-weight:600;color:#1A3A5C;margin-bottom:1.5rem;padding-right:2rem}
+.close{position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;font-size:20px;cursor:pointer;color:#888}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:4px}
+label{font-size:12px;font-weight:500;color:#555}
+input,select,textarea{padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none;transition:border-color .2s;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
+.section-title{font-size:12px;font-weight:600;color:#1A3A5C;text-transform:uppercase;letter-spacing:.5px;margin:1.25rem 0 .75rem;padding-bottom:4px;border-bottom:1px solid #f0f0f0}
+.btn-generar{width:100%;padding:13px;background:#1A3A5C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:1.25rem;transition:background .2s}
+.btn-generar:hover{background:#0f2540}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-brand">Nova Documentos</div>
+    <div class="header-sub">Prolig Propiedades</div>
+  </div>
+  <nav class="nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/api/logout">Salir</a>
+  </nav>
+</div>
+
+<div class="container">
+  <h1>Generador de Documentos</h1>
+  <p class="subtitle">Completa el formulario y descarga el documento listo para imprimir y firmar.</p>
+
+  <div class="doc-grid">
+    <div class="doc-card" onclick="abrirModal('administracion')">
+      <div class="doc-icon">📋</div>
+      <div class="doc-title">Contrato de Administración</div>
+      <div class="doc-desc">Prestación de servicios de administración de propiedad</div>
+    </div>
+    <div class="doc-card" onclick="abrirModal('arriendo')">
+      <div class="doc-icon">🏠</div>
+      <div class="doc-title">Contrato de Arriendo</div>
+      <div class="doc-desc">Contrato de arrendamiento entre propietario y arrendatario</div>
+    </div>
+    <div class="doc-card" onclick="abrirModal('visita')">
+      <div class="doc-icon">📅</div>
+      <div class="doc-title">Orden de Visita</div>
+      <div class="doc-desc">Confirmación de visita a propiedad para cliente</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Administración -->
+<div class="modal" id="modal-administracion">
+  <div class="modal-box">
+    <button class="close" onclick="cerrarModal('administracion')">✕</button>
+    <div class="modal-title">Contrato de Administración de Propiedad</div>
+
+    <div class="section-title">Datos del Lugar y Fecha</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ciudad</label>
+        <input type="text" id="adm-ciudad" value="La Ligua">
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="adm-fecha">
+      </div>
+    </div>
+
+    <div class="section-title">Propietario/a</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="adm-prop-nombre" placeholder="Juan Pérez González">
+      </div>
+      <div class="form-group">
+        <label>RUT</label>
+        <input type="text" id="adm-prop-rut" placeholder="12.345.678-9">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Dirección de la propiedad</label>
+        <input type="text" id="adm-prop-direccion" placeholder="Calle Ejemplo 123, La Ligua">
+      </div>
+    </div>
+
+    <div class="section-title">Condiciones</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valor arriendo mensual ($)</label>
+        <input type="number" id="adm-arriendo" placeholder="420000" oninput="calcularComision()">
+      </div>
+      <div class="form-group">
+        <label>Comisión administración (%)</label>
+        <input type="number" id="adm-comision-pct" value="10" oninput="calcularComision()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Monto comisión mensual ($)</label>
+        <input type="text" id="adm-comision-monto" placeholder="42000" readonly>
+      </div>
+      <div class="form-group">
+        <label>Duración contrato (meses)</label>
+        <input type="number" id="adm-duracion" value="12">
+      </div>
+    </div>
+
+    <button class="btn-generar" onclick="generarAdministracion()">Generar documento</button>
+  </div>
+</div>
+
+<!-- Modal Arriendo -->
+<div class="modal" id="modal-arriendo">
+  <div class="modal-box">
+    <button class="close" onclick="cerrarModal('arriendo')">✕</button>
+    <div class="modal-title">Contrato de Arrendamiento</div>
+
+    <div class="section-title">Lugar y Fecha</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ciudad</label>
+        <input type="text" id="arr-ciudad" value="La Ligua">
+      </div>
+      <div class="form-group">
+        <label>Fecha contrato</label>
+        <input type="date" id="arr-fecha">
+      </div>
+    </div>
+
+    <div class="section-title">Arrendador (Propietario/a)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="arr-arrendador-nombre" placeholder="Guillermina Abarca Bello">
+      </div>
+      <div class="form-group">
+        <label>RUT</label>
+        <input type="text" id="arr-arrendador-rut" placeholder="7.642.953-7">
+      </div>
+    </div>
+
+    <div class="section-title">Arrendatario/a</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="arr-arrendatario-nombre" placeholder="Juan González López">
+      </div>
+      <div class="form-group">
+        <label>RUT / Pasaporte</label>
+        <input type="text" id="arr-arrendatario-rut" placeholder="17.907.824-5">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Domicilio actual del arrendatario</label>
+        <input type="text" id="arr-arrendatario-domicilio" placeholder="Calle Ejemplo 123, Ciudad">
+      </div>
+    </div>
+
+    <div class="section-title">Propiedad</div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Dirección completa</label>
+        <input type="text" id="arr-direccion" placeholder="Pasaje Pérez 563, Jardines de La Ligua">
+      </div>
+    </div>
+
+    <div class="section-title">Condiciones Económicas</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fecha inicio arriendo</label>
+        <input type="date" id="arr-inicio">
+      </div>
+      <div class="form-group">
+        <label>Renta mensual ($)</label>
+        <input type="number" id="arr-renta" placeholder="480000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Garantía ($)</label>
+        <input type="number" id="arr-garantia" placeholder="480000">
+      </div>
+      <div class="form-group">
+        <label>Día de pago (día del mes)</label>
+        <input type="number" id="arr-dia-pago" value="5">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Cuenta bancaria para depósito</label>
+        <input type="text" id="arr-cuenta" placeholder="Banco Estado cuenta corriente N° 219000...">
+      </div>
+    </div>
+
+    <button class="btn-generar" onclick="generarArriendo()">Generar documento</button>
+  </div>
+</div>
+
+<!-- Modal Orden de Visita -->
+<div class="modal" id="modal-visita">
+  <div class="modal-box">
+    <button class="close" onclick="cerrarModal('visita')">✕</button>
+    <div class="modal-title">Orden de Visita</div>
+
+    <div class="section-title">Datos del Cliente</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="vis-nombre" placeholder="Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="text" id="vis-telefono" placeholder="+56 9 1234 5678">
+      </div>
+    </div>
+
+    <div class="section-title">Propiedad</div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Dirección de la propiedad</label>
+        <input type="text" id="vis-direccion" placeholder="Calle Ejemplo 123, La Ligua">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tipo de operación</label>
+        <select id="vis-operacion">
+          <option>Arriendo</option>
+          <option>Venta</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Precio referencial</label>
+        <input type="text" id="vis-precio" placeholder="$480.000/mes">
+      </div>
+    </div>
+
+    <div class="section-title">Visita</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="vis-fecha">
+      </div>
+      <div class="form-group">
+        <label>Hora</label>
+        <input type="time" id="vis-hora">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Agente a cargo</label>
+        <input type="text" id="vis-agente" value="Felipe Campos — Prolig Propiedades">
+      </div>
+      <div class="form-group">
+        <label>Teléfono agente</label>
+        <input type="text" id="vis-agente-tel" value="+56 9 2055 3288">
+      </div>
+    </div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Observaciones (opcional)</label>
+        <textarea id="vis-obs" rows="2" placeholder="Traer cédula de identidad. Estacionamiento disponible."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-generar" onclick="generarVisita()">Generar documento</button>
+  </div>
+</div>
+
+<script>
+function abrirModal(tipo) {
+  document.getElementById('modal-' + tipo).classList.add('active')
+  // Fecha por defecto hoy
+  const hoy = new Date().toISOString().split('T')[0]
+  const campos = ['adm-fecha','arr-fecha','arr-inicio','vis-fecha']
+  campos.forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = hoy })
+}
+function cerrarModal(tipo) {
+  document.getElementById('modal-' + tipo).classList.remove('active')
+}
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target === m) m.classList.remove('active') }))
+
+function calcularComision() {
+  const arr = parseFloat(document.getElementById('adm-arriendo').value) || 0
+  const pct = parseFloat(document.getElementById('adm-comision-pct').value) || 10
+  const monto = Math.round(arr * pct / 100)
+  document.getElementById('adm-comision-monto').value = monto ? monto.toLocaleString('es-CL') : ''
+}
+
+function formatFecha(str) {
+  if (!str) return '___'
+  const [y,m,d] = str.split('-')
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+  return `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`
+}
+function formatPeso(n) {
+  if (!n) return '___'
+  return '$' + parseInt(n).toLocaleString('es-CL')
+}
+
+function abrirDocumento(html) {
+  const win = window.open('', '_blank')
+  win.document.write(html)
+  win.document.close()
+  win.focus()
+}
+
+const estiloDoc = `
+  <style>
+    body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7;color:#000;padding:3cm 2.5cm;max-width:21cm;margin:0 auto}
+    h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:2em;font-weight:bold}
+    h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}
+    p{margin-bottom:.75em;text-align:justify}
+    ul{margin:.5em 0 .75em 1.5em}
+    li{margin-bottom:.25em}
+    .firmas{margin-top:4em;display:grid;grid-template-columns:1fr 1fr;gap:3em}
+    .firma-box{text-align:center}
+    .firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}
+    .firma-nombre{font-weight:bold;font-size:11pt}
+    .firma-rut{font-size:10pt}
+    @media print{body{padding:0} .no-print{display:none}}
+    .btn-print{position:fixed;bottom:2rem;right:2rem;background:#1A3A5C;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  </style>
+  <button class="btn-print no-print" onclick="window.print()">Imprimir / Guardar PDF</button>
+`
+
+function generarAdministracion() {
+  const ciudad = document.getElementById('adm-ciudad').value || 'La Ligua'
+  const fecha = formatFecha(document.getElementById('adm-fecha').value)
+  const propNombre = document.getElementById('adm-prop-nombre').value || '___'
+  const propRut = document.getElementById('adm-prop-rut').value || '___'
+  const direccion = document.getElementById('adm-prop-direccion').value || '___'
+  const arriendo = parseInt(document.getElementById('adm-arriendo').value) || 0
+  const comisionPct = parseFloat(document.getElementById('adm-comision-pct').value) || 10
+  const comisionMonto = Math.round(arriendo * comisionPct / 100)
+  const duracion = document.getElementById('adm-duracion').value || '12'
+
+  const arriendoTexto = arriendo ? `${formatPeso(arriendo)} (${numeroALetras(arriendo)} pesos)` : '___'
+  const comisionTexto = comisionMonto ? `${formatPeso(comisionMonto)} (${numeroALetras(comisionMonto)} pesos)` : '___'
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Contrato Administración</title>${estiloDoc}</head><body>
+  <h1>Acuerdo de Prestación de Servicios de<br>Administración de Propiedad</h1>
+  <p>En ${ciudad}, a ${fecha}, comparecen por una parte <strong>Felipe Ignacio Campos Pizarro, RUT 19.447.149-1</strong>, en representación de <strong>Prolig</strong>, en adelante "EL ADMINISTRADOR"; y por otra parte <strong>${propNombre}, RUT ${propRut}</strong>, en adelante "LA PROPIETARIA". Ambas partes mayores de edad, quienes convienen celebrar el siguiente Contrato de Prestación de Servicios de Administración de Propiedad, que se regirá por las siguientes cláusulas:</p>
+  <h2>PRIMERO: Objeto del contrato</h2>
+  <p>Por medio del presente instrumento, EL ADMINISTRADOR prestará a LA PROPIETARIA servicios de <strong>administración, gestión, supervisión y cuidado general</strong> del inmueble ubicado en <strong>${direccion}</strong>, que esta última mantiene arrendado. El objetivo del servicio es asegurar el correcto funcionamiento del arriendo, la gestión de pagos y la supervisión preventiva del estado del inmueble.</p>
+  <h2>SEGUNDO: Servicios incluidos</h2>
+  <p>EL ADMINISTRADOR se compromete a ejecutar, entre otros, los siguientes servicios:</p>
+  <ul>
+    <li><strong>Gestión del pago del arriendo:</strong> Recibir mensualmente el arriendo, verificar su correcta recepción y transferir el monto correspondiente a LA PROPIETARIA, descontando únicamente la comisión pactada.</li>
+    <li><strong>Administración del arriendo:</strong> Mantener comunicación con el arrendatario sobre fechas de pago, atrasos y requerimientos. Registrar mensualmente los movimientos y pagos.</li>
+    <li><strong>Gestión preventiva de servicios básicos:</strong> Revisar periódicamente si existen deudas en agua, luz o basura. Informar de inmediato a LA PROPIETARIA en caso de existir saldos pendientes.</li>
+    <li><strong>Supervisión del estado del inmueble:</strong> Verificar el estado general del inmueble cuando corresponda. Reportar daños o desperfectos ocasionados por el arrendatario.</li>
+  </ul>
+  <h2>TERCERO: Valor del arriendo y comisión</h2>
+  <p>El valor del arriendo del inmueble administrado es de <strong>${arriendoTexto}</strong> mensuales. Por concepto de administración y gestión, EL ADMINISTRADOR cobrará una comisión equivalente al <strong>${comisionPct}% del valor mensual del arriendo</strong>, es decir, <strong>${comisionTexto} mensuales</strong>. Este monto será descontado automáticamente por EL ADMINISTRADOR al momento de entregar el pago a LA PROPIETARIA.</p>
+  <h2>CUARTO: Obligaciones del Administrador</h2>
+  <ul>
+    <li>Gestionar de forma puntual el cobro y traspaso de dinero.</li>
+    <li>Mantener comunicación transparente y oportuna con LA PROPIETARIA.</li>
+    <li>Informar sobre cualquier irregularidad detectada en pagos, deudas o daños.</li>
+    <li>Representar a LA PROPIETARIA única y exclusivamente para los fines señalados en este contrato.</li>
+  </ul>
+  <h2>QUINTO: Obligaciones de la Propietaria</h2>
+  <ul>
+    <li>Aceptar el descuento mensual de la comisión acordada.</li>
+    <li>Comunicar cualquier cambio en las condiciones del inmueble o del arrendatario.</li>
+    <li>Respetar las decisiones administrativas realizadas por EL ADMINISTRADOR dentro del marco de este contrato.</li>
+  </ul>
+  <h2>SEXTO: Vigencia</h2>
+  <p>El presente contrato tendrá una vigencia inicial de <strong>${duracion} meses</strong>, renovable automáticamente por períodos iguales, salvo aviso en contrario con al menos 30 días de anticipación por cualquiera de las partes.</p>
+  <h2>SÉPTIMO: Terminación</h2>
+  <p>El contrato podrá darse por terminado por incumplimiento grave de una de las partes, mutuo acuerdo por escrito, o aviso previo de 30 días sin necesidad de expresar causa. En caso de término, EL ADMINISTRADOR deberá entregar a LA PROPIETARIA toda la información y registros pendientes.</p>
+  <h2>OCTAVO: Jurisdicción</h2>
+  <p>Para todos los efectos legales, las partes fijan su domicilio en la ciudad de ${ciudad}, sometiéndose a la jurisdicción de sus tribunales ordinarios.</p>
+  <div class="firmas">
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">Felipe Ignacio Campos Pizarro</div>
+      <div class="firma-rut">RUT 19.447.149-1</div>
+      <div>EL ADMINISTRADOR — Prolig</div>
+    </div>
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${propNombre}</div>
+      <div class="firma-rut">RUT ${propRut}</div>
+      <div>LA PROPIETARIA</div>
+    </div>
+  </div>
+  </body></html>`
+  abrirDocumento(html)
+}
+
+function generarArriendo() {
+  const ciudad = document.getElementById('arr-ciudad').value || 'La Ligua'
+  const fecha = formatFecha(document.getElementById('arr-fecha').value)
+  const arrendadorNombre = document.getElementById('arr-arrendador-nombre').value || '___'
+  const arrendadorRut = document.getElementById('arr-arrendador-rut').value || '___'
+  const arrendatarioNombre = document.getElementById('arr-arrendatario-nombre').value || '___'
+  const arrendatarioRut = document.getElementById('arr-arrendatario-rut').value || '___'
+  const arrendatarioDom = document.getElementById('arr-arrendatario-domicilio').value || '___'
+  const direccion = document.getElementById('arr-direccion').value || '___'
+  const inicio = formatFecha(document.getElementById('arr-inicio').value)
+  const inicioDate = document.getElementById('arr-inicio').value
+  const finDate = inicioDate ? new Date(new Date(inicioDate).setFullYear(new Date(inicioDate).getFullYear()+1)) : null
+  const fin = finDate ? formatFecha(finDate.toISOString().split('T')[0]) : '___'
+  const renta = parseInt(document.getElementById('arr-renta').value) || 0
+  const garantia = parseInt(document.getElementById('arr-garantia').value) || 0
+  const diaPago = document.getElementById('arr-dia-pago').value || '5'
+  const cuenta = document.getElementById('arr-cuenta').value || '___'
+
+  const rentaTexto = renta ? `${formatPeso(renta)} (${numeroALetras(renta)} pesos)` : '___'
+  const garantiaTexto = garantia ? `${formatPeso(garantia)} (${numeroALetras(garantia)} pesos)` : '___'
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Contrato de Arriendo</title>${estiloDoc}</head><body>
+  <h1>Contrato de Arrendamiento</h1>
+  <p><strong>${arrendadorNombre}</strong><br>a<br><strong>${arrendatarioNombre}</strong></p>
+  <p>En ${ciudad}, ${fecha}, entre: don/doña <strong>${arrendadorNombre}</strong>, cédula de identidad N° <strong>${arrendadorRut}</strong> (en adelante, el "Arrendador"); por una parte y por la otra don/doña <strong>${arrendatarioNombre}</strong>, cédula de identidad N° <strong>${arrendatarioRut}</strong>, con domicilio en ${arrendatarioDom} (en adelante, el "Arrendatario"); exponen que han convenido el siguiente Contrato de Arrendamiento de acuerdo a las estipulaciones que a continuación se indican:</p>
+  <h2>PRIMERO: Objeto</h2>
+  <p>El Arrendador entrega en arrendamiento el inmueble ubicado en <strong>${direccion}</strong>, el que será usado exclusivamente como casa habitación.</p>
+  <h2>SEGUNDO: Destino</h2>
+  <p>La propiedad arrendada será destinada exclusivamente para fines habitacionales.</p>
+  <h2>TERCERO: Plazo</h2>
+  <p>El presente contrato tiene una vigencia de 365 días a contar del día <strong>${inicio}</strong>, terminando el día <strong>${fin}</strong>. Al término del periodo original, el contrato se renovará por un período igual de 12 meses, salvo que alguna de las partes diere aviso a la otra mediante carta certificada con 30 días de anticipación.</p>
+  <h2>CUARTO: Inventario</h2>
+  <p>El Arrendatario declara que recibe la propiedad a su entera satisfacción y se obliga a restituirla en el mismo estado al término del contrato. El inventario se realizará en terreno posterior a la firma, con 7 días hábiles para informar reparos pendientes.</p>
+  <h2>QUINTO: Renta</h2>
+  <p>La renta mensual de arrendamiento será la suma de <strong>${rentaTexto}</strong>. Dicha suma deberá ser pagada por el Arrendatario anticipadamente dentro de los primeros <strong>${diaPago} días</strong> de cada mes mediante depósito en <strong>${cuenta}</strong>. El pago que no se efectúe dentro del plazo constituirá al Arrendatario en mora, debiendo pagar una multa de 2% por día de retraso.</p>
+  <h2>SEXTO: Consumos</h2>
+  <p>El Arrendatario estará obligado a pagar oportunamente los consumos de luz, agua potable, gastos comunes y demás pertinentes. El atraso de un mes en cualquiera de los pagos dará derecho al Arrendador para suspender los servicios respectivos.</p>
+  <h2>SÉPTIMO: Término anticipado</h2>
+  <p>El Arrendador podrá pedir el término total e inmediato del contrato si el Arrendatario no paga la renta mensual o los servicios dentro de los plazos definidos, causare deterioros a la propiedad, hiciere modificaciones sin autorización escrita, o cambiare el destino de la propiedad.</p>
+  <h2>OCTAVO: Prohibiciones</h2>
+  <p>Queda prohibido al Arrendatario: subarrendar o ceder el contrato sin previa autorización expresa del Arrendador; crear divisiones o subdivisiones de la propiedad; almacenar materiales explosivos, inflamables o de mal olor.</p>
+  <h2>NOVENO: Mantención</h2>
+  <p>El Arrendatario se obliga a mantener la propiedad en buen estado de aseo y conservación, efectuando oportunamente y a su costo todas las reparaciones locativas necesarias.</p>
+  <h2>DÉCIMO: Restitución</h2>
+  <p>El Arrendatario se obliga a restituir la propiedad inmediatamente al término del contrato, mediante la desocupación total y entrega de las llaves, en el mismo estado en que la recibió.</p>
+  <h2>DÉCIMO PRIMERO: Garantía</h2>
+  <p>A fin de garantizar la conservación de la propiedad y el fiel cumplimiento de las estipulaciones del contrato, el Arrendatario entrega en garantía la suma de <strong>${garantiaTexto}</strong>. Esta garantía se devolverá dentro de los 30 días siguientes a la fecha en que se haya devuelto la propiedad a entera satisfacción del Arrendador y los servicios públicos estén pagados.</p>
+  <h2>DÉCIMO SEGUNDO: Domicilio</h2>
+  <p>Para todos los efectos legales, las partes fijan su domicilio en la comuna y ciudad de ${ciudad} y se someten a la competencia de sus Tribunales Ordinarios de Justicia.</p>
+  <div class="firmas">
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${arrendadorNombre}</div>
+      <div class="firma-rut">RUT ${arrendadorRut}</div>
+      <div>Arrendador</div>
+    </div>
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${arrendatarioNombre}</div>
+      <div class="firma-rut">RUT ${arrendatarioRut}</div>
+      <div>Arrendatario</div>
+    </div>
+  </div>
+  </body></html>`
+  abrirDocumento(html)
+}
+
+function generarVisita() {
+  const nombre = document.getElementById('vis-nombre').value || '___'
+  const telefono = document.getElementById('vis-telefono').value || '___'
+  const direccion = document.getElementById('vis-direccion').value || '___'
+  const operacion = document.getElementById('vis-operacion').value
+  const precio = document.getElementById('vis-precio').value || '___'
+  const fecha = formatFecha(document.getElementById('vis-fecha').value)
+  const hora = document.getElementById('vis-hora').value || '___'
+  const agente = document.getElementById('vis-agente').value || '___'
+  const agenteTel = document.getElementById('vis-agente-tel').value || '___'
+  const obs = document.getElementById('vis-obs').value
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Orden de Visita</title>${estiloDoc}</head><body>
+  <h1>Orden de Visita</h1>
+  <p style="text-align:center;color:#888;margin-bottom:2em">Prolig Propiedades — Documento de Confirmación</p>
+  <h2>Datos del Cliente</h2>
+  <p><strong>Nombre:</strong> ${nombre}<br><strong>Teléfono:</strong> ${telefono}</p>
+  <h2>Propiedad a Visitar</h2>
+  <p><strong>Dirección:</strong> ${direccion}<br><strong>Operación:</strong> ${operacion}<br><strong>Precio referencial:</strong> ${precio}</p>
+  <h2>Fecha y Hora de la Visita</h2>
+  <p><strong>Fecha:</strong> ${fecha}<br><strong>Hora:</strong> ${hora}</p>
+  <h2>Agente a Cargo</h2>
+  <p><strong>Nombre:</strong> ${agente}<br><strong>Teléfono:</strong> ${agenteTel}</p>
+  ${obs ? `<h2>Observaciones</h2><p>${obs}</p>` : ''}
+  <p style="margin-top:2em;font-size:11pt;color:#555;border-top:1px solid #ddd;padding-top:1em">Este documento confirma la visita agendada. Si necesita reagendar o cancelar, comuníquese directamente con el agente a cargo.</p>
+  <div class="firmas">
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${nombre}</div>
+      <div>Cliente</div>
+    </div>
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${agente}</div>
+      <div>Agente Prolig</div>
+    </div>
+  </div>
+  </body></html>`
+  abrirDocumento(html)
+}
+
+// Convierte número a texto simplificado para los montos
+function numeroALetras(n) {
+  const unidades = ['','un','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve']
+  const decenas = ['','diez','veinte','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa']
+  const centenas = ['','ciento','doscientos','trescientos','cuatrocientos','quinientos','seiscientos','setecientos','ochocientos','novecientos']
+  if (n === 0) return 'cero'
+  if (n === 100) return 'cien'
+  if (n === 1000) return 'mil'
+  let resultado = ''
+  if (n >= 1000000) { resultado += numeroALetras(Math.floor(n/1000000)) + (Math.floor(n/1000000)===1?' millón':' millones'); n %= 1000000; if(n>0) resultado += ' ' }
+  if (n >= 1000) { const miles = Math.floor(n/1000); resultado += (miles===1?'mil':numeroALetras(miles)+' mil'); n %= 1000; if(n>0) resultado += ' ' }
+  if (n >= 100) { resultado += centenas[Math.floor(n/100)]; n %= 100; if(n>0) resultado += ' ' }
+  if (n >= 20) { resultado += decenas[Math.floor(n/10)]; n %= 10; if(n>0) resultado += ' y ' }
+  if (n > 0 && n < 20) resultado += unidades[n]
+  return resultado.trim()
+}
+</script>
+</body>
+</html>

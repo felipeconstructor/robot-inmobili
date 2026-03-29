@@ -41,6 +41,9 @@ app.get('/admin.html', requireAuth, (req, res) => {
 app.get('/crm.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'crm.html'))
 })
+app.get('/documentos.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'documentos.html'))
+})
 
 app.post('/api/login', (req, res) => {
   const { password } = req.body
