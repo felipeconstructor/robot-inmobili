@@ -50,6 +50,19 @@ input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
 .btn-generar{width:100%;padding:13px;background:#1A3A5C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:1.25rem;transition:background .2s}
 .btn-generar:hover{background:#0f2540}
 @media(max-width:500px){.form-row{grid-template-columns:1fr}}
+/* Document overlay */
+.doc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem}
+.doc-overlay-box{background:#fff;border-radius:16px;width:100%;max-width:880px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.doc-overlay-header{padding:.9rem 1.25rem;background:#1A3A5C;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.doc-overlay-title{color:#fff;font-size:14px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-overlay-actions{display:flex;gap:8px;flex-shrink:0}
+.doc-btn-word{background:#2E7D32;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap}
+.doc-btn-word:hover{background:#1B5E20}
+.doc-btn-print{background:#C9A96E;color:#1A3A5C;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap}
+.doc-btn-print:hover{background:#b8944f}
+.doc-btn-close{background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s;line-height:1}
+.doc-btn-close:hover{background:rgba(255,255,255,.3)}
+.doc-preview-frame{flex:1;border:none;width:100%;background:#f5f5f5}
 </style>
 </head>
 <body>
@@ -337,6 +350,21 @@ input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
   </div>
 </div>
 
+<!-- Document preview overlay -->
+<div id="doc-overlay" class="doc-overlay" style="display:none">
+  <div class="doc-overlay-box">
+    <div class="doc-overlay-header">
+      <div class="doc-overlay-title" id="doc-overlay-title">Documento</div>
+      <div class="doc-overlay-actions">
+        <button class="doc-btn-word" onclick="descargarDocWord()">⬇ Descargar Word</button>
+        <button class="doc-btn-print" onclick="imprimirDoc()">🖨 Imprimir / PDF</button>
+        <button class="doc-btn-close" onclick="cerrarPreview()" title="Cerrar">✕</button>
+      </div>
+    </div>
+    <iframe id="doc-preview-frame" class="doc-preview-frame"></iframe>
+  </div>
+</div>
+
 <script>
 function abrirModal(tipo) {
   document.getElementById('modal-' + tipo).classList.add('active')
@@ -408,12 +436,41 @@ function getLogoHeader() {
 }
 // ─────────────────────────────────────────────────────────
 
+let _docHtml = null, _docNombre = null
+
 function abrirDocumento(html, nombreArchivo) {
-  // Inyectar el nombre de archivo en el documento para usarlo al descargar
-  const htmlFinal = html.replace('</head>',
-    `<scr` + `ipt>window._docFilename='${nombreArchivo || "documento"}'</scr` + `ipt></head>`)
-  const blob = new Blob([htmlFinal], { type: 'text/html;charset=utf-8' })
-  window.open(URL.createObjectURL(blob), '_blank')
+  _docHtml = html
+  _docNombre = nombreArchivo || 'documento'
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const frame = document.getElementById('doc-preview-frame')
+  frame.src = URL.createObjectURL(blob)
+  document.getElementById('doc-overlay-title').textContent = '📄 ' + _docNombre.replace(/-/g, ' ')
+  document.getElementById('doc-overlay').style.display = 'flex'
+}
+
+function descargarDocWord() {
+  if (!_docHtml) return
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(_docHtml, 'text/html')
+  doc.querySelectorAll('.no-print,.toolbar,.edit-hint').forEach(el => el.remove())
+  const bodyContent = doc.body.innerHTML
+  const wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}p{margin-bottom:.75em;text-align:justify}ul{margin:.5em 0 .75em 1.5em}li{margin-bottom:.25em}.firmas{margin-top:3em}.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}.firma-nombre{font-weight:bold}.firma-rut{font-size:10pt}.doc-logo-header{padding-bottom:6px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}.doc-logo-img{height:36pt;width:auto}</style></head><body>${bodyContent}</body></html>`
+  const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = _docNombre + '.doc'
+  document.body.appendChild(a); a.click(); document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
+
+function imprimirDoc() {
+  const frame = document.getElementById('doc-preview-frame')
+  if (frame.contentWindow) frame.contentWindow.print()
+}
+
+function cerrarPreview() {
+  document.getElementById('doc-overlay').style.display = 'none'
+  document.getElementById('doc-preview-frame').src = 'about:blank'
 }
 
 const estiloDoc = `
@@ -431,43 +488,8 @@ const estiloDoc = `
     .firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}
     .firma-nombre{font-weight:bold;font-size:11pt}
     .firma-rut{font-size:10pt}
-    [contenteditable]:focus{outline:2px dashed #C9A96E;outline-offset:2px;background:#fffdf5}
-    @media print{body{padding:0} .no-print{display:none} [contenteditable]{outline:none;background:transparent}}
-    .toolbar{position:fixed;bottom:2rem;right:2rem;display:flex;gap:8px;z-index:99}
-    .btn-print{background:#1A3A5C;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-    .btn-edit{background:#C9A96E;color:#1A3A5C;border:none;padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600}
-    .btn-word{background:#2E7D32;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600}
-    .btn-word:hover{background:#1B5E20}
-    .edit-hint{position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#C9A96E;color:#1A3A5C;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;display:none}
-    .edit-hint.visible{display:block}
+    @media print{body{padding:0}}
   </style>
-  <div class="edit-hint" id="hint">Modo edicion activo — haz clic en cualquier texto para editarlo</div>
-  <div class="toolbar no-print">
-    <button class="btn-edit" onclick="toggleEdicion()">Editar texto</button>
-    <button class="btn-word" onclick="descargarWord()">⬇ Descargar Word</button>
-    <button class="btn-print" onclick="window.print()">Imprimir / PDF</button>
-  </div>
-  <script>
-    let editando = false
-    function toggleEdicion() {
-      editando = !editando
-      document.querySelectorAll('p,h1,h2,li,.firma-nombre,.firma-rut').forEach(el => {
-        el.contentEditable = editando ? 'true' : 'false'
-      })
-      document.querySelector('.btn-edit').textContent = editando ? 'Listo' : 'Editar texto'
-      document.getElementById('hint').classList.toggle('visible', editando)
-    }
-    function descargarWord() {
-      const clone = document.body.cloneNode(true)
-      clone.querySelectorAll('.toolbar,.edit-hint,.no-print').forEach(el => el.remove())
-      const w = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:\\"Times New Roman\\",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}p{margin-bottom:.75em;text-align:justify}ul{margin:.5em 0 .75em 1.5em}li{margin-bottom:.25em}.firmas{margin-top:3em}.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}.firma-nombre{font-weight:bold}.firma-rut{font-size:10pt}.doc-logo-header{padding-bottom:6px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}.doc-logo-img{height:36pt;width:auto}</style></head><body>'+clone.innerHTML+'</body></html>'
-      const blob = new Blob(['\ufeff', w], {type:'application/msword'})
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = (window._docFilename||'documento')+'.doc'
-      a.click()
-    }
-  </scr` + `ipt>
 `
 
 function generarAdministracion() {
