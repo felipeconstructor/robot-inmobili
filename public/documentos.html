@@ -10,9 +10,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
 .header-brand{color:#fff;font-size:16px;font-weight:500}
 .header-sub{color:#C9A96E;font-size:12px}
-.nav{display:flex;gap:8px}
-.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid #C9A96E;border-radius:6px;transition:all .2s}
-.nav a:hover{background:#C9A96E;color:#1A3A5C}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
+.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
+.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
+.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
 .container{max-width:900px;margin:0 auto;padding:2rem 1rem}
 h1{font-size:22px;color:#1A3A5C;margin-bottom:8px}
 .subtitle{font-size:13px;color:#888;margin-bottom:2rem}
@@ -59,7 +62,9 @@ input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
   <nav class="nav">
     <a href="/admin.html">Propiedades</a>
     <a href="/crm.html">CRM</a>
-    <a href="/api/logout">Salir</a>
+    <a href="/documentos.html" class="activo">Documentos</a>
+    <a href="/">Chat</a>
+    <a href="/api/logout" class="nav-salir">Salir</a>
   </nav>
 </div>
 

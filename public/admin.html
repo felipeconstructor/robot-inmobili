@@ -11,9 +11,12 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
 .header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
 .header h1{color:#fff;font-size:18px;font-weight:500}
-.header-links{display:flex;gap:1rem;align-items:center}
-.header-links a{color:#C9A96E;font-size:13px;text-decoration:none}
-.header-links a:hover{color:#fff}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
+.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
+.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
+.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
 .container{max-width:1300px;margin:0 auto;padding:1.5rem}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
 .stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
@@ -126,13 +129,13 @@ tr:hover td{background:#fafcff}
 
 <div class="header">
   <h1>Nova Admin — Propiedades</h1>
-  <div class="header-links">
-    <a href="/crm.html">CRM Leads</a>
+  <nav class="nav">
+    <a href="/admin.html" class="activo">Propiedades</a>
+    <a href="/crm.html">CRM</a>
     <a href="/documentos.html">Documentos</a>
     <a href="/">Chat</a>
-    <span id="ultimo-update" style="color:#888;font-size:13px">Cargando...</span>
-    <a href="/api/logout" style="color:#888">Salir</a>
-  </div>
+    <a href="/api/logout" class="nav-salir">Salir</a>
+  </nav>
 </div>
 
 <div class="container">
