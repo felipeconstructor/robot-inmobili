@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Nova — chatbot IA inmobiliario para Prolig Propiedades. En producción 24/7 en Railway.
 
-- Produccion: https://alluring-flow-production-16db.up.railway.app
+- Produccion: https://robot-inmobiliario-production.up.railway.app
 - CRM: /crm.html (conecta directo a Supabase desde el browser)
 - WhatsApp sandbox: +1 415 523 8886
 

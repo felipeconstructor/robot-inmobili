@@ -460,7 +460,7 @@ function filtrar() {
 async function cargarPropiedades() {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
   const { data, error } = await db.from('propiedades').select('*').order('id', { ascending: false })
-  if (error) { toast('Error cargando propiedades', true); return }
+  if (error) { toast('Error cargando propiedades: ' + error.message, true); return }
   todasProps = data || []
 
   const disp = todasProps.filter(p => p.disponible)
@@ -712,10 +712,12 @@ async function guardarPropiedad() {
 
   await cargarPropiedades()
 
+  cerrarModal()
+
   if (editandoId) {
     toast('Propiedad actualizada')
-    cerrarModal()
   } else {
+    toast('Propiedad guardada correctamente')
     // Publicar en redes
     const nuevaPropiedad = todasProps.find(p => p.id === nuevaId) || todasProps[0]
     if (nuevaPropiedad) {
@@ -735,9 +737,6 @@ async function guardarPropiedad() {
         })
       }).then(() => toast('Publicando en redes sociales...')).catch(() => {})
     }
-    // Reabrir en modo edicion para agregar fotos adicionales
-    toast('Propiedad guardada. Agrega las fotos adicionales ahora.')
-    await abrirEditar(nuevaId)
   }
 }
 
@@ -934,10 +933,21 @@ async function confirmarImporte() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-fetch('/api/config').then(r => r.json()).then(cfg => {
-  db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
-  cargarPropiedades()
-})
+fetch('/api/config')
+  .then(r => r.json())
+  .then(cfg => {
+    if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+      document.getElementById('tabla-props').innerHTML =
+        '<tr><td colspan="9" class="empty">Error: credenciales Supabase no configuradas en el servidor</td></tr>'
+      return
+    }
+    db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+    cargarPropiedades()
+  })
+  .catch(err => {
+    document.getElementById('tabla-props').innerHTML =
+      '<tr><td colspan="9" class="empty">Error conectando al servidor: ' + err.message + '</td></tr>'
+  })
 </script>
 </body>
 </html>
