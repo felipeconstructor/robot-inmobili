@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
-.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
 .header h1{color:#fff;font-size:18px;font-weight:500}
 .nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
@@ -19,18 +19,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
 .container{max-width:1300px;margin:0 auto;padding:1.5rem}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
-.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
+.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:.5px solid #e0e0e0}
 .stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
 .stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
 .stat-sub{font-size:11px;color:#aaa;margin-top:2px}
-.panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden}
+.panel{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;overflow:hidden}
 .panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
 .panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
-.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 select,input[type=text],input[type=number]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
 select:focus,input:focus{border-color:#1A3A5C}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0}
+th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0;white-space:nowrap}
 td{padding:10px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8;vertical-align:middle}
 tr:hover td{background:#fafcff}
 .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
@@ -47,76 +48,63 @@ tr:hover td{background:#fafcff}
 .btn-sm{padding:4px 10px;font-size:11px}
 .btn-danger{background:#fff;color:#c0392b;border-color:#e0a0a0}
 .btn-danger:hover{background:#FCEBEB}
+.btn-outline{background:#fff;color:#1A3A5C;border:1px solid #1A3A5C;padding:7px 18px;font-size:13px;border-radius:8px;cursor:pointer}
+.btn-outline:hover{background:#f0f4f8}
 .empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
-.refresh{font-size:11px;color:#aaa;cursor:pointer}
+.refresh{font-size:11px;color:#aaa;cursor:pointer;margin-left:8px}
 .refresh:hover{color:#1A3A5C}
 .precio{font-weight:600;color:#1A3A5C;white-space:nowrap}
-.acciones{display:flex;gap:3px}
+.acciones{display:flex;gap:3px;flex-wrap:wrap}
 .thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e0e0e0}
 .thumb-empty{width:40px;height:40px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:16px;color:#ccc}
 
 /* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
 .overlay.activo{display:flex}
-.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal h3{font-size:17px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
 .form-full{grid-column:1/-1}
 .form-group{display:flex;flex-direction:column;gap:5px}
 .form-group label{font-size:12px;font-weight:500;color:#555}
-.form-group input,.form-group select,.form-group textarea{
-  padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;
-  background:#fff;outline:none;font-family:inherit
-}
+.form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fff;outline:none;font-family:inherit}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
 .form-group textarea{resize:vertical;min-height:72px}
-
-/* Upload foto */
 .upload-area{border:2px dashed #ddd;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
 .upload-area:hover{border-color:#1A3A5C}
 .upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .upload-area p{font-size:12px;color:#999;margin-top:4px}
-.upload-preview{width:100%;max-height:160px;object-fit:cover;border-radius:8px;display:none;margin-top:8px}
 .upload-label{font-size:13px;color:#1A3A5C;font-weight:500}
 .upload-progress{font-size:11px;color:#888;margin-top:4px;display:none}
-
+.upload-preview{width:100%;max-height:160px;object-fit:cover;border-radius:8px;display:none;margin-top:8px}
+.galeria-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0}
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
-.toast.activo{opacity:1}
-.toast.error{background:#c0392b}
+.section-title{font-size:12px;font-weight:600;color:#555;margin:1rem 0 .5rem;border-top:1px solid #f0f0f0;padding-top:1rem}
 
 /* Modal importar */
-.import-preview{max-height:300px;overflow-y:auto;margin-top:1rem;border:1px solid #e0e0e0;border-radius:8px}
+.import-preview{max-height:280px;overflow-y:auto;margin-top:1rem;border:1px solid #e0e0e0;border-radius:8px}
 .import-preview table{width:100%;border-collapse:collapse;font-size:11px}
 .import-preview th{background:#f5f5f5;padding:6px 8px;text-align:left;font-weight:500;color:#555;position:sticky;top:0}
 .import-preview td{padding:5px 8px;border-top:1px solid #f0f0f0;color:#333}
 .import-preview tr.fila-error td{background:#FFF3F3;color:#c0392b}
-.btn-outline{background:#fff;color:#1A3A5C;border:1px solid #1A3A5C;padding:7px 18px;font-size:13px;border-radius:8px;cursor:pointer}
-.btn-outline:hover{background:#f0f4f8}
 .import-info{font-size:12px;color:#666;margin-top:.75rem;padding:.75rem;background:#f9f9f9;border-radius:8px;line-height:1.6}
 .import-info strong{color:#1A3A5C}
 
-/* Tabla con scroll horizontal */
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none;max-width:320px}
+.toast.activo{opacity:1}
+.toast.error{background:#c0392b}
 
-/* Mobile */
-@media (max-width:768px){
+@media(max-width:768px){
   .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
-  .header h1{font-size:15px}
-  .header-links{flex-wrap:wrap;gap:.5rem}
   .container{padding:1rem .75rem}
   .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
-  .stat{padding:.875rem 1rem}
   .stat-val{font-size:22px}
   .panel-header{flex-direction:column;align-items:flex-start}
-  .panel-header>div{width:100%}
   .filters{width:100%}
-  .filters input[type=text]{width:100% !important}
-  .filters select{flex:1;min-width:0}
-  .btn-gold{width:100%;text-align:center;margin-top:.25rem}
-  th{font-size:11px;padding:8px 10px;white-space:nowrap}
-  td{font-size:12px;padding:8px 10px;white-space:nowrap}
-  .acciones{flex-wrap:wrap;gap:4px}
+  .filters input[type=text]{width:100%}
+  .btn-gold{width:100%;text-align:center}
+  th,td{font-size:12px;padding:8px 10px;white-space:nowrap}
   .modal{border-radius:12px;padding:1.25rem;margin:.75rem;width:calc(100% - 1.5rem);max-height:95vh}
   .form-grid{grid-template-columns:1fr}
   .form-full{grid-column:1}
@@ -139,103 +127,80 @@ tr:hover td{background:#fafcff}
 </div>
 
 <div class="container">
-
   <div class="stats">
     <div class="stat">
       <div class="stat-lbl">Total propiedades</div>
-      <div class="stat-val" id="s-total">0</div>
-      <div class="stat-sub">en la base de datos</div>
+      <div class="stat-val" id="s-total">—</div>
     </div>
     <div class="stat">
       <div class="stat-lbl">Disponibles</div>
-      <div class="stat-val" id="s-disponibles" style="color:#0F6E56">0</div>
-      <div class="stat-sub">Nova las muestra</div>
+      <div class="stat-val" id="s-disponibles">—</div>
     </div>
     <div class="stat">
       <div class="stat-lbl">En venta</div>
-      <div class="stat-val" id="s-venta" style="color:#0C447C">0</div>
-      <div class="stat-sub">activas</div>
+      <div class="stat-val" id="s-venta">—</div>
     </div>
     <div class="stat">
       <div class="stat-lbl">En arriendo</div>
-      <div class="stat-val" id="s-arriendo" style="color:#3C3489">0</div>
-      <div class="stat-sub">activas</div>
+      <div class="stat-val" id="s-arriendo">—</div>
     </div>
   </div>
 
   <div class="panel">
     <div class="panel-header">
-      <h2>Todas las propiedades</h2>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2>Todas las propiedades <span class="refresh" onclick="cargarPropiedades()">Actualizar</span></h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <div class="filters">
-          <input type="text" id="f-buscar" placeholder="Buscar direccion o comuna..." oninput="filtrar()">
+          <input type="text" id="f-buscar" placeholder="Buscar..." style="width:160px" oninput="filtrar()">
+          <select id="f-tipo" onchange="filtrar()">
+            <option value="">Todos los tipos</option>
+            <option>Casa</option><option>Departamento</option><option>Oficina</option>
+            <option>Local</option><option>Terreno</option><option>Bodega</option>
+          </select>
           <select id="f-operacion" onchange="filtrar()">
-            <option value="">Todas las operaciones</option>
+            <option value="">Venta y arriendo</option>
             <option value="venta">Venta</option>
             <option value="arriendo">Arriendo</option>
           </select>
-          <select id="f-tipo" onchange="filtrar()">
-            <option value="">Todos los tipos</option>
-            <option value="Casa">Casa</option>
-            <option value="Departamento">Departamento</option>
-            <option value="Oficina">Oficina</option>
-            <option value="Local">Local Comercial</option>
-            <option value="Terreno">Terreno</option>
-            <option value="Bodega">Bodega</option>
-          </select>
           <select id="f-disponible" onchange="filtrar()">
-            <option value="">Todo</option>
+            <option value="">Todos</option>
             <option value="true">Disponibles</option>
             <option value="false">No disponibles</option>
           </select>
-          <span class="refresh" onclick="cargarPropiedades()">Actualizar</span>
         </div>
         <button class="btn btn-outline" onclick="abrirImportar()">Importar Excel</button>
         <button class="btn btn-gold" onclick="abrirModal()">+ Nueva propiedad</button>
       </div>
     </div>
     <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Foto</th>
-          <th>Tipo</th>
-          <th>Operacion</th>
-          <th>Direccion</th>
-          <th>Comuna</th>
-          <th>Precio</th>
-          <th>Dorm / Baños / m2</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tabla-props">
-        <tr><td colspan="9" class="empty">Cargando propiedades...</td></tr>
-      </tbody>
-    </table>
+      <table>
+        <thead>
+          <tr>
+            <th>Foto</th><th>Tipo</th><th>Operacion</th><th>Direccion</th>
+            <th>Comuna</th><th>Precio</th><th>Detalle</th><th>Estado</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-props">
+          <tr><td colspan="9" class="empty">Cargando propiedades...</td></tr>
+        </tbody>
+      </table>
     </div>
+    <div style="padding:.75rem 1.25rem;font-size:11px;color:#aaa" id="ultimo-update"></div>
   </div>
-
 </div>
 
-<!-- Modal agregar / editar -->
-<div class="overlay" id="overlay" onclick="cerrarModalClickFuera(event)">
-  <div class="modal" id="modal">
+<!-- Modal propiedad -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal">
     <h3 id="modal-titulo">Nueva propiedad</h3>
     <div class="form-grid">
-
       <div class="form-group">
-        <label>Tipo de propiedad</label>
+        <label>Tipo</label>
         <select id="f-mtipo">
-          <option value="Casa">Casa</option>
-          <option value="Departamento">Departamento</option>
-          <option value="Oficina">Oficina</option>
-          <option value="Local">Local Comercial</option>
-          <option value="Terreno">Terreno</option>
-          <option value="Bodega">Bodega</option>
+          <option>Casa</option><option>Departamento</option><option>Oficina</option>
+          <option>Local</option><option>Terreno</option><option>Bodega</option>
         </select>
       </div>
-
       <div class="form-group">
         <label>Operacion</label>
         <select id="f-moperacion">
@@ -243,22 +208,18 @@ tr:hover td{background:#fafcff}
           <option value="arriendo">Arriendo</option>
         </select>
       </div>
-
       <div class="form-group form-full">
-        <label>Direccion</label>
-        <input type="text" id="f-mdireccion" placeholder="Ej: Av. Independencia 1234">
+        <label>Direccion *</label>
+        <input type="text" id="f-mdireccion" placeholder="Ej: Av. Libertad 123">
       </div>
-
       <div class="form-group">
-        <label>Comuna</label>
-        <input type="text" id="f-mcomuna" placeholder="Ej: Santiago">
+        <label>Comuna *</label>
+        <input type="text" id="f-mcomuna" placeholder="Ej: La Ligua">
       </div>
-
       <div class="form-group">
-        <label>Precio</label>
-        <input type="number" id="f-mprecio" placeholder="Ej: 95000000">
+        <label>Precio *</label>
+        <input type="number" id="f-mprecio" placeholder="Ej: 95000000" min="0">
       </div>
-
       <div class="form-group">
         <label>Moneda</label>
         <select id="f-mmoneda">
@@ -266,30 +227,25 @@ tr:hover td{background:#fafcff}
           <option value="UF">UF</option>
         </select>
       </div>
-
       <div class="form-group">
         <label>Dormitorios</label>
         <input type="number" id="f-mdormitorios" placeholder="Ej: 3" min="0">
       </div>
-
       <div class="form-group">
-        <label>Baños</label>
+        <label>Banos</label>
         <input type="number" id="f-mbanos" placeholder="Ej: 2" min="0">
       </div>
-
       <div class="form-group">
         <label>Metros cuadrados</label>
         <input type="number" id="f-mmetros" placeholder="Ej: 85" min="0">
       </div>
-
       <div class="form-group">
-        <label>Disponible</label>
+        <label>Estado</label>
         <select id="f-mdisponible">
-          <option value="true">Si — Nova las muestra</option>
-          <option value="false">No — oculta para Nova</option>
+          <option value="true">Disponible</option>
+          <option value="false">No disponible</option>
         </select>
       </div>
-
       <div class="form-group form-full">
         <label>Descripcion</label>
         <textarea id="f-mdescripcion" placeholder="Descripcion breve de la propiedad..."></textarea>
@@ -297,28 +253,27 @@ tr:hover td{background:#fafcff}
 
       <!-- Foto principal -->
       <div class="form-group form-full">
-        <label>Foto principal</label>
-        <div class="upload-area" id="upload-area">
+        <div class="section-title">Foto principal</div>
+        <div class="upload-area">
           <input type="file" id="f-mfoto" accept="image/*" onchange="previsualizarFoto(event)">
-          <div class="upload-label">Subir foto</div>
-          <p>JPG o PNG — arrastra o haz clic aqui</p>
+          <div class="upload-label">Seleccionar foto principal</div>
+          <p>JPG, PNG o WEBP. Se muestra en el listado y WhatsApp.</p>
         </div>
-        <img id="foto-preview" class="upload-preview" alt="Vista previa">
-        <div class="upload-progress" id="upload-progress">Subiendo foto...</div>
+        <div id="upload-progress" class="upload-progress">Subiendo foto...</div>
+        <img id="foto-preview" class="upload-preview">
       </div>
 
-      <!-- Galeria adicional (solo al editar) -->
+      <!-- Galeria (solo en modo edicion) -->
       <div class="form-group form-full" id="galeria-seccion" style="display:none">
-        <label>Fotos adicionales para la galeria</label>
-        <div id="galeria-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;min-height:36px"></div>
+        <div class="section-title">Fotos adicionales para la ficha</div>
         <div class="upload-area">
           <input type="file" id="f-galeria-foto" accept="image/*" multiple onchange="subirFotosGaleria(event)">
           <div class="upload-label">Agregar fotos a la galeria</div>
-          <p>Puedes seleccionar varias a la vez</p>
+          <p>Puedes seleccionar varias a la vez.</p>
         </div>
-        <div class="upload-progress" id="galeria-progress">Subiendo...</div>
+        <div id="galeria-progress" class="upload-progress">Subiendo fotos...</div>
+        <div id="galeria-grid" class="galeria-grid"></div>
       </div>
-
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
@@ -328,47 +283,30 @@ tr:hover td{background:#fafcff}
 </div>
 
 <!-- Modal importar Excel -->
-<div class="overlay" id="overlay-import" onclick="cerrarImportarClickFuera(event)">
-  <div class="modal" id="modal-import" style="max-width:750px">
+<div class="overlay" id="overlay-import" onclick="if(event.target.id==='overlay-import')cerrarImportar()">
+  <div class="modal">
     <h3>Importar propiedades desde Excel</h3>
-
     <div class="import-info">
-      <strong>Columnas requeridas (en orden):</strong> tipo, operacion, direccion, comuna, precio, moneda, dormitorios, banos, metros, descripcion, disponible<br>
-      <strong>Valores tipo:</strong> Casa / Departamento / Oficina / Local / Terreno / Bodega<br>
-      <strong>Valores operacion:</strong> venta / arriendo<br>
-      <strong>Valores moneda:</strong> CLP / UF<br>
-      <strong>Valores disponible:</strong> si / no (o 1 / 0)
+      <strong>Columnas requeridas:</strong> tipo, operacion, direccion, comuna, precio, moneda, dormitorios, banos, metros, descripcion, disponible<br>
+      <strong>Valores validos:</strong><br>
+      - tipo: Casa / Departamento / Oficina / Local / Terreno / Bodega<br>
+      - operacion: venta / arriendo<br>
+      - moneda: CLP / UF<br>
+      - disponible: si / no / true / false / 1 / 0
     </div>
-
-    <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap">
-      <button class="btn btn-outline" onclick="descargarPlantilla()">Descargar plantilla .xlsx</button>
-      <div class="upload-area" style="flex:1;min-width:200px;padding:10px 16px">
-        <input type="file" id="f-import-excel" accept=".xlsx,.xls,.csv" onchange="leerExcel(event)">
-        <div class="upload-label" style="font-size:12px">Seleccionar archivo Excel o CSV</div>
-      </div>
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btn btn-outline" onclick="descargarPlantilla()">Descargar plantilla</button>
+      <label class="btn btn-gold" style="cursor:pointer">
+        Seleccionar archivo
+        <input type="file" id="f-import-excel" accept=".xlsx,.csv" style="display:none" onchange="procesarExcel(event)">
+      </label>
     </div>
-
     <div id="import-preview-wrap" style="display:none">
-      <div style="margin-top:1rem;font-size:13px;color:#333">
-        Vista previa: <strong id="import-count">0</strong> propiedades encontradas
-        <span id="import-errors-badge" style="display:none;margin-left:8px;background:#FCEBEB;color:#c0392b;padding:2px 8px;border-radius:10px;font-size:11px">filas con error</span>
-      </div>
-      <div class="import-preview">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Tipo</th><th>Operacion</th><th>Direccion</th><th>Comuna</th>
-              <th>Precio</th><th>Moneda</th><th>Dorm</th><th>Banos</th><th>m2</th><th>Disponible</th><th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="import-tbody"></tbody>
-        </table>
-      </div>
+      <div class="import-preview"><table><thead id="import-thead"></thead><tbody id="import-tbody"></tbody></table></div>
     </div>
-
     <div class="modal-footer">
       <button class="btn" onclick="cerrarImportar()">Cancelar</button>
-      <button class="btn btn-primary" id="btn-import-confirmar" style="display:none" onclick="confirmarImporte()">Importar propiedades</button>
+      <button class="btn btn-primary" id="btn-import-confirmar" style="display:none" onclick="confirmarImportar()">Importar</button>
     </div>
   </div>
 </div>
@@ -381,6 +319,8 @@ let todasProps = []
 let editandoId = null
 let imagenUrlActual = null
 let galeriaFotos = []
+
+// ─── Utilidades ───────────────────────────────────────────────────────────────
 
 function toast(msg, esError = false) {
   const t = document.getElementById('toast')
@@ -395,6 +335,8 @@ function formatPrecio(precio, moneda) {
   return `$${Number(precio).toLocaleString('es-CL')}`
 }
 
+// ─── Tabla ────────────────────────────────────────────────────────────────────
+
 function renderTabla(props) {
   const tbody = document.getElementById('tabla-props')
   if (!props.length) {
@@ -408,7 +350,6 @@ function renderTabla(props) {
     const dispBadge = p.disponible
       ? `<span class="badge badge-disponible">Disponible</span>`
       : `<span class="badge badge-nodisponible">No disponible</span>`
-    const toggleLabel = p.disponible ? 'Ocultar' : 'Publicar'
     const detalle = [
       p.dormitorios != null ? `${p.dormitorios} dorm` : null,
       p['baños'] != null ? `${p['baños']} baños` : null,
@@ -417,9 +358,7 @@ function renderTabla(props) {
     const foto = p.imagen_url
       ? `<img src="${p.imagen_url}" class="thumb" alt="foto">`
       : `<div class="thumb-empty">📷</div>`
-
-    return `
-    <tr>
+    return `<tr>
       <td>${foto}</td>
       <td>${p.tipo||'-'}</td>
       <td>${opBadge}</td>
@@ -430,7 +369,7 @@ function renderTabla(props) {
       <td>${dispBadge}</td>
       <td>
         <div class="acciones">
-          <button class="btn btn-sm" onclick="toggleDisponible('${p.id}', ${p.disponible})">${toggleLabel}</button>
+          <button class="btn btn-sm" onclick="toggleDisponible('${p.id}',${p.disponible})">${p.disponible?'Ocultar':'Publicar'}</button>
           <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
           <a class="btn btn-sm" href="/propiedad/${p.id}" target="_blank">Ficha</a>
           <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
@@ -446,13 +385,11 @@ function filtrar() {
   const tipo = document.getElementById('f-tipo').value
   const disp = document.getElementById('f-disponible').value
   const filtrados = todasProps.filter(p => {
-    const matchBuscar = !buscar ||
-      (p.direccion||'').toLowerCase().includes(buscar) ||
-      (p.comuna||'').toLowerCase().includes(buscar)
-    const matchOp = !op || p.operacion === op
-    const matchTipo = !tipo || (p.tipo||'').includes(tipo)
-    const matchDisp = disp === '' ? true : String(p.disponible) === disp
-    return matchBuscar && matchOp && matchTipo && matchDisp
+    if (buscar && !(p.direccion||'').toLowerCase().includes(buscar) && !(p.comuna||'').toLowerCase().includes(buscar)) return false
+    if (op && p.operacion !== op) return false
+    if (tipo && !(p.tipo||'').includes(tipo)) return false
+    if (disp !== '' && String(p.disponible) !== disp) return false
+    return true
   })
   renderTabla(filtrados)
 }
@@ -460,9 +397,12 @@ function filtrar() {
 async function cargarPropiedades() {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
   const { data, error } = await db.from('propiedades').select('*').order('id', { ascending: false })
-  if (error) { toast('Error cargando propiedades: ' + error.message, true); return }
+  if (error) {
+    toast('Error cargando propiedades: ' + error.message, true)
+    document.getElementById('ultimo-update').textContent = 'Error al cargar'
+    return
+  }
   todasProps = data || []
-
   const disp = todasProps.filter(p => p.disponible)
   document.getElementById('s-total').textContent = todasProps.length
   document.getElementById('s-disponibles').textContent = disp.length
@@ -472,58 +412,25 @@ async function cargarPropiedades() {
   filtrar()
 }
 
+// ─── Toggle disponible ────────────────────────────────────────────────────────
+
 async function toggleDisponible(id, actual) {
   const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', Number(id))
-  if (error) { toast('Error al cambiar estado', true); return }
-  toast(!actual ? 'Propiedad publicada — Nova la mostrara' : 'Propiedad ocultada')
+  if (error) { toast('Error: ' + error.message, true); return }
   await cargarPropiedades()
 }
 
+// ─── Eliminar ─────────────────────────────────────────────────────────────────
+
 async function eliminarPropiedad(id) {
-  const prop = todasProps.find(p => String(p.id) === String(id))
-  const nombre = prop ? `${prop.tipo} en ${prop.direccion}` : 'esta propiedad'
-  if (!confirm(`Eliminar ${nombre}?\n\nEsta accion no se puede deshacer.`)) return
+  if (!confirm('Eliminar esta propiedad? Esta accion no se puede deshacer.')) return
   const { error } = await db.from('propiedades').delete().eq('id', Number(id))
-  if (error) { toast('Error al eliminar', true); return }
+  if (error) { toast('Error al eliminar: ' + error.message, true); return }
   toast('Propiedad eliminada')
   await cargarPropiedades()
 }
 
-// Previsualizar foto antes de subir
-function previsualizarFoto(event) {
-  const file = event.target.files[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = e => {
-    const preview = document.getElementById('foto-preview')
-    preview.src = e.target.result
-    preview.style.display = 'block'
-  }
-  reader.readAsDataURL(file)
-}
-
-// Subir foto a Supabase Storage y retornar la URL publica
-// progressElId: ID del elemento de progreso a mostrar (opcional)
-async function subirFoto(file, progressElId = 'upload-progress') {
-  const ext = file.name.split('.').pop()
-  const nombre = `${Date.now()}.${ext}`
-  const progress = document.getElementById(progressElId)
-  if (progress) progress.style.display = 'block'
-
-  const { data, error } = await db.storage
-    .from('propiedades')
-    .upload(nombre, file, { upsert: false })
-
-  if (progress) progress.style.display = 'none'
-
-  if (error) {
-    toast('Error subiendo foto: ' + error.message, true)
-    return null
-  }
-
-  const { data: { publicUrl } } = db.storage.from('propiedades').getPublicUrl(nombre)
-  return publicUrl
-}
+// ─── Modal propiedad ──────────────────────────────────────────────────────────
 
 function abrirModal() {
   editandoId = null
@@ -538,12 +445,11 @@ function abrirModal() {
 
 async function abrirEditar(id) {
   const p = todasProps.find(x => String(x.id) === String(id))
-  if (!p) return
+  if (!p) { toast('Propiedad no encontrada, recarga la pagina', true); return }
   editandoId = id
   imagenUrlActual = p.imagen_url || null
   document.getElementById('modal-titulo').textContent = 'Editar propiedad'
   document.getElementById('btn-guardar').textContent = 'Guardar cambios'
-
   document.getElementById('f-mtipo').value = p.tipo || 'Casa'
   document.getElementById('f-moperacion').value = p.operacion || 'venta'
   document.getElementById('f-mdireccion').value = p.direccion || ''
@@ -555,19 +461,11 @@ async function abrirEditar(id) {
   document.getElementById('f-mmetros').value = p.metros || ''
   document.getElementById('f-mdisponible').value = String(p.disponible)
   document.getElementById('f-mdescripcion').value = p['descripción'] || ''
-
   const preview = document.getElementById('foto-preview')
-  if (p.imagen_url) {
-    preview.src = p.imagen_url
-    preview.style.display = 'block'
-  } else {
-    preview.style.display = 'none'
-  }
-
-  // Cargar galeria
+  if (p.imagen_url) { preview.src = p.imagen_url; preview.style.display = 'block' }
+  else { preview.style.display = 'none' }
   document.getElementById('galeria-seccion').style.display = 'block'
   await cargarGaleria(id)
-
   document.getElementById('overlay').classList.add('activo')
 }
 
@@ -576,71 +474,6 @@ function cerrarModal() {
   editandoId = null
   imagenUrlActual = null
   galeriaFotos = []
-}
-
-// ─── Galeria ──────────────────────────────────────────────────────────────────
-
-async function cargarGaleria(propiedadId) {
-  const { data } = await db.from('fotos_propiedades')
-    .select('*').eq('propiedad_id', propiedadId).order('orden')
-  galeriaFotos = data || []
-  renderGaleria()
-}
-
-function renderGaleria() {
-  const grid = document.getElementById('galeria-grid')
-  if (!galeriaFotos.length) {
-    grid.innerHTML = '<p style="font-size:12px;color:#aaa;padding:4px 0">Sin fotos adicionales — agrega las que quieras</p>'
-    return
-  }
-  grid.innerHTML = galeriaFotos.map(f => `
-    <div style="position:relative;display:inline-block">
-      <img src="${f.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">
-      <button onclick="eliminarFotoGaleria(${f.id})"
-        style="position:absolute;top:-6px;right:-6px;background:#c0392b;color:#fff;border:none;
-               border-radius:50%;width:20px;height:20px;font-size:13px;cursor:pointer;line-height:18px;text-align:center;padding:0">×</button>
-    </div>`).join('')
-}
-
-async function subirFotosGaleria(event) {
-  const files = Array.from(event.target.files)
-  if (!files.length || !editandoId) return
-  const progress = document.getElementById('galeria-progress')
-  progress.style.display = 'block'
-  let subidas = 0
-
-  for (let i = 0; i < files.length; i++) {
-    progress.textContent = `Subiendo foto ${i + 1} de ${files.length}...`
-    const url = await subirFoto(files[i], 'galeria-progress')
-    if (!url) continue
-
-    const { data, error } = await db.from('fotos_propiedades').insert({
-      propiedad_id: Number(editandoId),
-      url,
-      orden: galeriaFotos.length
-    }).select().single()
-
-    if (!error && data) { galeriaFotos.push(data); subidas++ }
-  }
-
-  progress.style.display = 'none'
-  document.getElementById('f-galeria-foto').value = ''
-  renderGaleria()
-  if (subidas > 0) toast(`${subidas} foto(s) agregadas a la galeria`)
-  else toast('No se pudo guardar ninguna foto', true)
-}
-
-async function eliminarFotoGaleria(fotoId) {
-  if (!confirm('Eliminar esta foto de la galeria?')) return
-  const { error } = await db.from('fotos_propiedades').delete().eq('id', fotoId)
-  if (error) { toast('Error al eliminar', true); return }
-  galeriaFotos = galeriaFotos.filter(f => f.id !== fotoId)
-  renderGaleria()
-  toast('Foto eliminada')
-}
-
-function cerrarModalClickFuera(e) {
-  if (e.target.id === 'overlay') cerrarModal()
 }
 
 function limpiarFormulario() {
@@ -660,19 +493,101 @@ function limpiarFormulario() {
   document.getElementById('upload-progress').style.display = 'none'
 }
 
+// ─── Fotos ────────────────────────────────────────────────────────────────────
+
+function previsualizarFoto(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = e => {
+    const preview = document.getElementById('foto-preview')
+    preview.src = e.target.result
+    preview.style.display = 'block'
+  }
+  reader.readAsDataURL(file)
+}
+
+async function subirFoto(file, progressElId = 'upload-progress') {
+  const ext = file.name.split('.').pop()
+  const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+  const progress = document.getElementById(progressElId)
+  if (progress) progress.style.display = 'block'
+  const { data, error } = await db.storage.from('propiedades').upload(nombre, file, { upsert: false })
+  if (progress) progress.style.display = 'none'
+  if (error) { toast('Error subiendo foto: ' + error.message, true); return null }
+  const { data: { publicUrl } } = db.storage.from('propiedades').getPublicUrl(nombre)
+  return publicUrl
+}
+
+// ─── Galeria ──────────────────────────────────────────────────────────────────
+
+async function cargarGaleria(propiedadId) {
+  const { data } = await db.from('fotos_propiedades').select('*').eq('propiedad_id', propiedadId).order('orden')
+  galeriaFotos = data || []
+  renderGaleria()
+}
+
+function renderGaleria() {
+  const grid = document.getElementById('galeria-grid')
+  if (!galeriaFotos.length) {
+    grid.innerHTML = '<p style="font-size:12px;color:#aaa;padding:4px 0">Sin fotos adicionales — agrega las que quieras</p>'
+    return
+  }
+  grid.innerHTML = galeriaFotos.map(f => `
+    <div style="position:relative;display:inline-block">
+      <img src="${f.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">
+      <button onclick="eliminarFotoGaleria(${f.id})"
+        style="position:absolute;top:-6px;right:-6px;background:#c0392b;color:#fff;border:none;
+               border-radius:50%;width:20px;height:20px;font-size:13px;cursor:pointer;line-height:18px;text-align:center;padding:0">x</button>
+    </div>`).join('')
+}
+
+async function subirFotosGaleria(event) {
+  const files = Array.from(event.target.files)
+  if (!files.length || !editandoId) return
+  const progress = document.getElementById('galeria-progress')
+  progress.style.display = 'block'
+  let subidas = 0
+  for (let i = 0; i < files.length; i++) {
+    progress.textContent = `Subiendo foto ${i + 1} de ${files.length}...`
+    const url = await subirFoto(files[i], 'galeria-progress')
+    if (!url) continue
+    const { data, error } = await db.from('fotos_propiedades').insert({
+      propiedad_id: Number(editandoId), url, orden: galeriaFotos.length
+    }).select().single()
+    if (!error && data) { galeriaFotos.push(data); subidas++ }
+  }
+  progress.style.display = 'none'
+  document.getElementById('f-galeria-foto').value = ''
+  renderGaleria()
+  if (subidas > 0) toast(`${subidas} foto(s) agregadas a la galeria`)
+  else toast('No se pudo guardar ninguna foto', true)
+}
+
+async function eliminarFotoGaleria(fotoId) {
+  if (!confirm('Eliminar esta foto de la galeria?')) return
+  const { error } = await db.from('fotos_propiedades').delete().eq('id', fotoId)
+  if (error) { toast('Error al eliminar: ' + error.message, true); return }
+  galeriaFotos = galeriaFotos.filter(f => f.id !== fotoId)
+  renderGaleria()
+  toast('Foto eliminada')
+}
+
+// ─── Guardar propiedad ────────────────────────────────────────────────────────
+
 async function guardarPropiedad() {
   const direccion = document.getElementById('f-mdireccion').value.trim()
   const comuna = document.getElementById('f-mcomuna').value.trim()
   const precio = document.getElementById('f-mprecio').value
   if (!direccion || !comuna || !precio) {
-    toast('Completa direccion, comuna y precio', true)
+    toast('Completa los campos: direccion, comuna y precio', true)
     return
   }
+  const btn = document.getElementById('btn-guardar')
+  btn.textContent = 'Guardando...'
+  btn.disabled = true
 
-  document.getElementById('btn-guardar').textContent = 'Guardando...'
-  document.getElementById('btn-guardar').disabled = true
-
-  // Subir foto si se selecciono una nueva
+  // Subir foto principal si se selecciono una
   let imagenUrl = imagenUrlActual
   const archivoFoto = document.getElementById('f-mfoto').files[0]
   if (archivoFoto) {
@@ -702,38 +617,32 @@ async function guardarPropiedad() {
   } else {
     const res = await db.from('propiedades').insert(datos).select().single()
     error = res.error
-    if (!error) nuevaId = res.data.id
+    if (!error && res.data) nuevaId = res.data.id
   }
 
-  document.getElementById('btn-guardar').textContent = editandoId ? 'Guardar cambios' : 'Guardar propiedad'
-  document.getElementById('btn-guardar').disabled = false
+  btn.textContent = editandoId ? 'Guardar cambios' : 'Guardar propiedad'
+  btn.disabled = false
 
   if (error) { toast('Error al guardar: ' + error.message, true); return }
 
   await cargarPropiedades()
-
   cerrarModal()
 
   if (editandoId) {
-    toast('Propiedad actualizada')
+    toast('Propiedad actualizada correctamente')
   } else {
     toast('Propiedad guardada correctamente')
     // Publicar en redes
-    const nuevaPropiedad = todasProps.find(p => p.id === nuevaId) || todasProps[0]
-    if (nuevaPropiedad) {
+    const nueva = todasProps.find(p => p.id === nuevaId)
+    if (nueva) {
       fetch('/api/publicar-propiedad', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: nuevaPropiedad.id,
-          tipo: nuevaPropiedad.tipo,
-          operacion: nuevaPropiedad.operacion,
-          direccion: nuevaPropiedad.direccion,
-          comuna: nuevaPropiedad.comuna,
-          precio: nuevaPropiedad.precio,
-          moneda: nuevaPropiedad.moneda,
-          descripcion: nuevaPropiedad['descripción'],
-          imagen_url: nuevaPropiedad.imagen_url
+          id: nueva.id, tipo: nueva.tipo, operacion: nueva.operacion,
+          direccion: nueva.direccion, comuna: nueva.comuna,
+          precio: nueva.precio, moneda: nueva.moneda,
+          descripcion: nueva['descripción'], imagen_url: nueva.imagen_url
         })
       }).then(() => toast('Publicando en redes sociales...')).catch(() => {})
     }
@@ -761,15 +670,11 @@ function cerrarImportar() {
   filasImportar = []
 }
 
-function cerrarImportarClickFuera(e) {
-  if (e.target.id === 'overlay-import') cerrarImportar()
-}
-
 function descargarPlantilla() {
   const ws = XLSX.utils.aoa_to_sheet([
     ['tipo','operacion','direccion','comuna','precio','moneda','dormitorios','banos','metros','descripcion','disponible'],
-    ['Casa','venta','Av. Ejemplo 123','La Ligua','95000000','CLP','3','2','85','Casa con jardin y estacionamiento','si'],
-    ['Departamento','arriendo','Calle Los Arrayanes 456','Cabildo','350000','CLP','2','1','60','Departamento luminoso, 2do piso','si'],
+    ['Casa','venta','Av. Ejemplo 123','La Ligua','95000000','CLP','3','2','85','Casa con jardin','si'],
+    ['Departamento','arriendo','Calle Los Arrayanes 456','Cabildo','350000','CLP','2','1','60','Depto luminoso 2do piso','si'],
   ])
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Propiedades')
@@ -777,11 +682,8 @@ function descargarPlantilla() {
   const blob = new Blob([wbout], { type: 'application/octet-stream' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url
-  a.download = 'plantilla_propiedades_nova.xlsx'
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  a.href = url; a.download = 'plantilla_propiedades_nova.xlsx'
+  document.body.appendChild(a); a.click(); document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
 
@@ -792,153 +694,91 @@ function normalizar(val, campo) {
     const mapa = { casa:'Casa', departamento:'Departamento', oficina:'Oficina', local:'Local', terreno:'Terreno', bodega:'Bodega' }
     return mapa[s.toLowerCase()] || s
   }
-  if (campo === 'operacion') {
-    if (s.toLowerCase() === 'venta') return 'venta'
-    if (s.toLowerCase() === 'arriendo') return 'arriendo'
-    return s.toLowerCase()
-  }
-  if (campo === 'moneda') {
-    return s.toUpperCase() === 'UF' ? 'UF' : 'CLP'
-  }
-  if (campo === 'disponible') {
-    return ['si','1','true','yes','sí'].includes(s.toLowerCase())
-  }
-  if (['dormitorios','banos','metros','precio'].includes(campo)) {
-    const n = Number(s.replace(/[^0-9.]/g,''))
-    return isNaN(n) ? null : n
-  }
+  if (campo === 'operacion') return ['venta','arriendo'].includes(s.toLowerCase()) ? s.toLowerCase() : null
+  if (campo === 'moneda') return s.toUpperCase() === 'UF' ? 'UF' : 'CLP'
+  if (campo === 'bool') return ['si','true','1','yes'].includes(s.toLowerCase())
+  if (['dormitorios','banos','metros','precio'].includes(campo)) return isNaN(Number(s)) ? null : Number(s)
   return s
 }
 
-function validarFila(f) {
-  const errores = []
-  if (!f.direccion) errores.push('sin direccion')
-  if (!f.comuna) errores.push('sin comuna')
-  if (!f.precio) errores.push('sin precio')
-  const tiposValidos = ['Casa','Departamento','Oficina','Local','Terreno','Bodega']
-  if (!tiposValidos.includes(f.tipo)) errores.push('tipo invalido')
-  if (!['venta','arriendo'].includes(f.operacion)) errores.push('operacion invalida')
-  return errores
-}
-
-function leerExcel(event) {
+function procesarExcel(event) {
   const file = event.target.files[0]
   if (!file) return
   const reader = new FileReader()
   reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: 'array' })
+    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' })
     const ws = wb.Sheets[wb.SheetNames[0]]
-    const filas = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
-
-    if (filas.length < 2) {
-      toast('El archivo esta vacio o no tiene datos', true)
-      return
-    }
-
-    // Detectar si la primera fila es encabezado
-    const primera = filas[0].map(c => String(c).toLowerCase().trim())
-    const esEncabezado = primera.includes('tipo') || primera.includes('direccion') || primera.includes('operacion')
-    const datosFilas = esEncabezado ? filas.slice(1) : filas
-
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+    if (rows.length < 2) { toast('Archivo sin datos', true); return }
+    const cabecera = rows[0].map(c => String(c).trim().toLowerCase())
+    const idx = n => cabecera.indexOf(n)
+    const COLS = ['tipo','operacion','direccion','comuna','precio','moneda','dormitorios','banos','metros','descripcion','disponible']
+    const faltantes = COLS.slice(0,5).filter(c => idx(c) === -1)
+    if (faltantes.length) { toast('Faltan columnas: ' + faltantes.join(', '), true); return }
     filasImportar = []
-    const tbody = document.getElementById('import-tbody')
-    let html = ''
-    let errCount = 0
-
-    datosFilas.forEach((fila, i) => {
-      if (fila.every(c => c === '' || c === null || c === undefined)) return // fila vacia
-
-      const f = {
-        tipo:         normalizar(fila[0], 'tipo') || 'Casa',
-        operacion:    normalizar(fila[1], 'operacion') || 'venta',
-        direccion:    normalizar(fila[2], 'texto'),
-        comuna:       normalizar(fila[3], 'texto'),
-        precio:       normalizar(fila[4], 'precio'),
-        moneda:       normalizar(fila[5], 'moneda') || 'CLP',
-        dormitorios:  normalizar(fila[6], 'dormitorios'),
-        'baños':      normalizar(fila[7], 'banos'),
-        metros:       normalizar(fila[8], 'metros'),
-        'descripción':normalizar(fila[9], 'texto') || '',
-        disponible:   fila[10] !== undefined ? normalizar(fila[10], 'disponible') : true
+    const html = rows.slice(1).map((fila, i) => {
+      if (fila.every(c => c === '' || c === null || c === undefined)) return ''
+      const obj = {
+        tipo: normalizar(fila[idx('tipo')], 'tipo'),
+        operacion: normalizar(fila[idx('operacion')], 'operacion'),
+        direccion: normalizar(fila[idx('direccion')], 'texto'),
+        comuna: normalizar(fila[idx('comuna')], 'texto'),
+        precio: normalizar(fila[idx('precio')], 'precio'),
+        moneda: normalizar(fila[idx('moneda')] || 'CLP', 'moneda'),
+        dormitorios: normalizar(fila[idx('dormitorios')], 'dormitorios'),
+        'baños': normalizar(fila[idx('banos')], 'banos'),
+        metros: normalizar(fila[idx('metros')], 'metros'),
+        'descripción': normalizar(fila[idx('descripcion')], 'texto') || '',
+        disponible: normalizar(fila[idx('disponible')] ?? 'si', 'bool') ?? true
       }
-
-      const errores = validarFila(f)
-      const tieneError = errores.length > 0
-      if (tieneError) errCount++
-      else filasImportar.push(f)
-
-      html += `<tr class="${tieneError ? 'fila-error' : ''}">
-        <td>${i + 1}</td>
-        <td>${f.tipo||'-'}</td>
-        <td>${f.operacion||'-'}</td>
-        <td>${f.direccion||'-'}</td>
-        <td>${f.comuna||'-'}</td>
-        <td>${f.precio ? Number(f.precio).toLocaleString('es-CL') : '-'}</td>
-        <td>${f.moneda}</td>
-        <td>${f.dormitorios??'-'}</td>
-        <td>${f['baños']??'-'}</td>
-        <td>${f.metros??'-'}</td>
-        <td>${f.disponible ? 'Si' : 'No'}</td>
-        <td style="color:${tieneError?'#c0392b':'#0F6E56'}">${tieneError ? errores.join(', ') : 'OK'}</td>
+      const valida = obj.tipo && obj.operacion && obj.direccion && obj.comuna && obj.precio
+      if (valida) filasImportar.push(obj)
+      return `<tr class="${valida?'':'fila-error'}">
+        <td>${i+1}</td><td>${obj.tipo||'?'}</td><td>${obj.operacion||'?'}</td>
+        <td>${obj.direccion||'?'}</td><td>${obj.comuna||'?'}</td>
+        <td>${formatPrecio(obj.precio, obj.moneda)}</td>
+        <td>${valida?'OK':'Error'}</td>
       </tr>`
-    })
-
-    tbody.innerHTML = html || '<tr><td colspan="12" style="text-align:center;color:#aaa;padding:1rem">Sin filas validas</td></tr>'
-    document.getElementById('import-count').textContent = filasImportar.length
-    const badge = document.getElementById('import-errors-badge')
-    if (errCount > 0) {
-      badge.textContent = `${errCount} fila(s) con error (seran omitidas)`
-      badge.style.display = 'inline'
-    } else {
-      badge.style.display = 'none'
-    }
+    }).join('')
+    document.getElementById('import-thead').innerHTML = '<tr><th>#</th><th>Tipo</th><th>Operacion</th><th>Direccion</th><th>Comuna</th><th>Precio</th><th>Estado</th></tr>'
+    document.getElementById('import-tbody').innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1rem">Sin filas validas</td></tr>'
     document.getElementById('import-preview-wrap').style.display = 'block'
-    document.getElementById('btn-import-confirmar').style.display = filasImportar.length ? 'inline-block' : 'none'
-    document.getElementById('btn-import-confirmar').textContent = `Importar ${filasImportar.length} propiedades`
+    if (filasImportar.length > 0) {
+      document.getElementById('btn-import-confirmar').style.display = 'inline-block'
+      document.getElementById('btn-import-confirmar').textContent = `Importar ${filasImportar.length} propiedades`
+    }
   }
   reader.readAsArrayBuffer(file)
 }
 
-async function confirmarImporte() {
+async function confirmarImportar() {
   if (!filasImportar.length) return
   const btn = document.getElementById('btn-import-confirmar')
   btn.disabled = true
-  btn.textContent = 'Importando...'
-
-  const LOTE = 50
-  let insertadas = 0
-  let errores = 0
-
+  const LOTE = 20
+  let insertadas = 0, errores = 0
   for (let i = 0; i < filasImportar.length; i += LOTE) {
     const lote = filasImportar.slice(i, i + LOTE)
     const { error } = await db.from('propiedades').insert(lote)
-    if (error) {
-      errores += lote.length
-    } else {
-      insertadas += lote.length
-    }
+    if (error) errores += lote.length
+    else insertadas += lote.length
     btn.textContent = `Importando... ${Math.min(i + LOTE, filasImportar.length)}/${filasImportar.length}`
   }
-
   btn.disabled = false
   cerrarImportar()
   await cargarPropiedades()
-
-  if (errores === 0) {
-    toast(`${insertadas} propiedades importadas correctamente`)
-  } else {
-    toast(`${insertadas} importadas, ${errores} fallaron`, errores > 0 && insertadas === 0)
-  }
+  if (errores === 0) toast(`${insertadas} propiedades importadas correctamente`)
+  else toast(`${insertadas} importadas, ${errores} fallaron`, errores > 0 && insertadas === 0)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Inicializacion ───────────────────────────────────────────────────────────
 
 fetch('/api/config')
   .then(r => r.json())
   .then(cfg => {
     if (!cfg.supabaseUrl || !cfg.supabaseKey) {
       document.getElementById('tabla-props').innerHTML =
-        '<tr><td colspan="9" class="empty">Error: credenciales Supabase no configuradas en el servidor</td></tr>'
+        '<tr><td colspan="9" class="empty">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
       return
     }
     db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
