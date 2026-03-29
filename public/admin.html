@@ -372,8 +372,6 @@ function renderTabla(props) {
           <button class="btn btn-sm" onclick="toggleDisponible('${p.id}',${p.disponible})">${p.disponible?'Ocultar':'Mostrar'}</button>
           <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
           <a class="btn btn-sm" href="/propiedad/${p.id}" target="_blank">Ficha</a>
-          <button class="btn btn-sm" onclick="copiarLinkFicha('${p.id}')" title="Copiar link de la ficha">Link</button>
-          <button class="btn btn-sm" style="color:#1877F2;border-color:#1877F2" onclick="publicarEnRedes('${p.id}')" title="Publicar en Facebook e Instagram">Redes</button>
           <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
         </div>
       </td>
