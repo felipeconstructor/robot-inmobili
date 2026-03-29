@@ -409,39 +409,11 @@ function getLogoHeader() {
 // ─────────────────────────────────────────────────────────
 
 function abrirDocumento(html, nombreArchivo) {
-  const bodyContent = html
-    .replace(/[\s\S]*<body[^>]*>/, '')
-    .replace(/<\/body>[\s\S]*/, '')
-
-  const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head><meta charset='utf-8'>
-<style>
-body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}
-h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}
-h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em;text-transform:uppercase}
-p{margin-bottom:.75em;text-align:justify}
-ul{margin:.5em 0 .75em 1.5em}
-li{margin-bottom:.25em}
-.firmas{margin-top:3em}
-.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}
-.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}
-.firma-nombre{font-weight:bold;font-size:11pt}
-.firma-rut{font-size:10pt}
-.doc-logo-header{padding-bottom:8px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}
-.doc-logo-img{height:40pt;width:auto}
-.toolbar,.edit-hint,.no-print,.btn-print,.btn-edit{display:none}
-</style>
-</head>
-<body>${bodyContent}</body>
-</html>`
-
-  const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = (nombreArchivo || 'documento') + '.doc'
-  a.click()
-  URL.revokeObjectURL(url)
+  // Inyectar el nombre de archivo en el documento para usarlo al descargar
+  const htmlFinal = html.replace('</head>',
+    `<scr` + `ipt>window._docFilename='${nombreArchivo || "documento"}'</scr` + `ipt></head>`)
+  const blob = new Blob([htmlFinal], { type: 'text/html;charset=utf-8' })
+  window.open(URL.createObjectURL(blob), '_blank')
 }
 
 const estiloDoc = `
@@ -463,13 +435,16 @@ const estiloDoc = `
     @media print{body{padding:0} .no-print{display:none} [contenteditable]{outline:none;background:transparent}}
     .toolbar{position:fixed;bottom:2rem;right:2rem;display:flex;gap:8px;z-index:99}
     .btn-print{background:#1A3A5C;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-    .btn-edit{background:#C9A96E;color:#1A3A5C;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600}
+    .btn-edit{background:#C9A96E;color:#1A3A5C;border:none;padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600}
+    .btn-word{background:#2E7D32;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600}
+    .btn-word:hover{background:#1B5E20}
     .edit-hint{position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#C9A96E;color:#1A3A5C;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;display:none}
     .edit-hint.visible{display:block}
   </style>
   <div class="edit-hint" id="hint">Modo edicion activo — haz clic en cualquier texto para editarlo</div>
   <div class="toolbar no-print">
     <button class="btn-edit" onclick="toggleEdicion()">Editar texto</button>
+    <button class="btn-word" onclick="descargarWord()">⬇ Descargar Word</button>
     <button class="btn-print" onclick="window.print()">Imprimir / PDF</button>
   </div>
   <script>
@@ -481,6 +456,16 @@ const estiloDoc = `
       })
       document.querySelector('.btn-edit').textContent = editando ? 'Listo' : 'Editar texto'
       document.getElementById('hint').classList.toggle('visible', editando)
+    }
+    function descargarWord() {
+      const clone = document.body.cloneNode(true)
+      clone.querySelectorAll('.toolbar,.edit-hint,.no-print').forEach(el => el.remove())
+      const w = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:\\"Times New Roman\\",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}p{margin-bottom:.75em;text-align:justify}ul{margin:.5em 0 .75em 1.5em}li{margin-bottom:.25em}.firmas{margin-top:3em}.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}.firma-nombre{font-weight:bold}.firma-rut{font-size:10pt}.doc-logo-header{padding-bottom:6px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}.doc-logo-img{height:36pt;width:auto}</style></head><body>'+clone.innerHTML+'</body></html>'
+      const blob = new Blob(['\ufeff', w], {type:'application/msword'})
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = (window._docFilename||'documento')+'.doc'
+      a.click()
     }
   </scr` + `ipt>
 `
