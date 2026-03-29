@@ -219,7 +219,7 @@ Dormitorios: ${p.dormitorios} | Banos: ${p['baños']} | Metros: ${p.metros}m2
 Descripcion: ${p['descripción']}
 ${p.imagen_url ? `Imagen principal: ${p.imagen_url}` : 'Sin imagen principal'}
 ${galeria.length > 0 ? `Galeria adicional (${galeria.length} fotos): ${galeria.join(' | ')}` : 'Sin galeria adicional'}
-Ficha completa con fotos: https://alluring-flow-production-16db.up.railway.app/propiedad/${p.id}
+Ficha completa con fotos: https://robot-inmobiliario-production.up.railway.app/propiedad/${p.id}
 `
     })
   } else {
@@ -310,7 +310,7 @@ app.get('/propiedad/:id', async (req, res) => {
       const titulo = `${prop.tipo} en ${prop.operacion} — ${prop.direccion}, ${prop.comuna}`
       const descripcion = prop['descripción'] || prop.descripcion || `${prop.dormitorios || ''} dorm. ${prop.metros || ''} m²`
       const imagen = prop.imagen_url || ''
-      const url = `https://alluring-flow-production-16db.up.railway.app/propiedad/${id}`
+      const url = `https://robot-inmobiliario-production.up.railway.app/propiedad/${id}`
 
       // Inyectar OG tags antes de </head>
       const ogTags = `
@@ -469,7 +469,7 @@ app.post('/api/publicar-propiedad', async (req, res) => {
       ? `${Number(precio).toLocaleString('es-CL')} UF`
       : `$${Number(precio).toLocaleString('es-CL')}`
 
-    const fichaUrl = `https://alluring-flow-production-16db.up.railway.app/propiedad/${id}`
+    const fichaUrl = `https://robot-inmobiliario-production.up.railway.app/propiedad/${id}`
 
     const texto = `${tipo} en ${operacion} — ${direccion}, ${comuna}\nPrecio: ${precioFormateado}\n\n${descripcion || ''}\n\nEscríbenos por mensaje directo para más información.`
 
@@ -685,7 +685,7 @@ async function enviarInformeSemanal() {
 
       <!-- Footer -->
       <div style="padding:20px 32px;text-align:center">
-        <a href="https://alluring-flow-production-16db.up.railway.app/crm.html"
+        <a href="https://robot-inmobiliario-production.up.railway.app/crm.html"
            style="display:inline-block;background:#1A3A5C;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-size:13px">
           Ver CRM completo
         </a>
