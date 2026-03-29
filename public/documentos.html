@@ -349,10 +349,30 @@ const estiloDoc = `
     .firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}
     .firma-nombre{font-weight:bold;font-size:11pt}
     .firma-rut{font-size:10pt}
-    @media print{body{padding:0} .no-print{display:none}}
-    .btn-print{position:fixed;bottom:2rem;right:2rem;background:#1A3A5C;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+    [contenteditable]:focus{outline:2px dashed #C9A96E;outline-offset:2px;background:#fffdf5}
+    @media print{body{padding:0} .no-print{display:none} [contenteditable]{outline:none;background:transparent}}
+    .toolbar{position:fixed;bottom:2rem;right:2rem;display:flex;gap:8px;z-index:99}
+    .btn-print{background:#1A3A5C;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+    .btn-edit{background:#C9A96E;color:#1A3A5C;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);font-weight:600}
+    .edit-hint{position:fixed;top:1rem;left:50%;transform:translateX(-50%);background:#C9A96E;color:#1A3A5C;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;display:none}
+    .edit-hint.visible{display:block}
   </style>
-  <button class="btn-print no-print" onclick="window.print()">Imprimir / Guardar PDF</button>
+  <div class="edit-hint" id="hint">Modo edicion activo — haz clic en cualquier texto para editarlo</div>
+  <div class="toolbar no-print">
+    <button class="btn-edit" onclick="toggleEdicion()">Editar texto</button>
+    <button class="btn-print" onclick="window.print()">Imprimir / PDF</button>
+  </div>
+  <script>
+    let editando = false
+    function toggleEdicion() {
+      editando = !editando
+      document.querySelectorAll('p,h1,h2,li,.firma-nombre,.firma-rut').forEach(el => {
+        el.contentEditable = editando ? 'true' : 'false'
+      })
+      document.querySelector('.btn-edit').textContent = editando ? 'Listo' : 'Editar texto'
+      document.getElementById('hint').classList.toggle('visible', editando)
+    }
+  </scr` + `ipt>
 `
 
 function generarAdministracion() {
