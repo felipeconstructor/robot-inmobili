@@ -372,10 +372,7 @@ tr:hover td{background:#fafcff}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://nhmuvrtbagtfglnyvcwc.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_3mmvHGaRcqUVPrpKqCaOXA_KQTXDDef'
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-
+let db
 let todasProps = []
 let editandoId = null
 let imagenUrlActual = null
@@ -933,7 +930,10 @@ async function confirmarImporte() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-cargarPropiedades()
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+  cargarPropiedades()
+})
 </script>
 </body>
 </html>

@@ -290,10 +290,7 @@ tr:hover td{background:#fafcff}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://nhmuvrtbagtfglnyvcwc.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_3mmvHGaRcqUVPrpKqCaOXA_KQTXDDef'
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-
+let db
 let todosLeads = []
 let vistaActual = 'lista'
 
@@ -524,8 +521,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarNotas(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-cargarLeads()
-setInterval(cargarLeads, 30000)
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+  cargarLeads()
+  setInterval(cargarLeads, 30000)
+})
 </script>
 </body>
 </html>

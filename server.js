@@ -62,6 +62,14 @@ app.get('/api/logout', (req, res) => {
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Endpoint config publica — los HTMLs piden las credenciales Supabase al servidor
+app.get('/api/config', (req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_KEY
+  })
+})
+
 app.use(express.static(path.join(__dirname, 'public')))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)

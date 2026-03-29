@@ -126,10 +126,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="footer">Ficha generada por <span>Broker Inmobiliaria</span></div>
 
 <script>
-const SUPABASE_URL = 'https://nhmuvrtbagtfglnyvcwc.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_3mmvHGaRcqUVPrpKqCaOXA_KQTXDDef'
-const WHATSAPP_NUMBER = '14155238886' // Twilio sandbox Nova — cambiar por numero real cuando este activo
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+const WHATSAPP_NUMBER = '14155238886'
+let db
 
 // Obtener ID desde la URL: /propiedad/3
 const propiedadId = window.location.pathname.split('/').filter(Boolean).pop()
@@ -231,7 +229,10 @@ async function cargar() {
   document.getElementById('contenido').style.display = 'block'
 }
 
-cargar()
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+  cargar()
+})
 </script>
 </body>
 </html>
