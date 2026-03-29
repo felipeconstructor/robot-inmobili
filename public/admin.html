@@ -116,7 +116,7 @@ tr:hover td{background:#fafcff}
 <body>
 
 <div class="header">
-  <h1>Nova Admin — Propiedades</h1>
+  <h1 id="page-title">Nova Admin — Propiedades</h1>
   <nav class="nav">
     <a href="/admin.html" class="activo">Propiedades</a>
     <a href="/crm.html">CRM</a>
@@ -817,6 +817,10 @@ async function confirmarImportar() {
 fetch('/api/config')
   .then(r => r.json())
   .then(cfg => {
+    if (cfg.siteName) {
+      document.getElementById('page-title').textContent = cfg.siteName + ' — Propiedades'
+      document.title = cfg.siteName + ' — Admin'
+    }
     if (!cfg.supabaseUrl || !cfg.supabaseKey) {
       document.getElementById('tabla-props').innerHTML =
         '<tr><td colspan="9" class="empty">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'

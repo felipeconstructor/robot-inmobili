@@ -69,7 +69,8 @@ app.get('/api/logout', (req, res) => {
 app.get('/api/config', (req, res) => {
   res.json({
     supabaseUrl: process.env.SUPABASE_URL,
-    supabaseKey: process.env.SUPABASE_KEY
+    supabaseKey: process.env.SUPABASE_KEY,
+    siteName: process.env.SITE_NAME || 'Nova — Prolig Propiedades'
   })
 })
 

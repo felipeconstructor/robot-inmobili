@@ -155,7 +155,7 @@ tr:hover td{background:#fafcff}
 <body>
 
 <div class="header">
-  <h1>Nova CRM — Prolig Propiedades</h1>
+  <h1 id="page-title">Nova CRM — Prolig Propiedades</h1>
   <nav class="nav">
     <a href="/admin.html">Propiedades</a>
     <a href="/crm.html" class="activo">CRM</a>
@@ -531,6 +531,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarNotas(
 // ─────────────────────────────────────────────────────────────────────────────
 
 fetch('/api/config').then(r => r.json()).then(cfg => {
+  if (cfg.siteName) {
+    document.getElementById('page-title').textContent = cfg.siteName + ' — CRM'
+    document.title = cfg.siteName + ' — CRM'
+  }
   db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
   cargarLeads()
   setInterval(cargarLeads, 30000)
