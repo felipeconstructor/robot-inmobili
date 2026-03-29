@@ -231,7 +231,7 @@ Ficha completa con fotos: https://alluring-flow-production-16db.up.railway.app/p
     (CATALOGO_URL ? `\nCATALOGO: Cuando el cliente pida ver mas propiedades o el catalogo completo, menciona que puede verlo en: ${CATALOGO_URL}\n` : '') +
     listaPropiedades
 
-  historial[sesionId].push({ role: 'user', content: mensaje })
+  if (mensaje && mensaje.trim()) historial[sesionId].push({ role: 'user', content: mensaje.trim() })
   if (historial[sesionId].length > 20) historial[sesionId] = historial[sesionId].slice(-20)
 
   const respuesta = await fetch('https://api.anthropic.com/v1/messages', {
