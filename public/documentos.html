@@ -329,11 +329,16 @@ function formatPeso(n) {
   return '$' + parseInt(n).toLocaleString('es-CL')
 }
 
-function abrirDocumento(html) {
-  const win = window.open('', '_blank')
-  win.document.write(html)
-  win.document.close()
-  win.focus()
+function abrirDocumento(html, nombreArchivo) {
+  // Descargar como .doc (Word lo abre nativamente)
+  const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>body{font-family:Times New Roman,serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:2em}h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}p{margin-bottom:.75em;text-align:justify}ul{margin:.5em 0 .75em 1.5em}li{margin-bottom:.25em}.firmas{margin-top:4em}.firma-box{display:inline-block;width:45%;text-align:center;margin:0 2%}.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}.firma-nombre{font-weight:bold}.btn-print,.toolbar,.no-print,.edit-hint{display:none}</style></head><body>${html.replace(/[\s\S]*<body[^>]*>/,'').replace(/<\/body>[\s\S]*/,'')}</body></html>`
+  const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = (nombreArchivo || 'documento') + '.doc'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 const estiloDoc = `
@@ -438,7 +443,7 @@ function generarAdministracion() {
     </div>
   </div>
   </body></html>`
-  abrirDocumento(html)
+  abrirDocumento(html, 'contrato-administracion')
 }
 
 function generarArriendo() {
@@ -505,7 +510,7 @@ function generarArriendo() {
     </div>
   </div>
   </body></html>`
-  abrirDocumento(html)
+  abrirDocumento(html, 'contrato-arriendo')
 }
 
 function generarVisita() {
@@ -546,7 +551,7 @@ function generarVisita() {
     </div>
   </div>
   </body></html>`
-  abrirDocumento(html)
+  abrirDocumento(html, 'orden-visita')
 }
 
 // Convierte número a texto simplificado para los montos
