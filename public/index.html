@@ -45,6 +45,10 @@ textarea::placeholder{color:#bbb}
 .btn-send:disabled{background:#ddd;cursor:not-allowed}
 .btn-reset{font-size:11px;color:#bbb;background:transparent;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:'DM Sans',sans-serif;white-space:nowrap;align-self:center;transition:color .2s}
 .btn-reset:hover{color:#555;background:#f5f3ef}
+.btn-ficha{display:inline-block;background:#16213e;color:#c9a96e!important;padding:7px 14px;border-radius:8px;text-decoration:none!important;font-size:12px;font-weight:500;margin-top:6px;transition:background .2s}
+.btn-ficha:hover{background:#c9a96e;color:#16213e!important}
+.img-propiedad{max-width:100%;border-radius:10px;display:block;margin-top:4px;cursor:pointer}
+.img-propiedad:hover{opacity:.92}
 </style>
 </head>
 <body>
@@ -90,7 +94,18 @@ textarea::placeholder{color:#bbb}
 <script>
 const SID='sid_'+Date.now()+'_'+Math.random().toString(36).slice(2)
 let ocupado=false
-function agregar(txt,esUser){
+
+function formatearTexto(txt){
+  // Convierte links de ficha en botones y otros links en anchors
+  return txt
+    .replace(/\n/g,'<br>')
+    .replace(/(https?:\/\/[^\s<"]+\/propiedad\/\d+)/g,
+      '<br><a href="$1" target="_blank" class="btn-ficha">📷 Ver ficha y fotos</a>')
+    .replace(/(https?:\/\/wa\.me\/[^\s<"]+)/g,
+      '<a href="$1" target="_blank" style="color:#c9a96e">WhatsApp</a>')
+}
+
+function agregar(txt,esUser,imgUrl){
   const c=document.getElementById('msgs')
   const row=document.createElement('div')
   row.className='row'+(esUser?' user':'')
@@ -99,9 +114,22 @@ function agregar(txt,esUser){
   av.textContent=esUser?'Tú':'N'
   const b=document.createElement('div')
   b.className='burbuja '+(esUser?'user':'nova')
-  b.innerHTML=txt.replace(/\n/g,'<br>')
+  b.innerHTML=esUser?txt.replace(/\n/g,'<br>'):formatearTexto(txt)
   row.appendChild(av);row.appendChild(b)
-  c.appendChild(row);c.scrollTop=c.scrollHeight
+  c.appendChild(row)
+  // Mostrar imagen si la hay
+  if(imgUrl){
+    const rowImg=document.createElement('div')
+    rowImg.className='row'
+    const avImg=document.createElement('div')
+    avImg.className='av nova';avImg.textContent='N'
+    const bImg=document.createElement('div')
+    bImg.className='burbuja nova';bImg.style.padding='6px'
+    bImg.innerHTML=`<img src="${imgUrl}" class="img-propiedad" alt="Foto propiedad" onclick="window.open('${imgUrl}','_blank')" onerror="this.style.display='none'">`
+    rowImg.appendChild(avImg);rowImg.appendChild(bImg)
+    c.appendChild(rowImg)
+  }
+  c.scrollTop=c.scrollHeight
 }
 function mostrarTyping(){
   const c=document.getElementById('msgs')
@@ -132,7 +160,8 @@ async function enviar(){
     })
     const d=await r.json()
     quitarTyping()
-    agregar(d.error?'Hubo un problema, intenta de nuevo.':d.respuesta,false)
+    if(d.error) agregar('Hubo un problema, intenta de nuevo.',false)
+    else agregar(d.respuesta,false,d.imagenUrl)
   }catch(e){
     quitarTyping()
     agregar('Error de conexión. Verifica que el servidor esté corriendo.',false)

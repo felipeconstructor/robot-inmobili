@@ -87,6 +87,9 @@ const calendar = google.calendar({ version: 'v3', auth })
 // Link al catalogo de WhatsApp (publico, no es dato sensible)
 const CATALOGO_URL = process.env.WHATSAPP_CATALOGO_URL || 'https://wa.me/c/56920553288'
 
+// URL base del sitio — cambiar en Railway por cliente (env var APP_URL)
+const APP_URL = process.env.APP_URL || 'https://robot-inmobiliario-production.up.railway.app'
+
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de Prolig Propiedades, corredora de propiedades en La Ligua, V Region de Chile, con propiedades tambien en Santiago y otras regiones.
 Respondes siempre en espanol, con tono amable, profesional y cercano.
@@ -105,7 +108,7 @@ IMAGENES Y FICHA DE PROPIEDADES:
 Cuando respondas sobre una propiedad especifica y esta tenga imagen disponible, incluye al final de tu respuesta en una linea separada (sin texto adicional en esa linea):
 IMAGEN_URL|{url_exacta_de_la_imagen}
 Solo una imagen por respuesta. Solo si la propiedad tiene imagen. No inventes URLs.
-Ademas, cuando el cliente pida ver mas fotos o mas informacion de una propiedad, comparte el link de la ficha completa que aparece en los datos de la propiedad. Ejemplo: "Puedes ver todas las fotos y detalles aqui: https://robot-inmobiliario-production.up.railway.app/propiedad/3"
+Ademas, cuando el cliente pida ver mas fotos o mas informacion de una propiedad, comparte el link de la ficha completa que aparece en los datos de la propiedad. Ejemplo: "Puedes ver todas las fotos y detalles aqui: ${APP_URL}/propiedad/3"
 
 AGENDA DE VISITAS:
 Cuando un cliente quiera ver una propiedad debes:
@@ -219,7 +222,7 @@ Dormitorios: ${p.dormitorios} | Banos: ${p['baños']} | Metros: ${p.metros}m2
 Descripcion: ${p['descripción']}
 ${p.imagen_url ? `Imagen principal: ${p.imagen_url}` : 'Sin imagen principal'}
 ${galeria.length > 0 ? `Galeria adicional (${galeria.length} fotos): ${galeria.join(' | ')}` : 'Sin galeria adicional'}
-Ficha completa con fotos: https://robot-inmobiliario-production.up.railway.app/propiedad/${p.id}
+Ficha completa con fotos: ${APP_URL}/propiedad/${p.id}
 `
     })
   } else {
@@ -421,7 +424,7 @@ app.post('/api/chat', async (req, res) => {
   try {
     const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
     const resultado = await procesarRespuesta(respuestaNova, sesionId, 'web')
-    res.json({ respuesta: resultado.respuesta })
+    res.json({ respuesta: resultado.respuesta, imagenUrl: resultado.imagenUrl || null })
   } catch (err) {
     console.error('Error chat:', err)
     res.status(500).json({ error: 'Error del servidor' })
@@ -469,7 +472,7 @@ app.post('/api/publicar-propiedad', async (req, res) => {
       ? `${Number(precio).toLocaleString('es-CL')} UF`
       : `$${Number(precio).toLocaleString('es-CL')}`
 
-    const fichaUrl = `https://robot-inmobiliario-production.up.railway.app/propiedad/${id}`
+    const fichaUrl = `${APP_URL}/propiedad/${id}`
 
     const texto = `${tipo} en ${operacion} — ${direccion}, ${comuna}\nPrecio: ${precioFormateado}\n\n${descripcion || ''}\n\nEscríbenos por mensaje directo para más información.`
 

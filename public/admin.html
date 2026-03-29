@@ -369,9 +369,11 @@ function renderTabla(props) {
       <td>${dispBadge}</td>
       <td>
         <div class="acciones">
-          <button class="btn btn-sm" onclick="toggleDisponible('${p.id}',${p.disponible})">${p.disponible?'Ocultar':'Publicar'}</button>
+          <button class="btn btn-sm" onclick="toggleDisponible('${p.id}',${p.disponible})">${p.disponible?'Ocultar':'Mostrar'}</button>
           <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
           <a class="btn btn-sm" href="/propiedad/${p.id}" target="_blank">Ficha</a>
+          <button class="btn btn-sm" onclick="copiarLinkFicha('${p.id}')" title="Copiar link de la ficha">Link</button>
+          <button class="btn btn-sm" style="color:#1877F2;border-color:#1877F2" onclick="publicarEnRedes('${p.id}')" title="Publicar en Facebook e Instagram">Redes</button>
           <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
         </div>
       </td>
@@ -410,6 +412,45 @@ async function cargarPropiedades() {
   document.getElementById('s-arriendo').textContent = disp.filter(p => p.operacion === 'arriendo').length
   document.getElementById('ultimo-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
   filtrar()
+}
+
+// ─── Copiar link ficha ────────────────────────────────────────────────────────
+
+function copiarLinkFicha(id) {
+  const url = window.location.origin + '/propiedad/' + id
+  navigator.clipboard.writeText(url)
+    .then(() => toast('Link copiado: ' + url))
+    .catch(() => toast('Error al copiar link', true))
+}
+
+// ─── Publicar en redes ────────────────────────────────────────────────────────
+
+async function publicarEnRedes(id) {
+  const p = todasProps.find(x => String(x.id) === String(id))
+  if (!p) { toast('Propiedad no encontrada', true); return }
+  toast('Publicando en Facebook e Instagram...')
+  try {
+    const r = await fetch('/api/publicar-propiedad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: p.id,
+        tipo: p.tipo,
+        operacion: p.operacion,
+        direccion: p.direccion,
+        comuna: p.comuna,
+        precio: p.precio,
+        moneda: p.moneda,
+        descripcion: p['descripción'] || p.descripcion || '',
+        imagen_url: p.imagen_url || ''
+      })
+    })
+    const d = await r.json()
+    if (d.ok) toast('Publicado en redes correctamente')
+    else toast('Error al publicar: ' + (d.error || 'revisa Make.com'), true)
+  } catch (e) {
+    toast('Error de conexion al publicar', true)
+  }
 }
 
 // ─── Toggle disponible ────────────────────────────────────────────────────────
