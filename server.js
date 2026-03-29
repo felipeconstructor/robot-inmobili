@@ -67,10 +67,17 @@ app.get('/api/logout', (req, res) => {
 
 // Endpoint config publica — los HTMLs piden las credenciales Supabase al servidor
 app.get('/api/config', (req, res) => {
+  let siteName = process.env.SITE_NAME
+  if (!siteName) {
+    const host = req.headers.host || ''
+    if (host.includes('broker')) siteName = 'Broker Inmobiliario'
+    else if (host.includes('ligua')) siteName = 'Corredora La Ligua'
+    else siteName = 'Nova — Prolig Propiedades'
+  }
   res.json({
     supabaseUrl: process.env.SUPABASE_URL,
     supabaseKey: process.env.SUPABASE_KEY,
-    siteName: process.env.SITE_NAME || 'Nova — Prolig Propiedades'
+    siteName
   })
 })
 
