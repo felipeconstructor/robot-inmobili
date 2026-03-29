@@ -14,6 +14,9 @@ body{font-family:'DM Sans',sans-serif;background:#f0ede8;min-height:100vh;displa
 .header-info h1{font-family:'DM Serif Display',serif;font-size:17px;color:#fff;font-weight:400}
 .header-info p{font-size:11px;color:#c9a96e;margin-top:1px}
 .online{width:8px;height:8px;background:#4ade80;border-radius:50%;margin-left:auto;box-shadow:0 0 8px rgba(74,222,128,0.5);flex-shrink:0}
+.panel-nav{background:#0f1a2e;padding:.4rem 1rem;display:flex;gap:6px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
+.panel-nav a{color:rgba(201,169,110,.7);font-size:11px;text-decoration:none;padding:3px 10px;border:1px solid rgba(201,169,110,.2);border-radius:20px;transition:all .2s;white-space:nowrap}
+.panel-nav a:hover{background:#c9a96e;color:#16213e;border-color:#c9a96e}
 .chips{padding:.6rem 1rem;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid #f0ede8;flex-shrink:0;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{white-space:nowrap;padding:5px 12px;border-radius:20px;border:1px solid #e2ddd6;background:#faf8f5;font-size:12px;color:#555;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;flex-shrink:0}
@@ -53,6 +56,11 @@ textarea::placeholder{color:#bbb}
       <p>Asistente Inmobiliaria con IA</p>
     </div>
     <div class="online"></div>
+  </div>
+  <div class="panel-nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/documentos.html">Documentos</a>
   </div>
   <div class="chips">
     <div class="chip" onclick="sugerir('¿Qué documentos necesito para vender mi propiedad?')">Vender propiedad</div>
