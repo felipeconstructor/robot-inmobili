@@ -557,7 +557,7 @@ app.post('/api/limpiar', (req, res) => {
 })
 
 // ─── Email ──────────────────────────────────────────────────────────────────
-const GMAIL_USER = 'felipec.constructor@gmail.com'
+const GMAIL_USER = process.env.EMAIL_ADMIN || 'felipec.constructor@gmail.com'
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS'
 
