@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nova — Documentos</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
@@ -409,59 +408,40 @@ function getLogoHeader() {
 }
 // ─────────────────────────────────────────────────────────
 
-async function abrirDocumento(html, nombreArchivo) {
-  // Encontrar el botón que disparó esto para mostrar estado de carga
-  const modal = document.querySelector('.modal[style*="flex"]')
-  const btn = modal ? modal.querySelector('.btn-generar') : null
-  const textoOriginal = btn ? btn.textContent : ''
-  if (btn) { btn.textContent = 'Generando PDF…'; btn.disabled = true }
-
-  // Extraer contenido del body
+function abrirDocumento(html, nombreArchivo) {
   const bodyContent = html
     .replace(/[\s\S]*<body[^>]*>/, '')
     .replace(/<\/body>[\s\S]*/, '')
 
-  // Crear contenedor limpio para renderizar
-  const wrapper = document.createElement('div')
-  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:18cm;background:#fff;font-family:"Times New Roman",serif;font-size:12pt;line-height:1.7;color:#000'
+  const wordHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'>
+<style>
+body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}
+h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}
+h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em;text-transform:uppercase}
+p{margin-bottom:.75em;text-align:justify}
+ul{margin:.5em 0 .75em 1.5em}
+li{margin-bottom:.25em}
+.firmas{margin-top:3em}
+.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}
+.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}
+.firma-nombre{font-weight:bold;font-size:11pt}
+.firma-rut{font-size:10pt}
+.doc-logo-header{padding-bottom:8px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}
+.doc-logo-img{height:40pt;width:auto}
+.toolbar,.edit-hint,.no-print,.btn-print,.btn-edit{display:none}
+</style>
+</head>
+<body>${bodyContent}</body>
+</html>`
 
-  // Inyectar estilos del documento
-  const styleEl = document.createElement('style')
-  styleEl.textContent = `
-    h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}
-    h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em;text-transform:uppercase}
-    p{margin-bottom:.75em;text-align:justify}
-    ul{margin:.5em 0 .75em 1.5em} li{margin-bottom:.25em}
-    .firmas{margin-top:3em;width:100%;display:block}
-    .firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%}
-    .firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}
-    .firma-nombre{font-weight:bold;font-size:11pt}
-    .firma-rut{font-size:10pt;color:#333}
-    .doc-logo-header{margin-bottom:1.5em;padding-bottom:8px;border-bottom:2px solid #1A3A5C}
-    .doc-logo-img{height:40px;width:auto}
-    .toolbar,.edit-hint,.no-print,.btn-print,.btn-edit{display:none!important}
-  `
-  wrapper.appendChild(styleEl)
-
-  // Contenido del documento
-  const content = document.createElement('div')
-  content.innerHTML = bodyContent
-  content.querySelectorAll('.toolbar,.edit-hint,.no-print,.btn-print,.btn-edit').forEach(el => el.remove())
-  wrapper.appendChild(content)
-  document.body.appendChild(wrapper)
-
-  try {
-    await html2pdf().set({
-      margin: [2, 2.5, 2, 2.5],
-      filename: (nombreArchivo || 'documento') + '.pdf',
-      image: { type: 'jpeg', quality: 0.97 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-    }).from(wrapper).save()
-  } finally {
-    document.body.removeChild(wrapper)
-    if (btn) { btn.textContent = textoOriginal; btn.disabled = false }
-  }
+  const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = (nombreArchivo || 'documento') + '.doc'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 const estiloDoc = `
