@@ -13,6 +13,7 @@ app.use(express.urlencoded({ extended: false }))
 
 // ─── Autenticacion paneles ────────────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'nova2026'
+console.log('ADMIN_PASSWORD cargado:', ADMIN_PASSWORD)
 const sesionesActivas = new Set()
 
 function parseCookies(req) {
