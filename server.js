@@ -84,9 +84,8 @@ app.get('/api/config', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
-console.log('DEBUG API KEY primeros 20:', process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.slice(0,20) : 'MISSING')
 
-const CALENDAR_ID = 'felipec.constructor@gmail.com'
+const CALENDAR_ID = process.env.CALENDAR_ID || 'felipec.constructor@gmail.com'
 const auth = new google.auth.GoogleAuth({
   keyFile: path.join(__dirname, 'google-credentials.json'),
   scopes: ['https://www.googleapis.com/auth/calendar']
@@ -98,6 +97,7 @@ const CATALOGO_URL = process.env.WHATSAPP_CATALOGO_URL || 'https://wa.me/c/56920
 
 // URL base del sitio — cambiar en Railway por cliente (env var APP_URL)
 const APP_URL = process.env.APP_URL || 'https://robot-inmobiliario-production.up.railway.app'
+if (!process.env.APP_URL) console.log('ADVERTENCIA: APP_URL no definida — usando URL de Nova por defecto')
 
 const EMPRESA = process.env.SITE_NAME || 'Prolig Propiedades'
 
@@ -349,9 +349,9 @@ app.get('/propiedad/:id', async (req, res) => {
 })
 
 // ─── Meta Webhook (Messenger + Instagram DM) ─────────────────────────────────
-const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || 'nova_prolig_2026'
-const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || 'EAF0uhX9idx8BRMubcdeTalZCvO6s3gMuc2IN2vzi5kDEt5KQS6Cc0cnZAXqtBWzWRv0ZCakom6xb0UdM4NiI2IP9Vxkeno5QGMcBAR9yV6SdSYslQ5dk5Jmv8ihkKrlzIxNhNK5ZCUAZCqgZCszN5jZAgdyw8Uh526c4cTbtivBbl2LLHFf3FseRBx2rbCNnYynthLsoQ57WvM6giGP7GLJ9zoiYRIQYZC76u5BvDGb3enAJhAqyYETp5WYZBZAnrA8uvlTQROpZBitFNpi7rEOpTc4rbtWPQZDZD'
-const META_IG_TOKEN = process.env.META_IG_TOKEN || 'IGAASNkhvzuupBZAGJlMHgzcTRIYnlRa25NV0FmOVJwWkRLbUtNSG5NVTZAZAQ2tWRWZAaQzZAfeGZAzZAmlFWGdpUjZABN2U2c2pSNEpqbEJwdXJOaEsxRWJwNlpzd1VmekRfOENweFBSaVBVM25Ib3lkQncwVjI0bHE5ZA0NtRUc0T0d2TQZDZD'
+const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || ''
+const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || ''
+const META_IG_TOKEN = process.env.META_IG_TOKEN || ''
 
 // Verificacion del webhook — Meta hace GET para confirmar la URL
 app.get('/webhook/meta', (req, res) => {
@@ -473,11 +473,13 @@ app.post('/webhook/whatsapp', async (req, res) => {
 })
 
 // ─── Webhook Make.com — nueva propiedad ──────────────────────────────────────
-const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || 'https://hook.us2.make.com/sa1uuc3w8sw6vl5agnj2t3bwe5b7sm52'
+const MAKE_WEBHOOK_URL = process.env.MAKE_WEBHOOK_URL || ''
 
 app.post('/api/publicar-propiedad', async (req, res) => {
   const { tipo, operacion, direccion, comuna, precio, moneda, descripcion, imagen_url, id } = req.body
   if (!id) return res.status(400).json({ error: 'Datos incompletos' })
+
+  if (!MAKE_WEBHOOK_URL) return res.status(200).json({ ok: false, mensaje: 'Make.com no configurado para este cliente' })
 
   try {
     const precioFormateado = moneda === 'UF'
