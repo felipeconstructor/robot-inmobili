@@ -1,0 +1,498 @@
+MASTER CONTEXT — Nova Inmobiliario
+Última actualización: 30 marzo 2026
+IMPORTANTE: Este archivo contiene credenciales. Está en .gitignore — nunca subir a GitHub.
+
+================================================================================
+VISIÓN ESTRATÉGICA
+================================================================================
+
+Nova Inmobiliario es la BASE MAESTRA — se perfecciona al 100% primero.
+De esa base se saca una copia para cada nuevo cliente (cualquier rubro).
+Nunca se empieza desde cero — siempre se clona y adapta la base.
+
+Meta: construir el mejor CRM de Chile y de la V Región con los más altos estándares.
+Felipe quiere posicionarse como experto senior en IA en Chile.
+Claude actúa como experto senior en IA y recomienda proactivamente lo más nuevo.
+
+Roadmap:
+  Fase 1 (ahora):   Vender Nova inmobiliaria a corredoras locales
+  Fase 2 (mes 3):   Nova para servicios — clínicas, talleres, spa
+  Fase 3 (mes 5):   Nova e-commerce con tienda web + MercadoPago
+  Meta final:       Plataforma SaaS multi-industria, libertad geográfica
+
+================================================================================
+PERFIL — FELIPE CAMPOS
+================================================================================
+
+Email:    felipec.constructor@gmail.com
+Tel:      +56 9 2055 3288
+GitHub:   felipeconstructor
+Edad:     29 años (marzo 2026)
+
+No es dev de carrera — necesita instrucciones paso a paso para Mac.
+Meta inmediata: $20.000 USD/mes con tres fuentes:
+  1. Corredora Prolig (venta y arriendo de propiedades)
+  2. Vender Nova a empresas de cualquier rubro
+  3. Campañas de Ads para corredoras V Región (Meta Ads + Google Ads)
+
+Cómo trabaja con Claude:
+  - Instrucciones siempre para Mac, paso a paso
+  - Error: causa real directa, sin vueltas
+  - Una cosa a la vez
+  - Directo y eficiente, sin rodeos
+
+================================================================================
+STACK Y ARQUITECTURA
+================================================================================
+
+Node.js + Express | Claude API claude-haiku-4-5-20251001 | Supabase | Railway | Twilio | Resend | Make.com | GitHub
+
+Modelo de Claude: claude-haiku-4-5-20251001 (cambiado desde Opus — 25x más barato)
+  - Costo Haiku: ~$0.003 USD por mensaje
+  - Costo por cliente/mes: ~$10-19 USD (~$9.000-17.000 CLP)
+
+Arquitectura del código:
+  - Un solo archivo backend: server.js (sin carpetas src/ ni routes/)
+  - Todo el frontend en /public/
+  - Historial de conversación en RAM — máx 20 mensajes por sesión, se pierde al reiniciar
+  - Admin y CRM se conectan directo a Supabase desde el browser (clave pública)
+  - Credenciales Supabase se pasan via /api/config (no hardcodeadas en HTML)
+
+IDs de sesión por canal:
+  - Web:       sesionId generado en el frontend
+  - WhatsApp:  wa_ + número sin prefijo
+  - Instagram: instagram_ + senderId
+  - Messenger: messenger_ + senderId
+
+================================================================================
+MODELO MULTI-CLIENTE (definido 28 marzo 2026)
+================================================================================
+
+Mismo repo GitHub → nuevo proyecto Railway → nuevo proyecto Supabase por cliente
+  - Cada cliente tiene: URL propia, DB propia, Admin propio, CRM propio
+  - Datos 100% separados — nunca se mezclan
+  - Cambios al código se aplican a TODOS los clientes simultáneamente (mismo repo)
+  - Para cambios específicos por cliente: usar variables de entorno
+
+Lo que diferencia cada instancia (solo variables Railway):
+  SUPABASE_URL, SUPABASE_KEY → base de datos del cliente
+  ADMIN_PASSWORD             → contraseña del panel
+  NOTIFY_PHONE               → número de WhatsApp del dueño
+  ANTHROPIC_API_KEY          → (puede compartirse o ser individual)
+
+================================================================================
+CLIENTES ACTIVOS
+================================================================================
+
+--- NOVA / PROLIG PROPIEDADES (base maestra) ---
+Railway URL:     https://robot-inmobiliario-production.up.railway.app
+Admin:           https://robot-inmobiliario-production.up.railway.app/admin.html
+CRM:             https://robot-inmobiliario-production.up.railway.app/crm.html
+Chat público:    https://robot-inmobiliario-production.up.railway.app
+Password panel:  nova2026
+Repo GitHub:     github.com/felipeconstructor/robot-inmobiliario
+Carpeta Mac:     ~/robot-inmobiliario
+
+Supabase:
+  Proyecto:  agente-prolig
+  URL:       https://macmgtldsljipknomjpp.supabase.co
+  Key:       sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq
+  Tablas:    propiedades, leads, fotos_propiedades (RLS desactivado en las 3)
+  Storage:   bucket "propiedades" — público — policies: allow_upload, allow_delete, allow_select
+
+Variables Railway (Nova):
+  ANTHROPIC_API_KEY=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
+  SUPABASE_URL=https://macmgtldsljipknomjpp.supabase.co
+  SUPABASE_KEY=sb_publishable_GaY1zI63bbGVdKUNEZb7iw_yCeYzwQq
+  TWILIO_ACCOUNT_SID=AC576ce1fa6e074bc53047a3e7319f6bca
+  TWILIO_AUTH_TOKEN=c10a0e0a26d00483a0d54cb783499c85
+  TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+  GOOGLE_CREDENTIALS=[JSON completo guardado en Railway]
+  RESEND_API_KEY=re_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS
+  ADMIN_PASSWORD=nova2026
+  NOTIFY_PHONE=whatsapp:+56920553288
+  MAKE_WEBHOOK_URL=https://hook.us2.make.com/6v5we...
+  META_VERIFY_TOKEN=nova_prolig_2026
+  META_PAGE_TOKEN=[Page Access Token — no vence — generarlo en Graph API Explorer]
+  PORT=8080
+
+--- BROKER INMOBILIARIO (primer cliente pagando) ---
+Railway URL:     https://robot-inmobiliario-production-d466.up.railway.app
+Admin:           https://robot-inmobiliario-production-d466.up.railway.app/admin.html
+CRM:             https://robot-inmobiliario-production-d466.up.railway.app/crm.html
+Password panel:  broker2026
+Repo GitHub:     github.com/felipeconstructor/robot-inmobiliario (mismo repo)
+Railway proyecto: efficient-manifestation
+
+NOTA: El proyecto anterior (broker-inmobiliario) fue eliminado el 30 marzo 2026.
+      También se eliminó el Supabase anterior (nova-broker con URL nhmuvrtbagtfglnyvcwc).
+      Se recreó todo desde cero para tener un clone limpio de Nova.
+
+Supabase:
+  Proyecto:  nova-broker (recreado 30 marzo 2026)
+  URL:       https://txfzztwxlhecxvibqmta.supabase.co
+  Key:       sb_publishable_xyoALZzmL80uTY7HgyJoqQ_jIlIAivR
+  Tablas:    propiedades, leads, fotos_propiedades (RLS desactivado en las 3)
+  Storage:   bucket "propiedades" — público — policies: allow_upload, allow_delete, allow_select
+
+Variables Railway (Broker) — completas desde 30 marzo 2026:
+  ANTHROPIC_API_KEY=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
+  SUPABASE_URL=https://txfzztwxlhecxvibqmta.supabase.co
+  SUPABASE_KEY=sb_publishable_xyoALZzmL80uTY7HgyJoqQ_jIlIAivR
+  ADMIN_PASSWORD=broker2026
+  TWILIO_ACCOUNT_SID=AC576ce1fa6e074bc53047a3e7319f6bca
+  TWILIO_AUTH_TOKEN=c10a0e0a26d00483a0d54cb783499c85
+  TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+  RESEND_API_KEY=re_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS
+  NOTIFY_PHONE=whatsapp:+56920553288
+  GOOGLE_CREDENTIALS=[mismo JSON de Nova — subido manualmente en Railway]
+  SITE_NAME=Broker Inmobiliario
+  PORT=8080
+
+Precio acordado: $150.000 CLP instalación + $49.000 CLP/mes
+
+================================================================================
+BASE DE DATOS SUPABASE (estructura idéntica en todos los clientes)
+================================================================================
+
+Tabla propiedades:
+  id, created_at, tipo, operacion, direccion, comuna,
+  precio, moneda, dormitorios, baños, metros, descripción, disponible, imagen_url
+
+Tabla leads:
+  id, nombre, telefono, propiedad_interes, mensaje_inicial,
+  estado (nuevo/caliente/tibio/frio/visita),
+  canal (whatsapp/web/instagram/messenger),
+  notas, created_at, updated_at
+
+Tabla fotos_propiedades:
+  id, propiedad_id, url, orden
+  (galería múltiple por propiedad)
+
+Storage bucket "propiedades":
+  - Público
+  - Policies: INSERT (anon), DELETE (anon), SELECT (anon)
+  - Definition: bucket_id = 'propiedades'
+
+================================================================================
+SERVICIOS ACTIVOS (Nova/Prolig)
+================================================================================
+
+Railway:
+  - Proyecto: robot-inmobiliario — puerto 8080 — plan Hobby $5 USD/mes
+  - Auto-deploy: push a main → redespliega automáticamente
+  - Dockerfile en repo: COPY . . → RUN npm ci → EXPOSE 8080
+
+Twilio:
+  - Account SID: AC576ce1fa6e074bc53047a3e7319f6bca
+  - Sandbox WhatsApp: +1 415 523 8886 (join specific-supper)
+  - Número real WhatsApp Business: PENDIENTE
+
+Google Calendar:
+  - Proyecto Cloud: nova-calendar
+  - Cuenta de servicio activa
+  - Calendario felipec.constructor@gmail.com compartido con cuenta de servicio
+
+Resend:
+  - From: onboarding@resend.dev
+  - Reporte semanal: lunes 8am hora Santiago → felipec.constructor@gmail.com
+
+Make.com:
+  - Escenario activo: recibe /api/publicar-propiedad → publica Facebook + Instagram
+
+Meta (Facebook/Instagram):
+  - App: nova bussines-IG (ID: 1281558580542186)
+  - Page ID: 983131144890917 (Prolig propiedades)
+  - Instagram ID: 17841421656550160 (prolig_propiedades)
+  - Webhook /webhook/meta — Instagram DM + Facebook Messenger
+  - Estado: modo desarrollo — pendiente modo Live
+
+================================================================================
+ENDPOINTS DEL SERVIDOR
+================================================================================
+
+Autenticación:
+  GET  /admin.html              → protegido, cookie HttpOnly 7 días
+  GET  /crm.html                → protegido
+  GET  /documentos.html         → protegido
+  POST /api/login               → valida contraseña → devuelve cookie
+  GET  /api/logout              → invalida sesión
+  GET  /api/config              → público — devuelve SUPABASE_URL y SUPABASE_KEY
+
+Chat:
+  POST /api/chat                → chat inmobiliario web
+  POST /webhook/whatsapp        → mensajes Twilio WhatsApp
+  GET  /webhook/meta            → verificación webhook Meta
+  POST /webhook/meta            → Instagram DM + Facebook Messenger
+
+Automatizaciones:
+  POST /api/notificar-lead-caliente → email + WhatsApp cuando lead es caliente
+  POST /api/publicar-propiedad      → Make.com → Facebook + Instagram
+
+Páginas:
+  GET  /                        → chat público (index.html)
+  GET  /propiedad/:id           → ficha con OG tags dinámicas
+  GET  /login.html              → acceso al panel
+
+Debug:
+  GET  /api/debug-env           → verifica tokens Meta configurados
+
+================================================================================
+FLUJO DEL CHATBOT
+================================================================================
+
+1. Mensaje entra por /api/chat, /webhook/whatsapp o /webhook/meta
+
+2. obtenerRespuestaNova(mensaje, sesionId)
+   - Carga propiedades disponibles de Supabase
+   - Carga galería de fotos por propiedad
+   - Arma prompt dinámico (SISTEMA_BASE + propiedades)
+   - Agrega mensaje al historial en memoria (máx 20)
+   - Llama Claude API claude-haiku-4-5-20251001 (max 500 tokens)
+
+3. procesarRespuesta(texto, sesionId, canal)
+   - Extrae IMAGEN_URL|url → separa imagen del texto
+   - Si AGENDAR_VISITA|nombre|tel|prop|fecha|hora:
+       → guardarLead() en Supabase (estado: visita)
+       → agendarVisita() en Google Calendar
+   - Si LEAD_DATOS|nombre|tel|propiedad:
+       → guardarLead() en Supabase (estado: nuevo)
+   - AGENDAR_VISITA tiene prioridad sobre LEAD_DATOS
+
+4. Respuesta enviada al canal correspondiente
+
+Señales estructuradas:
+  AGENDAR_VISITA|nombre|telefono|propiedad|fecha|hora
+  LEAD_DATOS|nombre|telefono|propiedad_consultada
+  IMAGEN_URL|https://url-de-imagen.jpg
+
+================================================================================
+LO QUE FUNCIONA HOY (30 marzo 2026)
+================================================================================
+
+Nova (Prolig):
+  - Chat IA 24/7 en web, WhatsApp sandbox, Instagram DM, Facebook Messenger
+  - Agenda visitas automática en Google Calendar
+  - Guarda leads en Supabase
+  - Panel CRM: lista, Kanban, filtros, cambio de estado, notas, stats
+  - Panel Admin: CRUD propiedades, foto principal, galería, importar Excel
+  - Ficha individual /propiedad/:id con galería y OG tags dinámicas
+  - Reporte semanal automático lunes 8am via Resend
+  - Publicación automática en Facebook + Instagram con Make.com
+  - Notificación lead caliente por email + WhatsApp
+  - Panel de documentos: contratos (arriendo, visita, compraventa, administración)
+
+Broker (recreado desde cero 30 marzo 2026):
+  - Clone limpio de Nova via mismo repo robot-inmobiliario
+  - Supabase propio (nova-broker recreado) con datos 100% separados
+  - Todas las variables Railway configuradas
+  - SITE_NAME=Broker Inmobiliario → paneles muestran nombre del cliente
+  - Admin panel, CRM, Storage operativos
+  - PENDIENTE: verificar nombre dinámico en paneles (SITE_NAME + redeploy)
+
+================================================================================
+PENDIENTE EN ORDEN DE PRIORIDAD
+================================================================================
+
+1. Verificar SITE_NAME en Broker — confirmar que paneles muestran "Broker Inmobiliario"
+   - Redeploy en Railway efficient-manifestation con SITE_NAME=Broker Inmobiliario
+   - Revisar login.html, admin.html y crm.html
+
+2. Investigar por qué Twilio sandbox no responde (Nova/Prolig)
+   - Posible causa: sesión sandbox expirada → enviar "join specific-supper" al +14155238886
+   - Verificar webhook URL en Twilio console
+
+3. Instagram DM + Facebook Messenger modo Live (Broker y Nova)
+   - PENDIENTE: aceptar invitación evaluador en nvs.car
+   - PENDIENTE: solicitar modo Live en Meta
+
+4. Número real WhatsApp Business
+   - Comprar chip nuevo → conectar Twilio → Meta (2-7 días aprobación)
+   - Costo: ~$1 USD/mes + $0.005/mensaje
+
+5. Meta Pixel instalado en el sitio (retargeting y campañas Ads)
+
+6. Reactivación automática de leads fríos
+
+7. Panel de propietarios (owners)
+   - RUT, banco, cuenta corriente, comisiones
+
+8. Panel de contratos en Supabase
+   - Tablas: contracts, commissions, owners
+
+================================================================================
+COSTOS POR CLIENTE/MES
+================================================================================
+
+  Anthropic (Haiku):   ~$0.003 USD/mensaje → ~$10-19 USD/mes con uso normal
+  Railway:             $5 USD/mes/proyecto
+  Supabase:            gratis primeros 2 proyectos, $25 USD del 3ro en adelante
+  Twilio WA real:      $1 USD/mes + $0.005/mensaje
+  Meta conversations:  primeras 1.000/mes gratis, ~$0.02 después
+
+  Precio al cliente:   $49.000 CLP/mes → margen ~75%
+  Instalación:         $150.000 CLP
+  Upgrades:
+    - Facebook/Instagram: +$40.000/mes
+    - Fotos:              +$20.000
+    - Redes automáticas:  +$20.000/mes
+
+================================================================================
+ERRORES CONOCIDOS Y SOLUCIONES
+================================================================================
+
+Error: admin panel muestra "Cargando propiedades..." infinito
+  Causa 1: URL muerta (alluring-flow-production-16db ya no existe)
+  Solución: usar robot-inmobiliario-production.up.railway.app
+
+  Causa 2: Railway Broker tenía código viejo (repo broker-inmobiliario separado)
+  Solución: conectar Railway Broker al repo robot-inmobiliario, branch main
+
+  Causa 3: Docker layer cache de Railway usa imagen vieja
+  Solución: modificar Dockerfile (COPY . . antes de npm ci) para forzar rebuild
+
+Error: bucket Storage "propiedades" no encontrado (al subir fotos)
+  Causa: bucket eliminado o no creado
+  Solución: Storage → New bucket → nombre: propiedades, público → agregar 3 policies:
+    - allow_upload:  INSERT, anon, bucket_id = 'propiedades'
+    - allow_delete:  DELETE, anon, bucket_id = 'propiedades'
+    - allow_select:  SELECT, anon, bucket_id = 'propiedades'
+
+Error: columna descripcion no encontrada en Broker
+  Causa: tabla creada con "descripcion" sin acento vs "descripción" del código
+  Solución SQL: ALTER TABLE propiedades RENAME COLUMN descripcion TO "descripción";
+
+Error: "Object with ID 'me' does not exist" en Messenger/Instagram
+  Causa: META_PAGE_TOKEN vencido o es User Token en vez de Page Token
+  Solución: developers.facebook.com → Graph API Explorer → Page Token permanente
+    Permisos: pages_messaging, pages_read_engagement, instagram_manage_messages
+
+Error: Railway no despliega (Railpack secrets)
+  Solución: Dockerfile en la raíz del repo — Railway usa Docker builder
+
+================================================================================
+NUEVO CLIENTE — CHECKLIST DE SETUP
+================================================================================
+
+1. Supabase:
+   - Crear proyecto nuevo
+   - Crear tablas: propiedades, leads, fotos_propiedades (copiar estructura)
+   - Desactivar RLS en las 3 tablas
+   - Crear bucket "propiedades" público con 3 policies
+   - Verificar columna "descripción" con acento en tabla propiedades
+
+2. Railway:
+   - Crear nuevo proyecto → conectar repo robot-inmobiliario → branch main
+   - IMPORTANTE: agregar variables desde el RAW EDITOR del SERVICIO (no Project Settings)
+   - Agregar variables de entorno:
+       SUPABASE_URL, SUPABASE_KEY (del proyecto nuevo)
+       ANTHROPIC_API_KEY=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
+       ADMIN_PASSWORD (contraseña para el cliente)
+       NOTIFY_PHONE (número WhatsApp del dueño)
+       TWILIO_ACCOUNT_SID=AC576ce1fa6e074bc53047a3e7319f6bca
+       TWILIO_AUTH_TOKEN=c10a0e0a26d00483a0d54cb783499c85
+       TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+       RESEND_API_KEY=re_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS
+       GOOGLE_CREDENTIALS=[JSON completo de google-credentials.json]
+       SITE_NAME=[nombre del cliente — ej: Broker Inmobiliario]
+       PORT=8080
+   - Hacer Deploy
+
+3. Entregar al cliente:
+   - URL admin: https://[proyecto].up.railway.app/admin.html
+   - URL chat:  https://[proyecto].up.railway.app
+   - Password: el definido en ADMIN_PASSWORD
+
+================================================================================
+REPORTE SEMANAL
+================================================================================
+
+Cron: lunes 8:00am hora Santiago
+Envía via Resend → felipec.constructor@gmail.com
+Incluye: total leads, leads por estado, tabla de leads, nota automática, link CRM
+
+Para replicar en cliente nuevo: cambiar to: (correo cliente) y link CRM en footer.
+
+================================================================================
+META / FACEBOOK
+================================================================================
+
+ADVERTENCIA META_PAGE_TOKEN:
+  - Debe ser PAGE ACCESS TOKEN (no user token)
+  - User token vence en 60 días — Page Token NO vence
+  - Generarlo en: developers.facebook.com → Graph API Explorer → seleccionar página
+  - Permisos requeridos: pages_messaging, pages_read_engagement, instagram_manage_messages
+  - Verificar: /api/debug-env → meta_primeros_10
+
+================================================================================
+GUÍA DE CUSTOMIZACIÓN POR CLIENTE (definida 30 marzo 2026)
+================================================================================
+
+ARQUITECTURA CLAVE:
+  Un solo repo GitHub → múltiples proyectos Railway → múltiples proyectos Supabase
+  Cambios de código aplican a TODOS los clientes al hacer push a main
+  Diferencias entre clientes → solo variables de entorno en Railway
+
+─── VARIABLES QUE DIFERENCIAN CADA CLIENTE ─────────────────────────────────────
+
+  SITE_NAME        → nombre que aparece en login, admin y CRM del cliente
+  SUPABASE_URL     → base de datos exclusiva del cliente
+  SUPABASE_KEY     → clave de acceso a esa base de datos
+  ADMIN_PASSWORD   → contraseña del panel del cliente
+  NOTIFY_PHONE     → WhatsApp del dueño donde llegan alertas de leads
+  META_VERIFY_TOKEN → token para webhook Meta del cliente (si tiene FB/Instagram)
+  META_PAGE_TOKEN  → token de página Meta del cliente
+
+─── CAMBIO A TODOS LOS CLIENTES A LA VEZ ───────────────────────────────────────
+
+  Editar código localmente → git push → Railway redesplíega todos los proyectos
+  conectados al repo automáticamente.
+
+  Ejemplo: mejorar diseño del CRM → aplica a Nova/Prolig y Broker simultáneamente.
+
+─── CAMBIO SOLO A UN CLIENTE ESPECÍFICO ─────────────────────────────────────────
+
+  Opción A — sin tocar código (siempre preferida):
+    Agregar/editar variable de entorno en Railway del cliente específico.
+    Ejemplo: cambiar nombre → cambiar SITE_NAME en ese proyecto Railway.
+    Ejemplo: cambiar prompt → agregar variable PROMPT_EXTRA y leerla en server.js.
+
+  Opción B — rama git por cliente (solo si las diferencias son muy grandes):
+    Crear rama → conectar ese Railway a esa rama.
+    RIESGO: las ramas se desincronizarán con main. Usar con cuidado.
+
+─── QUÉ CONTROLA SITE_NAME ─────────────────────────────────────────────────────
+
+  login.html  → título y footer (ej: "Broker Inmobiliario — Sistema Nova")
+  admin.html  → encabezado (ej: "Broker Inmobiliario — Propiedades")
+  crm.html    → encabezado (ej: "Broker Inmobiliario — CRM")
+
+  Si no se define SITE_NAME, el servidor detecta por el host:
+    host contiene "broker" → "Broker Inmobiliario"
+    host contiene "ligua"  → "Corredora La Ligua"
+    cualquier otro         → "Nova — Prolig Propiedades"
+
+─── AGREGAR VARIABLES EN RAILWAY (MÉTODO CORRECTO) ─────────────────────────────
+
+  Railway → proyecto → click en el cuadro del SERVICIO → pestaña Variables → Raw Editor
+  NO usar Project Settings → Variables (son shared variables que pueden conflictuar)
+
+─── FLUJO DE TRABAJO DÍA A DÍA ─────────────────────────────────────────────────
+
+  Mejora que aplica a todos:
+    1. Editar en ~/robot-inmobiliario/
+    2. git add . && git commit -m "descripción" && git push
+    3. Railway redesplíega Nova y Broker automáticamente — no se hace nada más
+
+  Personalizar algo de un cliente:
+    1. Railway → proyecto del cliente → Variables del servicio → editar variable
+    2. Redeploy si el cambio no se aplica solo
+
+  Cliente nuevo:
+    1. Supabase nuevo (copiar SQL de estructura)
+    2. Railway nuevo → repo robot-inmobiliario branch main
+    3. Variables via Raw Editor del servicio
+    4. SITE_NAME = nombre del cliente
+    5. Entregar URL + password
+
+================================================================================
