@@ -83,6 +83,8 @@ app.get('/api/config', (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public')))
 
+console.log('DEBUG SUPABASE_URL:', JSON.stringify(process.env.SUPABASE_URL))
+console.log('DEBUG SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'OK' : 'MISSING')
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
 const CALENDAR_ID = 'felipec.constructor@gmail.com'
