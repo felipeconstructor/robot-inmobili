@@ -10,6 +10,8 @@ fetch('/api/config').then(r=>r.json()).then(cfg=>{
     document.title=cfg.siteName+' — Asistente Inmobiliaria'
     const h=document.getElementById('chat-title')
     if(h)h.textContent=cfg.siteName
+    const m=document.getElementById('msg-bienvenida')
+    if(m)m.innerHTML='Hola, soy el asistente de <strong>'+cfg.siteName+'</strong> con IA. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?'
   }
 }).catch(()=>{})
 </script>
@@ -87,7 +89,7 @@ textarea::placeholder{color:#bbb}
   <div class="msgs" id="msgs">
     <div class="row">
       <div class="av nova">N</div>
-      <div class="burbuja nova">Hola, soy <strong>Nova</strong>, tu asistente inmobiliaria con IA. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?</div>
+      <div class="burbuja nova" id="msg-bienvenida">Hola, soy <strong>Nova</strong>, tu asistente inmobiliaria con IA. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?</div>
     </div>
   </div>
   <div class="footer">

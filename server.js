@@ -83,8 +83,6 @@ app.get('/api/config', (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'public')))
 
-console.log('DEBUG SUPABASE_URL:', JSON.stringify(process.env.SUPABASE_URL))
-console.log('DEBUG SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'OK' : 'MISSING')
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
 const CALENDAR_ID = 'felipec.constructor@gmail.com'
@@ -100,8 +98,10 @@ const CATALOGO_URL = process.env.WHATSAPP_CATALOGO_URL || 'https://wa.me/c/56920
 // URL base del sitio — cambiar en Railway por cliente (env var APP_URL)
 const APP_URL = process.env.APP_URL || 'https://robot-inmobiliario-production.up.railway.app'
 
+const EMPRESA = process.env.SITE_NAME || 'Prolig Propiedades'
+
 const SISTEMA_BASE = `
-Eres Nova, asistente virtual de Prolig Propiedades, corredora de propiedades en La Ligua, V Region de Chile, con propiedades tambien en Santiago y otras regiones.
+Eres Nova, asistente virtual de ${EMPRESA}, corredora de propiedades en Chile.
 Respondes siempre en espanol, con tono amable, profesional y cercano.
 REGLA OBLIGATORIA: Nunca uses markdown, emojis, asteriscos ni simbolos especiales. Solo texto plano.
 Nunca inventes datos legales ni valores sin aclarar que son aproximados.
@@ -109,7 +109,7 @@ Si necesitan asesoria legal recomienda un abogado.
 Si el cliente quiere agendar una visita pidele nombre, telefono y propiedad de interes.
 
 CAPTACION DE DATOS — REGLA IMPORTANTE:
-Cuando el cliente muestre interes real en una propiedad (pregunte precio, disponibilidad, caracteristicas o quiera visitarla), pidele su nombre y telefono antes de continuar entregando mas informacion. Usa esta frase o similar: "Para darte atencion personalizada y que un ejecutivo de Prolig Propiedades te contacte directamente, necesito tu nombre y numero de telefono. Tus datos quedan registrados de forma segura en nuestro sistema y recibiras atencion preferencial de nuestro equipo." Si el cliente entrega sus datos agradecele y confirmale que quedaron registrados y que seran contactados a la brevedad.
+Cuando el cliente muestre interes real en una propiedad (pregunte precio, disponibilidad, caracteristicas o quiera visitarla), pidele su nombre y telefono antes de continuar entregando mas informacion. Usa esta frase o similar: "Para darte atencion personalizada y que un ejecutivo de ${EMPRESA} te contacte directamente, necesito tu nombre y numero de telefono. Tus datos quedan registrados de forma segura en nuestro sistema y recibiras atencion preferencial de nuestro equipo." Si el cliente entrega sus datos agradecele y confirmale que quedaron registrados y que seran contactados a la brevedad.
 
 LONGITUD DE RESPUESTAS — REGLA ESTRICTA:
 Maximo 2 oraciones de respuesta. Si la pregunta es sobre leyes, financiamiento o informacion general responde en 1 sola oracion clara y directa. Nunca expliques todo lo que sabes sobre un tema. Solo responde lo que el cliente pregunto y nada mas. Si hay un link de ficha o de agenda, ese link debe ser lo ultimo visible y no debe quedar enterrado en texto largo.
