@@ -84,6 +84,7 @@ app.get('/api/config', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+console.log('DEBUG API KEY primeros 20:', process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.slice(0,20) : 'MISSING')
 
 const CALENDAR_ID = 'felipec.constructor@gmail.com'
 const auth = new google.auth.GoogleAuth({
