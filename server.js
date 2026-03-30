@@ -439,7 +439,7 @@ app.post('/api/chat', async (req, res) => {
     res.json({ respuesta: resultado.respuesta, imagenUrl: resultado.imagenUrl || null })
   } catch (err) {
     console.error('Error chat:', err)
-    res.status(500).json({ error: 'Error del servidor' })
+    res.status(500).json({ error: 'Error del servidor', detalle: err.message })
   }
 })
 
