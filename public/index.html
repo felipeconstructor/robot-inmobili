@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nova — Asistente Inmobiliaria</title>
+<script>
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  if(cfg.siteName){
+    document.title=cfg.siteName+' — Asistente Inmobiliaria'
+    const h=document.getElementById('chat-title')
+    if(h)h.textContent=cfg.siteName
+  }
+}).catch(()=>{})
+</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -56,7 +65,7 @@ textarea::placeholder{color:#bbb}
   <div class="header">
     <div class="logo">N</div>
     <div class="header-info">
-      <h1>Nova</h1>
+      <h1 id="chat-title">Nova</h1>
       <p>Asistente Inmobiliaria con IA</p>
     </div>
     <div class="online"></div>
