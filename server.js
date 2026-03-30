@@ -325,7 +325,7 @@ app.get('/propiedad/:id', async (req, res) => {
       const titulo = `${prop.tipo} en ${prop.operacion} — ${prop.direccion}, ${prop.comuna}`
       const descripcion = prop['descripción'] || prop.descripcion || `${prop.dormitorios || ''} dorm. ${prop.metros || ''} m²`
       const imagen = prop.imagen_url || ''
-      const url = `https://robot-inmobiliario-production.up.railway.app/propiedad/${id}`
+      const url = `${APP_URL}/propiedad/${id}`
 
       // Inyectar OG tags antes de </head>
       const ogTags = `
@@ -548,7 +548,7 @@ app.post('/api/notificar-lead-caliente', async (req, res) => {
           </table>
           ${waLink ? `<a href="${waLink}" style="display:inline-block;margin-top:20px;background:#25D366;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Contactar por WhatsApp</a>` : ''}
         </div>
-        <div style="padding:12px 28px;background:#f7f8fa;font-size:11px;color:#aaa">Nova Prolig Propiedades — notificacion automatica</div>
+        <div style="padding:12px 28px;background:#f7f8fa;font-size:11px;color:#aaa">${EMPRESA} — notificacion automatica</div>
       </div>`
 
     await enviarEmail(`🔥 Lead caliente: ${nombre}`, html)
@@ -702,7 +702,7 @@ async function enviarInformeSemanal() {
 
       <!-- Footer -->
       <div style="padding:20px 32px;text-align:center">
-        <a href="https://robot-inmobiliario-production.up.railway.app/crm.html"
+        <a href="${APP_URL}/crm.html"
            style="display:inline-block;background:#1A3A5C;color:#fff;text-decoration:none;padding:10px 24px;border-radius:8px;font-size:13px">
           Ver CRM completo
         </a>
