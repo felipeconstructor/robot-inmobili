@@ -725,10 +725,14 @@ async function enviarInformeSemanal() {
 
 // Ruta debug para verificar variables de entorno
 app.get('/api/debug-env', (req, res) => {
+  const apiKey = (process.env.ANTHROPIC_API_KEY || '').trim()
   res.json({
     meta_configurado: META_PAGE_TOKEN.length > 20,
     meta_primeros_10: META_PAGE_TOKEN.substring(0, 10),
-    meta_largo: META_PAGE_TOKEN.length
+    meta_largo: META_PAGE_TOKEN.length,
+    api_key_largo: apiKey.length,
+    api_key_inicio: apiKey.substring(0, 20),
+    api_key_fin: apiKey.substring(apiKey.length - 10)
   })
 })
 
