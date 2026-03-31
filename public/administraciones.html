@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administraciones</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.header h1{color:#fff;font-size:18px;font-weight:500}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
+.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
+.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
+.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
+.container{max-width:1300px;margin:0 auto;padding:1.5rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
+.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
+.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
+.panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
+.panel-header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+select:focus,input:focus{border-color:#1A3A5C}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+td{padding:11px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8;white-space:nowrap}
+tr:hover td{background:#fafcff}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
+.badge-pagado{background:#EAF3DE;color:#0F6E56}
+.badge-pagado:hover{background:#d4ecc4}
+.badge-pendiente{background:#FAEEDA;color:#633806}
+.badge-pendiente:hover{background:#f5dfc0}
+.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333;transition:all .15s}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
+.btn-primary:hover{background:#0f2540}
+.btn-danger{background:#fff;color:#c0392b;border-color:#e0c0be}
+.btn-danger:hover{background:#fdecea}
+.btn-sm{padding:3px 10px;font-size:11px;border-radius:6px}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.monto{font-weight:600;color:#1A3A5C}
+.monto-comision{font-weight:600;color:#C9A96E}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.overlay.activo{display:flex}
+.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
+.modal h3{font-size:16px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-full{grid-column:1/-1}
+.form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px;font-weight:500}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
+.form-group textarea{resize:vertical;min-height:70px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0}
+.section-label{grid-column:1/-1;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px;padding-top:4px;border-top:1px solid #f0f0f0;margin-top:4px}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
+.toast.activo{opacity:1}
+
+@media(max-width:768px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:1fr}
+  .header{padding:.875rem 1rem}
+  .container{padding:1rem .75rem}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="page-title">Administraciones</h1>
+  <nav class="nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/administraciones.html" class="activo">Administraciones</a>
+    <a href="/documentos.html">Documentos</a>
+    <a href="/">Chat</a>
+    <a href="/api/logout" class="nav-salir">Salir</a>
+  </nav>
+</div>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-lbl">Propiedades en administración</div>
+      <div class="stat-val" id="s-total">0</div>
+      <div class="stat-sub">activas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Arriendo total mensual</div>
+      <div class="stat-val" id="s-arriendo" style="color:#1A3A5C">$0</div>
+      <div class="stat-sub">suma de arriendos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Comisiones pendientes</div>
+      <div class="stat-val" id="s-pendiente" style="color:#C05C00">$0</div>
+      <div class="stat-sub">por cobrar</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Comisiones pagadas</div>
+      <div class="stat-val" id="s-pagado" style="color:#0F6E56">$0</div>
+      <div class="stat-sub">cobradas</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Propiedades administradas</h2>
+      <div class="panel-header-right">
+        <select id="f-estado" onchange="filtrar()">
+          <option value="">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="pagado">Pagado</option>
+        </select>
+        <input type="text" id="f-buscar" placeholder="Buscar propietario o dirección..." oninput="filtrar()" style="width:220px">
+        <button class="btn btn-primary" onclick="abrirModal()">+ Nueva administración</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Propietario</th>
+            <th>Dirección</th>
+            <th>Arrendatario</th>
+            <th>Mes</th>
+            <th>Arriendo</th>
+            <th>% Comisión</th>
+            <th>Monto comisión</th>
+            <th>Estado</th>
+            <th>Cuenta pago</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          <tr><td colspan="10" class="empty">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal agregar/editar -->
+<div class="overlay" id="overlay" onclick="cerrarSiAfuera(event)">
+  <div class="modal">
+    <h3 id="modal-titulo">Nueva administración</h3>
+    <div class="form-grid">
+
+      <div class="section-label">Propietario</div>
+
+      <div class="form-group">
+        <label>Nombre propietario *</label>
+        <input type="text" id="f-propietario" placeholder="Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label>RUT propietario</label>
+        <input type="text" id="f-rut" placeholder="12.345.678-9">
+      </div>
+
+      <div class="section-label">Cuenta de pago del propietario</div>
+
+      <div class="form-group">
+        <label>Banco</label>
+        <select id="f-banco">
+          <option value="">Seleccionar banco</option>
+          <option>Banco de Chile</option>
+          <option>BancoEstado</option>
+          <option>Santander</option>
+          <option>BCI</option>
+          <option>Scotiabank</option>
+          <option>Itaú</option>
+          <option>BICE</option>
+          <option>Security</option>
+          <option>Falabella</option>
+          <option>Ripley</option>
+          <option>Mercado Pago</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo de cuenta</label>
+        <select id="f-tipo-cuenta">
+          <option value="">Seleccionar</option>
+          <option>Cuenta Corriente</option>
+          <option>Cuenta Vista</option>
+          <option>Cuenta RUT</option>
+          <option>Cuenta de Ahorro</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label>N° de cuenta</label>
+        <input type="text" id="f-numero-cuenta" placeholder="000-00000-00">
+      </div>
+
+      <div class="section-label">Propiedad</div>
+
+      <div class="form-group form-full">
+        <label>Dirección *</label>
+        <input type="text" id="f-direccion" placeholder="Av. Principal 123, La Ligua">
+      </div>
+      <div class="form-group">
+        <label>Arrendatario</label>
+        <input type="text" id="f-arrendatario" placeholder="María González">
+      </div>
+      <div class="form-group">
+        <label>Mes</label>
+        <input type="text" id="f-mes" placeholder="Abril 2026">
+      </div>
+
+      <div class="section-label">Arriendo y comisión</div>
+
+      <div class="form-group">
+        <label>Valor arriendo (CLP) *</label>
+        <input type="number" id="f-valor" placeholder="350000" oninput="calcularComision()">
+      </div>
+      <div class="form-group">
+        <label>% Comisión</label>
+        <input type="number" id="f-porcentaje" value="10" min="0" max="100" oninput="calcularComision()">
+      </div>
+      <div class="form-group form-full">
+        <label>Monto comisión (calculado)</label>
+        <input type="text" id="f-comision-preview" readonly style="background:#f5f3ef;color:#C9A96E;font-weight:600">
+      </div>
+
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="f-estado-form">
+          <option value="pendiente">Pendiente</option>
+          <option value="pagado">Pagado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notas</label>
+        <input type="text" id="f-notas" placeholder="Observaciones...">
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let supabase, datos = [], editId = null
+
+async function init() {
+  const cfg = await fetch('/api/config').then(r => r.json())
+  supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+  if (cfg.siteName) {
+    document.getElementById('page-title').textContent = cfg.siteName + ' — Administraciones'
+    document.title = cfg.siteName + ' — Administraciones'
+  }
+  cargar()
+}
+
+async function cargar() {
+  const { data, error } = await supabase
+    .from('administraciones')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) { mostrarToast('Error cargando datos'); return }
+  datos = data || []
+  calcularStats()
+  filtrar()
+}
+
+function calcularStats() {
+  const total = datos.length
+  const arriendo = datos.reduce((s, r) => s + Number(r.valor_arriendo || 0), 0)
+  const pendiente = datos.filter(r => r.estado === 'pendiente').reduce((s, r) => s + comision(r), 0)
+  const pagado = datos.filter(r => r.estado === 'pagado').reduce((s, r) => s + comision(r), 0)
+  document.getElementById('s-total').textContent = total
+  document.getElementById('s-arriendo').textContent = '$' + arriendo.toLocaleString('es-CL')
+  document.getElementById('s-pendiente').textContent = '$' + pendiente.toLocaleString('es-CL')
+  document.getElementById('s-pagado').textContent = '$' + pagado.toLocaleString('es-CL')
+}
+
+function comision(r) {
+  return Math.round(Number(r.valor_arriendo || 0) * Number(r.porcentaje_comision || 10) / 100)
+}
+
+function filtrar() {
+  const est = document.getElementById('f-estado').value
+  const bus = (document.getElementById('f-buscar').value || '').toLowerCase()
+  const filtrados = datos.filter(r => {
+    const okEst = !est || r.estado === est
+    const okBus = !bus || (r.propietario || '').toLowerCase().includes(bus) || (r.direccion || '').toLowerCase().includes(bus)
+    return okEst && okBus
+  })
+  renderTabla(filtrados)
+}
+
+function renderTabla(lista) {
+  const tbody = document.getElementById('tabla-body')
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Sin registros</td></tr>'
+    return
+  }
+  tbody.innerHTML = lista.map(r => {
+    const mont = comision(r)
+    const cuentaInfo = [r.banco, r.tipo_cuenta, r.numero_cuenta].filter(Boolean).join(' · ') || '—'
+    return `<tr>
+      <td><strong>${r.propietario || '—'}</strong>${r.rut_propietario ? '<br><span style="font-size:11px;color:#aaa">'+r.rut_propietario+'</span>' : ''}</td>
+      <td>${r.direccion || '—'}</td>
+      <td>${r.arrendatario || '—'}</td>
+      <td>${r.mes || '—'}</td>
+      <td class="monto">$${Number(r.valor_arriendo || 0).toLocaleString('es-CL')}</td>
+      <td>${r.porcentaje_comision || 10}%</td>
+      <td class="monto-comision">$${mont.toLocaleString('es-CL')}</td>
+      <td><span class="badge badge-${r.estado}" onclick="toggleEstado(${r.id},'${r.estado}')">${r.estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span></td>
+      <td style="font-size:11px;color:#888;max-width:160px;white-space:normal">${cuentaInfo}</td>
+      <td>
+        <button class="btn btn-sm" onclick="editarFila(${r.id})" style="margin-right:4px">Editar</button>
+        <button class="btn btn-sm btn-danger" onclick="eliminar(${r.id})">Eliminar</button>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+async function toggleEstado(id, estadoActual) {
+  const nuevo = estadoActual === 'pagado' ? 'pendiente' : 'pagado'
+  const { error } = await supabase.from('administraciones').update({ estado: nuevo }).eq('id', id)
+  if (error) { mostrarToast('Error al actualizar'); return }
+  mostrarToast(nuevo === 'pagado' ? 'Marcado como pagado' : 'Marcado como pendiente')
+  cargar()
+}
+
+function abrirModal(id) {
+  editId = null
+  document.getElementById('modal-titulo').textContent = 'Nueva administración'
+  document.getElementById('f-propietario').value = ''
+  document.getElementById('f-rut').value = ''
+  document.getElementById('f-banco').value = ''
+  document.getElementById('f-tipo-cuenta').value = ''
+  document.getElementById('f-numero-cuenta').value = ''
+  document.getElementById('f-direccion').value = ''
+  document.getElementById('f-arrendatario').value = ''
+  document.getElementById('f-mes').value = mesActual()
+  document.getElementById('f-valor').value = ''
+  document.getElementById('f-porcentaje').value = '10'
+  document.getElementById('f-comision-preview').value = ''
+  document.getElementById('f-estado-form').value = 'pendiente'
+  document.getElementById('f-notas').value = ''
+  document.getElementById('overlay').classList.add('activo')
+}
+
+function editarFila(id) {
+  const r = datos.find(x => x.id === id)
+  if (!r) return
+  editId = id
+  document.getElementById('modal-titulo').textContent = 'Editar administración'
+  document.getElementById('f-propietario').value = r.propietario || ''
+  document.getElementById('f-rut').value = r.rut_propietario || ''
+  document.getElementById('f-banco').value = r.banco || ''
+  document.getElementById('f-tipo-cuenta').value = r.tipo_cuenta || ''
+  document.getElementById('f-numero-cuenta').value = r.numero_cuenta || ''
+  document.getElementById('f-direccion').value = r.direccion || ''
+  document.getElementById('f-arrendatario').value = r.arrendatario || ''
+  document.getElementById('f-mes').value = r.mes || ''
+  document.getElementById('f-valor').value = r.valor_arriendo || ''
+  document.getElementById('f-porcentaje').value = r.porcentaje_comision || 10
+  document.getElementById('f-estado-form').value = r.estado || 'pendiente'
+  document.getElementById('f-notas').value = r.notas || ''
+  calcularComision()
+  document.getElementById('overlay').classList.add('activo')
+}
+
+function cerrarModal() {
+  document.getElementById('overlay').classList.remove('activo')
+  editId = null
+}
+
+function cerrarSiAfuera(e) {
+  if (e.target === document.getElementById('overlay')) cerrarModal()
+}
+
+function calcularComision() {
+  const val = Number(document.getElementById('f-valor').value || 0)
+  const pct = Number(document.getElementById('f-porcentaje').value || 10)
+  const mont = Math.round(val * pct / 100)
+  document.getElementById('f-comision-preview').value = mont ? '$' + mont.toLocaleString('es-CL') : ''
+}
+
+async function guardar() {
+  const propietario = document.getElementById('f-propietario').value.trim()
+  const direccion = document.getElementById('f-direccion').value.trim()
+  const valor_arriendo = Number(document.getElementById('f-valor').value)
+  if (!propietario || !direccion || !valor_arriendo) {
+    mostrarToast('Completa los campos obligatorios (*)'); return
+  }
+  const payload = {
+    propietario,
+    rut_propietario: document.getElementById('f-rut').value.trim() || null,
+    banco: document.getElementById('f-banco').value || null,
+    tipo_cuenta: document.getElementById('f-tipo-cuenta').value || null,
+    numero_cuenta: document.getElementById('f-numero-cuenta').value.trim() || null,
+    direccion,
+    arrendatario: document.getElementById('f-arrendatario').value.trim() || null,
+    mes: document.getElementById('f-mes').value.trim() || null,
+    valor_arriendo,
+    porcentaje_comision: Number(document.getElementById('f-porcentaje').value || 10),
+    estado: document.getElementById('f-estado-form').value,
+    notas: document.getElementById('f-notas').value.trim() || null
+  }
+  let error
+  if (editId) {
+    ({ error } = await supabase.from('administraciones').update(payload).eq('id', editId))
+  } else {
+    ({ error } = await supabase.from('administraciones').insert([payload]))
+  }
+  if (error) { mostrarToast('Error al guardar: ' + error.message); return }
+  mostrarToast(editId ? 'Actualizado correctamente' : 'Administración agregada')
+  cerrarModal()
+  cargar()
+}
+
+async function eliminar(id) {
+  if (!confirm('¿Eliminar este registro?')) return
+  const { error } = await supabase.from('administraciones').delete().eq('id', id)
+  if (error) { mostrarToast('Error al eliminar'); return }
+  mostrarToast('Eliminado')
+  cargar()
+}
+
+function mesActual() {
+  const d = new Date()
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+  return meses[d.getMonth()] + ' ' + d.getFullYear()
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('activo')
+  setTimeout(() => t.classList.remove('activo'), 2500)
+}
+
+init()
+</script>
+</body>
+</html>

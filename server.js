@@ -45,6 +45,10 @@ app.get('/documentos.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'documentos.html'))
 })
 
+app.get('/administraciones.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'administraciones.html'))
+})
+
 app.post('/api/login', (req, res) => {
   const { password } = req.body
   if (!password || password !== ADMIN_PASSWORD) {
