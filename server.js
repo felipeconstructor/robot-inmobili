@@ -253,7 +253,7 @@ Ficha completa con fotos: ${APP_URL}/propiedad/${p.id}
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': (process.env.ANTHROPIC_API_KEY || '').trim(),
+      'x-api-key': (process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '').trim(),
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
