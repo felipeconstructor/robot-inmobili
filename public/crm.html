@@ -459,13 +459,14 @@ function filtrar() {
 }
 
 async function cargarLeads() {
+  try {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
   const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
   const { data, error } = await db.from('leads')
     .select('*')
     .order('created_at', { ascending: false })
   if (error) {
-    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error: ' + error.message + '</td></tr>'
+    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error Supabase: ' + error.message + '</td></tr>'
     return
   }
   todosLeads = data || []
@@ -481,6 +482,9 @@ async function cargarLeads() {
 
   filtrar()
   renderPipeline(todosLeads)
+  } catch(e) {
+    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error JS: ' + e.message + '</td></tr>'
+  }
 }
 
 async function eliminarLead(id, nombre) {
@@ -534,19 +538,28 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarNotas(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-fetch('/api/config').then(r => r.json()).then(cfg => {
-  if (cfg.siteName) {
-    document.getElementById('page-title').textContent = cfg.siteName + ' — CRM'
-    document.title = cfg.siteName + ' — CRM'
-  }
-  if (!cfg.supabaseUrl || !cfg.supabaseKey) {
-    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
-    return
-  }
-  db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
-  cargarLeads()
-  setInterval(cargarLeads, 30000)
-})
+fetch('/api/config')
+  .then(r => r.json())
+  .then(cfg => {
+    try {
+      if (cfg.siteName) {
+        document.getElementById('page-title').textContent = cfg.siteName + ' — CRM'
+        document.title = cfg.siteName + ' — CRM'
+      }
+      if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+        document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error: SUPABASE_URL o SUPABASE_KEY no configuradas</td></tr>'
+        return
+      }
+      db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+      cargarLeads()
+      setInterval(cargarLeads, 30000)
+    } catch(e) {
+      document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error init: ' + e.message + '</td></tr>'
+    }
+  })
+  .catch(e => {
+    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error conectando servidor: ' + e.message + '</td></tr>'
+  })
 </script>
 </body>
 </html>
