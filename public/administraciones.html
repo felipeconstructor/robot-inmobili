@@ -398,6 +398,7 @@ function calcularComision() {
 }
 
 async function guardar() {
+  if (!supabase) { mostrarToast('Error de conexión — recarga la página'); return }
   const propietario = document.getElementById('f-propietario').value.trim()
   const direccion = document.getElementById('f-direccion').value.trim()
   const valor_arriendo = Number(document.getElementById('f-valor').value)
