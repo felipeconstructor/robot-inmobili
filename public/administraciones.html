@@ -261,6 +261,10 @@ let sb, datos = [], editId = null
 
 async function init() {
   const cfg = await fetch('/api/config').then(r => r.json())
+  if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="10" class="empty" style="color:#c0392b">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
+    return
+  }
   sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
   if (cfg.siteName) {
     document.getElementById('page-title').textContent = cfg.siteName + ' — Administraciones'
@@ -274,7 +278,10 @@ async function cargar() {
     .from('administraciones')
     .select('*')
     .order('created_at', { ascending: false })
-  if (error) { mostrarToast('Error cargando datos'); return }
+  if (error) {
+    document.getElementById('tabla-body').innerHTML = '<tr><td colspan="10" class="empty" style="color:#c0392b">Error: ' + error.message + '</td></tr>'
+    return
+  }
   datos = data || []
   calcularStats()
   filtrar()

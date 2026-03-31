@@ -464,7 +464,10 @@ async function cargarLeads() {
   const { data, error } = await db.from('leads')
     .select('*')
     .order('created_at', { ascending: false })
-  if (error) { console.error(error); return }
+  if (error) {
+    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error: ' + error.message + '</td></tr>'
+    return
+  }
   todosLeads = data || []
 
   const esMes = l => new Date(l.created_at) >= inicioMes
@@ -535,6 +538,10 @@ fetch('/api/config').then(r => r.json()).then(cfg => {
   if (cfg.siteName) {
     document.getElementById('page-title').textContent = cfg.siteName + ' — CRM'
     document.title = cfg.siteName + ' — CRM'
+  }
+  if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
+    return
   }
   db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
   cargarLeads()

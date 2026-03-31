@@ -399,7 +399,7 @@ async function cargarPropiedades() {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
   const { data, error } = await db.from('propiedades').select('*').order('id', { ascending: false })
   if (error) {
-    toast('Error cargando propiedades: ' + error.message, true)
+    document.getElementById('tabla-props').innerHTML = '<tr><td colspan="9" class="empty" style="color:#c0392b">Error: ' + error.message + '</td></tr>'
     document.getElementById('ultimo-update').textContent = 'Error al cargar'
     return
   }
@@ -822,7 +822,7 @@ fetch('/api/config')
     }
     if (!cfg.supabaseUrl || !cfg.supabaseKey) {
       document.getElementById('tabla-props').innerHTML =
-        '<tr><td colspan="9" class="empty">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
+        '<tr><td colspan="9" class="empty" style="color:#c0392b">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
       return
     }
     db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
