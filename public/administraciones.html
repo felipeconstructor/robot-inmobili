@@ -257,11 +257,11 @@ tr:hover td{background:#fafcff}
 <div class="toast" id="toast"></div>
 
 <script>
-let supabase, datos = [], editId = null
+let sb, datos = [], editId = null
 
 async function init() {
   const cfg = await fetch('/api/config').then(r => r.json())
-  supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+  sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
   if (cfg.siteName) {
     document.getElementById('page-title').textContent = cfg.siteName + ' — Administraciones'
     document.title = cfg.siteName + ' — Administraciones'
@@ -335,7 +335,7 @@ function renderTabla(lista) {
 
 async function toggleEstado(id, estadoActual) {
   const nuevo = estadoActual === 'pagado' ? 'pendiente' : 'pagado'
-  const { error } = await supabase.from('administraciones').update({ estado: nuevo }).eq('id', id)
+  const { error } = await sb.from('administraciones').update({ estado: nuevo }).eq('id', id)
   if (error) { mostrarToast('Error al actualizar'); return }
   mostrarToast(nuevo === 'pagado' ? 'Marcado como pagado' : 'Marcado como pendiente')
   cargar()
@@ -398,7 +398,7 @@ function calcularComision() {
 }
 
 async function guardar() {
-  if (!supabase) { mostrarToast('Error de conexión — recarga la página'); return }
+  if (!sb) { mostrarToast('Error de conexión — recarga la página'); return }
   const propietario = document.getElementById('f-propietario').value.trim()
   const direccion = document.getElementById('f-direccion').value.trim()
   const valor_arriendo = Number(document.getElementById('f-valor').value)
@@ -421,9 +421,9 @@ async function guardar() {
   }
   let error
   if (editId) {
-    ({ error } = await supabase.from('administraciones').update(payload).eq('id', editId))
+    ({ error } = await sb.from('administraciones').update(payload).eq('id', editId))
   } else {
-    ({ error } = await supabase.from('administraciones').insert([payload]))
+    ({ error } = await sb.from('administraciones').insert([payload]))
   }
   if (error) { mostrarToast('Error al guardar: ' + error.message); return }
   mostrarToast(editId ? 'Actualizado correctamente' : 'Administración agregada')
@@ -433,7 +433,7 @@ async function guardar() {
 
 async function eliminar(id) {
   if (!confirm('¿Eliminar este registro?')) return
-  const { error } = await supabase.from('administraciones').delete().eq('id', id)
+  const { error } = await sb.from('administraciones').delete().eq('id', id)
   if (error) { mostrarToast('Error al eliminar'); return }
   mostrarToast('Eliminado')
   cargar()
