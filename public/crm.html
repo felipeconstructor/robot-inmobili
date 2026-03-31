@@ -460,7 +460,7 @@ function filtrar() {
 
 async function cargarLeads() {
   try {
-  document.getElementById('ultimo-update').textContent = 'Actualizando...'
+  const elUpd = document.getElementById('ultimo-update'); if(elUpd) elUpd.textContent = 'Actualizando...'
   const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
   const { data, error } = await db.from('leads')
     .select('*')
@@ -478,7 +478,7 @@ async function cargarLeads() {
   document.getElementById('s-calientes').textContent = delMes.filter(l=>l.estado==='caliente').length
   document.getElementById('s-visitas').textContent = delMes.filter(l=>l.estado==='visita').length
   document.getElementById('s-whatsapp').textContent = delMes.filter(l=>l.canal==='whatsapp').length
-  document.getElementById('ultimo-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+  if(elUpd) elUpd.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
 
   filtrar()
   renderPipeline(todosLeads)
