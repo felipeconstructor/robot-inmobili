@@ -751,4 +751,7 @@ cron.schedule('0 8 * * 1', enviarInformeSemanal, { timezone: 'America/Santiago' 
 console.log('Cron informe semanal activo — lunes 8:00am Santiago')
 
 const PUERTO = process.env.PORT || 3000
-app.listen(PUERTO, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PUERTO}`))
+app.listen(PUERTO, '0.0.0.0', () => {
+  console.log(`Servidor corriendo en puerto ${PUERTO}`)
+  console.log(`Ambiente: ${process.env.SITE_NAME || 'Nova — Prolig Propiedades'}`)
+})
