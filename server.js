@@ -49,6 +49,10 @@ app.get('/administraciones.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'administraciones.html'))
 })
 
+app.get('/finanzas.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'finanzas.html'))
+})
+
 app.post('/api/login', (req, res) => {
   const { password } = req.body
   if (!password || password !== ADMIN_PASSWORD) {
@@ -657,6 +661,22 @@ app.post('/api/limpiar', (req, res) => {
   if (sesionId) delete historial[sesionId]
   res.json({ ok: true })
 })
+
+// ─── Reporte finanzas por email ───────────────────────────────────────────────
+app.post('/api/enviar-reporte-finanzas', async (req, res) => {
+  const { html, mes, ventas, arriendos, totalComision } = req.body
+  try {
+    await enviarEmail(
+      `Reporte Finanzas — ${mes || 'Resumen'}`,
+      html
+    )
+    res.json({ ok: true })
+  } catch(e) {
+    console.error('Error reporte finanzas:', e.message)
+    res.json({ ok: false, error: e.message })
+  }
+})
+// ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Email ──────────────────────────────────────────────────────────────────
 const GMAIL_USER = process.env.EMAIL_ADMIN || 'felipec.constructor@gmail.com'

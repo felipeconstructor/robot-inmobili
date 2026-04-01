@@ -165,6 +165,7 @@ tr:hover .thumb{transform:scale(1.08)}
     <a href="/admin.html" class="activo">Propiedades</a>
     <a href="/crm.html">CRM</a>
     <a href="/administraciones.html">Administraciones</a>
+    <a href="/finanzas.html">Finanzas</a>
     <a href="/documentos.html">Documentos</a>
     <a href="/">Chat</a>
     <a href="/api/logout" class="nav-salir">Salir</a>
@@ -356,6 +357,42 @@ tr:hover .thumb{transform:scale(1.08)}
   </div>
 </div>
 
+<!-- Modal Registrar Cierre -->
+<div class="overlay" id="overlay-cierre" onclick="if(event.target.id==='overlay-cierre')cerrarCierre()">
+  <div class="modal" style="max-width:500px">
+    <h3 id="cierre-titulo">Registrar cierre</h3>
+    <div style="font-size:12px;color:#888;margin-bottom:1.25rem" id="cierre-sub"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Precio de cierre</label>
+        <input type="number" id="c-precio" oninput="calcularComision()">
+      </div>
+      <div class="form-group">
+        <label>Fecha de cierre</label>
+        <input type="date" id="c-fecha">
+      </div>
+      <div class="form-group">
+        <label>Agente</label>
+        <input type="text" id="c-agente" placeholder="Nombre del agente">
+      </div>
+      <div class="form-group">
+        <label>Cliente / Comprador</label>
+        <input type="text" id="c-cliente" placeholder="Nombre del cliente">
+      </div>
+      <div class="form-group form-full">
+        <label>Notas</label>
+        <textarea id="c-notas" rows="2" placeholder="Observaciones del cierre..."></textarea>
+      </div>
+    </div>
+    <div id="cierre-calculo" style="background:#f7f8fa;border-radius:10px;padding:1rem;margin-top:1rem;font-size:13px;line-height:1.9">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarCierre()">Cancelar</button>
+      <button class="btn btn-gold" id="btn-cierre" onclick="guardarCierre()">Registrar cierre</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -414,7 +451,10 @@ function renderTabla(props) {
       <td>${dispBadge}</td>
       <td>
         <div class="acciones">
-          <button class="btn btn-sm" onclick="toggleDisponible('${p.id}',${p.disponible})">${p.disponible?'Ocultar':'Mostrar'}</button>
+          ${p.disponible
+            ? `<button class="btn btn-sm btn-gold" onclick="abrirCierre('${p.id}','${p.operacion}',${p.precio||0},'${(p.direccion||'').replace(/'/g,"\\'")}','${p.moneda||'CLP'}')">Cerrar</button>`
+            : `<button class="btn btn-sm" onclick="toggleDisponible('${p.id}',false)">Activar</button>`
+          }
           <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
           <a class="btn btn-sm" href="/propiedad/${p.id}" target="_blank">Ficha</a>
           <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
@@ -496,12 +536,104 @@ async function publicarEnRedes(id) {
   }
 }
 
-// ─── Toggle disponible ────────────────────────────────────────────────────────
+// ─── Toggle disponible (solo para activar) ────────────────────────────────────
 
 async function toggleDisponible(id, actual) {
   const { error } = await db.from('propiedades').update({ disponible: !actual }).eq('id', Number(id))
   if (error) { toast('Error: ' + error.message, true); return }
   await cargarPropiedades()
+}
+
+// ─── Cierre de propiedad ──────────────────────────────────────────────────────
+
+let cierreData = {}
+
+function abrirCierre(id, operacion, precio, direccion, moneda) {
+  cierreData = { id, operacion, moneda }
+  document.getElementById('cierre-titulo').textContent = operacion === 'venta' ? 'Registrar venta' : 'Registrar arriendo'
+  document.getElementById('cierre-sub').textContent = direccion + ' — ' + (operacion === 'venta' ? 'Venta' : 'Arriendo')
+  document.getElementById('c-precio').value = precio || ''
+  document.getElementById('c-fecha').value = new Date().toISOString().split('T')[0]
+  document.getElementById('c-agente').value = ''
+  document.getElementById('c-cliente').value = ''
+  document.getElementById('c-notas').value = ''
+  calcularComision()
+  document.getElementById('overlay-cierre').classList.add('activo')
+}
+
+function cerrarCierre() {
+  document.getElementById('overlay-cierre').classList.remove('activo')
+  cierreData = {}
+}
+
+function calcularComision() {
+  const precio = Number(document.getElementById('c-precio').value) || 0
+  const moneda = cierreData.moneda || 'CLP'
+  const fmt = v => moneda === 'UF'
+    ? v.toLocaleString('es-CL', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' UF'
+    : '$' + Math.round(v).toLocaleString('es-CL')
+  let html = ''
+  if (cierreData.operacion === 'venta') {
+    const c1 = precio * 0.02
+    const c2 = precio * 0.02
+    html = `<div style="color:#555">
+      <div style="display:flex;justify-content:space-between"><span>Comision vendedor (2%)</span><strong>${fmt(c1)}</strong></div>
+      <div style="display:flex;justify-content:space-between"><span>Comision comprador (2%)</span><strong>${fmt(c2)}</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #e0e0e0;font-size:14px">
+        <span style="font-weight:600">Total comision Nova</span>
+        <strong style="color:#1A3A5C">${fmt(c1+c2)}</strong>
+      </div>
+    </div>`
+  } else {
+    const c1 = precio * 0.5
+    const c2 = precio * 0.5
+    html = `<div style="color:#555">
+      <div style="display:flex;justify-content:space-between"><span>Comision arrendador (50%)</span><strong>${fmt(c1)}</strong></div>
+      <div style="display:flex;justify-content:space-between"><span>Comision arrendatario (50%)</span><strong>${fmt(c2)}</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #e0e0e0;font-size:14px">
+        <span style="font-weight:600">Total comision Nova</span>
+        <strong style="color:#1A3A5C">${fmt(c1+c2)}</strong>
+      </div>
+    </div>`
+  }
+  document.getElementById('cierre-calculo').innerHTML = html
+}
+
+async function guardarCierre() {
+  const precio = Number(document.getElementById('c-precio').value)
+  const fecha = document.getElementById('c-fecha').value
+  if (!precio || !fecha) { toast('Completa precio y fecha', true); return }
+  const btn = document.getElementById('btn-cierre')
+  btn.disabled = true; btn.textContent = 'Guardando...'
+  try {
+    const c1 = cierreData.operacion === 'venta' ? precio * 0.02 : precio * 0.5
+    const c2 = c1
+    const prop = todasProps.find(p => String(p.id) === String(cierreData.id))
+    const { error: errTx } = await db.from('transacciones').insert({
+      propiedad_id: Number(cierreData.id),
+      direccion: prop?.direccion || '',
+      tipo: cierreData.operacion,
+      precio,
+      moneda: cierreData.moneda || 'CLP',
+      comision_parte1: c1,
+      comision_parte2: c2,
+      comision_total: c1 + c2,
+      fecha_cierre: fecha,
+      agente: document.getElementById('c-agente').value.trim() || null,
+      cliente: document.getElementById('c-cliente').value.trim() || null,
+      notas: document.getElementById('c-notas').value.trim() || null
+    })
+    if (errTx) { toast('Error al registrar transaccion: ' + errTx.message, true); return }
+    const { error: errProp } = await db.from('propiedades').update({ disponible: false }).eq('id', Number(cierreData.id))
+    if (errProp) { toast('Error al actualizar propiedad: ' + errProp.message, true); return }
+    cerrarCierre()
+    toast('Cierre registrado correctamente')
+    await cargarPropiedades()
+  } catch(e) {
+    toast('Error: ' + e.message, true)
+  } finally {
+    btn.disabled = false; btn.textContent = 'Registrar cierre'
+  }
 }
 
 // ─── Eliminar ─────────────────────────────────────────────────────────────────
