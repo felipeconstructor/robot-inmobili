@@ -119,6 +119,14 @@ Cuando el cliente muestre interes real en una propiedad (pregunte precio, dispon
 LONGITUD DE RESPUESTAS — REGLA ESTRICTA:
 Maximo 2 oraciones de respuesta. Si la pregunta es sobre leyes, financiamiento o informacion general responde en 1 sola oracion clara y directa. Nunca expliques todo lo que sabes sobre un tema. Solo responde lo que el cliente pregunto y nada mas. Si hay un link de ficha o de agenda, ese link debe ser lo ultimo visible y no debe quedar enterrado en texto largo.
 
+LISTA DE PROPIEDADES — REGLA OBLIGATORIA:
+Cuando el cliente pida ver propiedades disponibles o pregunte que tienes, presenta cada propiedad en una linea separada con este formato exacto:
+. [Tipo] en [Comuna] — [Precio] [Moneda] — [Dormitorios] dorm, [Banos] ban, [Metros]m2
+Ejemplo:
+. Casa en La Ligua — $85.000.000 CLP — 3 dorm, 2 ban, 120m2
+. Departamento en Valparaiso — 2.500 UF — 2 dorm, 1 ban, 58m2
+Nunca pongas toda la lista en una sola oracion. Cada propiedad va en su propia linea comenzando con punto.
+
 IMAGENES Y FICHA DE PROPIEDADES:
 Cuando respondas sobre una propiedad especifica, SIEMPRE incluye el link de la ficha completa al final de tu respuesta. Ejemplo: "Ver fotos y detalles completos: ${APP_URL}/propiedad/3"
 Usa el id de la propiedad que aparece en los datos. Nunca inventes IDs.
@@ -174,6 +182,68 @@ async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, c
     })
   } catch (err) {
     console.error('Error guardando lead:', err.message)
+  }
+}
+
+// ─── MODELO DUAL HAIKU/OPUS ────────────────────────────────────────────────────
+const ENABLE_DUAL_MODEL = process.env.ENABLE_DUAL_MODEL === 'true'
+
+/**
+ * Detecta si el texto del usuario contiene datos críticos para switchear a Opus
+ * @param {string} texto - Mensaje del usuario
+ * @returns {object} { tieneNombreCompleto, tieneTelefono, expresionInteres }
+ */
+function detectarDatosCriticos(texto) {
+  if (!texto) return { tieneNombreCompleto: false, tieneTelefono: false, expresionInteres: false }
+
+  const textoLimpio = texto.toLowerCase().trim()
+
+  // Detectar nombre completo (al menos 2 palabras con letras)
+  const regexNombres = [
+    /(?:me\s+llamo|mi\s+nombre\s+es|soy|yo\s+soy|nombre:?)\s+([A-ZÁÉÍÓÚa-záéíóú]+(?:\s+[A-ZÁÉÍÓÚa-záéíóú]+)+)/i,
+    /^([A-ZÁÉÍÓÚa-záéíóú]+\s+[A-ZÁÉÍÓÚa-záéíóú]+)[,.\s]/
+  ]
+  const tieneNombreCompleto = regexNombres.some(r => r.test(texto))
+
+  // Detectar teléfono (múltiples formatos chilenos)
+  const regexTelefonos = [
+    /\+?56\s?9?\s?\d{4}\s?\d{4}/,
+    /\+?56[\s-]?9[\s-]?\d{4}[\s-]?\d{4}/,
+    /0*9[\s-]?\d{4}[\s-]?\d{4}/,
+    /\b\d{8,9}\b/
+  ]
+  const tieneTelefono = regexTelefonos.some(r => r.test(texto))
+
+  // Detectar palabras clave de intención de compra/arriendo
+  const palabrasClaveInteres = [
+    'quiero comprar', 'quiero arrendar', 'quiero ver', 'quiero visitar',
+    'estoy interesad', 'me interesa', 'cuánto cuesta', 'cuanto cuesta',
+    'valor', 'precio', 'disponible', 'fecha', 'horario', 'agendar',
+    'agendar visita', 'ver la', 'me gustaría', 'necesito', 'busco',
+    'cuando puedo', 'cuando podemos'
+  ]
+  const expresionInteres = palabrasClaveInteres.some(p => textoLimpio.includes(p))
+
+  return { tiemeNombreCompleto, tieneTelefono, expresionInteres }
+}
+
+/**
+ * Obtiene la configuración de modelo IA para un broker desde Supabase
+ * @param {string} siteName - Nombre del sitio/broker
+ * @returns {Promise<string>} 'haiku' | 'opus' | 'auto'
+ */
+async function obtenerModeloConfiguracion(siteName) {
+  try {
+    const { data } = await supabase
+      .from('configuracion_broker')
+      .select('modelo_ia')
+      .eq('site_name', siteName)
+      .single()
+
+    return data?.modelo_ia || 'auto'
+  } catch (err) {
+    console.log(`Configuración broker no encontrada para ${siteName}, usando AUTO`)
+    return 'auto'
   }
 }
 
