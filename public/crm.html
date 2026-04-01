@@ -643,25 +643,33 @@ function cerrarDetalle() {
 
 async function guardarDetalle() {
   if (!leadDetalleId) return
-  const l = todosLeads.find(x => String(x.id) === String(leadDetalleId))
-  const updates = {
-    proxima_accion: document.getElementById('det-accion').value.trim() || null,
-    fecha_seguimiento: document.getElementById('det-fecha').value || null,
-    prioridad: document.getElementById('det-prioridad').value,
-    agente: document.getElementById('det-agente').value.trim() || null,
-    notas: document.getElementById('det-notas').value.trim() || null,
-    updated_at: new Date().toISOString()
+  const btn = document.querySelector('#overlay-detalle .btn-primary')
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...' }
+  try {
+    const l = todosLeads.find(x => String(x.id) === String(leadDetalleId))
+    const updates = {
+      proxima_accion: document.getElementById('det-accion').value.trim() || null,
+      fecha_seguimiento: document.getElementById('det-fecha').value || null,
+      prioridad: document.getElementById('det-prioridad').value,
+      agente: document.getElementById('det-agente').value.trim() || null,
+      notas: document.getElementById('det-notas').value.trim() || null,
+      updated_at: new Date().toISOString()
+    }
+    const { error } = await db.from('leads').update(updates).eq('id', leadDetalleId)
+    if (error) { toast('Error Supabase: ' + error.message); return }
+    const cambios = []
+    if (updates.proxima_accion && updates.proxima_accion !== (l?.proxima_accion||'')) cambios.push(`Proxima accion: ${updates.proxima_accion}`)
+    if (updates.fecha_seguimiento && updates.fecha_seguimiento !== (l?.fecha_seguimiento||'')) cambios.push(`Seguimiento: ${updates.fecha_seguimiento}`)
+    if (updates.prioridad !== (l?.prioridad||'media')) cambios.push(`Prioridad: ${updates.prioridad}`)
+    if (cambios.length) await registrarActividad(leadDetalleId, 'edicion', 'Actualizado: ' + cambios.join(', '))
+    cerrarDetalle()
+    toast('Guardado')
+    await cargarLeads()
+  } catch(e) {
+    toast('Error: ' + e.message)
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar' }
   }
-  const { error } = await db.from('leads').update(updates).eq('id', leadDetalleId)
-  if (error) { toast('Error al guardar'); return }
-  const cambios = []
-  if (updates.proxima_accion && updates.proxima_accion !== (l?.proxima_accion||'')) cambios.push(`Proxima accion: ${updates.proxima_accion}`)
-  if (updates.fecha_seguimiento && updates.fecha_seguimiento !== (l?.fecha_seguimiento||'')) cambios.push(`Seguimiento: ${updates.fecha_seguimiento}`)
-  if (updates.prioridad !== (l?.prioridad||'media')) cambios.push(`Prioridad: ${updates.prioridad}`)
-  if (cambios.length) await registrarActividad(leadDetalleId, 'edicion', 'Actualizado: ' + cambios.join(', '))
-  cerrarDetalle()
-  toast('Guardado')
-  await cargarLeads()
 }
 
 // ── Filtrar ───────────────────────────────────────────────────────────────────
