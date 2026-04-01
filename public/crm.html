@@ -514,8 +514,8 @@ function renderTabla(leads) {
       </td>
       <td>${formatSeguimiento(l)}</td>
       <td style="color:#888">${formatFecha(l.created_at)}</td>
-      <td>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">
+      <td style="white-space:nowrap">
+        <div style="display:flex;gap:8px;flex-wrap:nowrap;align-items:center">
           <button class="btn-nota ${tieneDetalle?'tiene-nota':''}" onclick="abrirDetalle('${l.id}')">${tieneDetalle?'Ver detalle':'+ Detalle'}</button>
           <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
             <button class="btn btn-primary">Contactar</button>

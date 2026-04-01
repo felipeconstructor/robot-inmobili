@@ -373,9 +373,11 @@ function renderTabla(lista) {
       <td class="monto-comision">$${mont.toLocaleString('es-CL')}</td>
       <td><span class="badge badge-${r.estado}" onclick="toggleEstado(${r.id},'${r.estado}')">${r.estado === 'pagado' ? 'Pagado' : 'Pendiente'}</span></td>
       <td style="font-size:11px;color:#888;max-width:160px;white-space:normal">${cuentaInfo}</td>
-      <td>
-        <button class="btn btn-sm" onclick="editarFila(${r.id})" style="margin-right:4px">Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="eliminar(${r.id})">Eliminar</button>
+      <td style="white-space:nowrap">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap">
+          <button class="btn btn-sm" onclick="editarFila(${r.id})">Editar</button>
+          <button class="btn btn-sm btn-danger" onclick="eliminar(${r.id})">Eliminar</button>
+        </div>
       </td>
     </tr>`
   }).join('')
