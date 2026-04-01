@@ -169,6 +169,49 @@ td{transition:background .15s}
 .card{transition:box-shadow .18s,transform .15s}
 .card:hover{box-shadow:0 6px 20px rgba(0,0,0,.11);transform:translateY(-1px)}
 
+/* Prioridad */
+.dot-prioridad{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;flex-shrink:0}
+.dot-alta{background:#E74C3C}.dot-media{background:#E67E22}.dot-baja{background:#95A5A6}
+.badge-alta{background:#FDECEA;color:#791F1F}
+.badge-baja{background:#F0F0F0;color:#666}
+
+/* Seguimientos view */
+.seg-wrap{padding:1.25rem}
+.seg-empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.seg-item{background:#fff;border-radius:10px;padding:12px 16px;border:1px solid #ebebeb;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:box-shadow .15s;border-left:4px solid #ddd}
+.seg-item:hover{box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.seg-item.vencido{border-left-color:#E74C3C}
+.seg-item.hoy{border-left-color:#E67E22}
+.seg-item.futuro{border-left-color:#3498DB}
+.seg-fecha-lbl{font-size:11px;font-weight:700;text-transform:uppercase;min-width:68px;letter-spacing:.5px}
+.seg-fecha-lbl.vencido{color:#E74C3C}.seg-fecha-lbl.hoy{color:#E67E22}.seg-fecha-lbl.futuro{color:#3498DB}
+.seg-nombre{font-size:14px;font-weight:600;color:#1A3A5C}
+body.broker .seg-nombre{color:#3B52D4}
+.seg-accion{font-size:12px;color:#666;margin-top:2px}
+.seg-badge-count{font-size:11px;font-weight:700;background:#E74C3C;color:#fff;border-radius:10px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+
+/* Actividad feed */
+.actividad-feed{max-height:180px;overflow-y:auto}
+.act-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f5f5f5;align-items:flex-start}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:8px;height:8px;border-radius:50%;background:#C9A96E;margin-top:4px;flex-shrink:0}
+.act-desc{font-size:12px;color:#333;line-height:1.4}
+.act-time{font-size:10px;color:#aaa;margin-top:2px}
+
+/* Modal detalle */
+.modal-section{margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0}
+.modal-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.modal-section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:.75rem}
+.seg-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.seg-grid label{font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:4px}
+.seg-grid input,.seg-grid select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+.seg-grid input:focus,.seg-grid select:focus{border-color:#1A3A5C;background:#fff}
+body.broker .seg-grid input:focus,body.broker .seg-grid select:focus{border-color:#3B52D4}
+.det-textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none;font-family:inherit;resize:vertical;min-height:72px;transition:border-color .2s}
+.det-textarea:focus{border-color:#1A3A5C;background:#fff}
+body.broker .det-textarea:focus{border-color:#3B52D4}
+.det-sub{font-size:12px;color:#aaa;margin-bottom:1.25rem}
+
 /* Mobile */
 @media (max-width:768px){
   .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
@@ -189,6 +232,8 @@ td{transition:background .15s}
   .pipeline-col{flex:0 0 82vw}
   .card-nombre{font-size:15px}
   .card-telefono{font-size:13px}
+  .seg-grid{grid-template-columns:1fr}
+  .seg-item{flex-wrap:wrap;gap:8px}
 }
 </style>
 </head>
@@ -229,9 +274,9 @@ td{transition:background .15s}
       <div class="stat-sub">este mes</div>
     </div>
     <div class="stat">
-      <div class="stat-lbl">Por WhatsApp</div>
-      <div class="stat-val" id="s-whatsapp" style="color:#1D9E75">0</div>
-      <div class="stat-sub">canal principal</div>
+      <div class="stat-lbl">Seguimientos hoy</div>
+      <div class="stat-val" id="s-seguimientos" style="color:#E67E22">0</div>
+      <div class="stat-sub">pendientes de contacto</div>
     </div>
   </div>
 
@@ -259,6 +304,7 @@ td{transition:background .15s}
         <div class="view-toggle">
           <button class="view-btn active" id="btn-lista" onclick="setVista('lista')">Lista</button>
           <button class="view-btn" id="btn-pipeline" onclick="setVista('pipeline')">Pipeline</button>
+          <button class="view-btn" id="btn-seguimientos" onclick="setVista('seguimientos')">Seguimientos<span class="seg-badge-count" id="seg-badge" style="display:none">0</span></button>
         </div>
       </div>
     </div>
@@ -271,11 +317,11 @@ td{transition:background .15s}
           <tr>
             <th>Nombre</th>
             <th>Telefono</th>
-            <th>Propiedad de interes</th>
+            <th>Propiedad</th>
             <th>Canal</th>
             <th>Estado</th>
-            <th>Fecha y hora</th>
-            <th>Notas</th>
+            <th>Seguimiento</th>
+            <th>Ingreso</th>
             <th>Accion</th>
           </tr>
         </thead>
@@ -283,6 +329,13 @@ td{transition:background .15s}
           <tr><td colspan="8" class="empty">Cargando leads...</td></tr>
         </tbody>
       </table>
+      </div>
+    </div>
+
+    <!-- Vista Seguimientos -->
+    <div id="vista-seguimientos" style="display:none">
+      <div class="seg-wrap" id="seg-list">
+        <div class="seg-empty">Sin seguimientos pendientes</div>
       </div>
     </div>
 
@@ -328,15 +381,53 @@ td{transition:background .15s}
   </div>
 </div>
 
-<!-- Modal notas -->
-<div class="overlay" id="overlay-notas" onclick="cerrarNotasClickFuera(event)">
-  <div class="modal">
-    <h3 id="notas-titulo">Notas</h3>
-    <div class="modal-sub" id="notas-sub"></div>
-    <textarea id="notas-texto" placeholder="Escribe tus observaciones sobre este lead..."></textarea>
+<!-- Modal detalle lead -->
+<div class="overlay" id="overlay-detalle" onclick="if(event.target.id==='overlay-detalle')cerrarDetalle()">
+  <div class="modal" style="max-width:560px">
+    <h3 id="detalle-titulo">Detalle del Lead</h3>
+    <div class="det-sub" id="detalle-sub"></div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Seguimiento</div>
+      <div class="seg-grid">
+        <div>
+          <label>Proxima accion</label>
+          <input type="text" id="det-accion" placeholder="Ej: Llamar, Enviar fotos...">
+        </div>
+        <div>
+          <label>Fecha de seguimiento</label>
+          <input type="date" id="det-fecha">
+        </div>
+        <div>
+          <label>Prioridad</label>
+          <select id="det-prioridad">
+            <option value="alta">Alta</option>
+            <option value="media" selected>Media</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+        <div>
+          <label>Agente</label>
+          <input type="text" id="det-agente" placeholder="Nombre del agente">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Notas internas</div>
+      <textarea class="det-textarea" id="det-notas" placeholder="Observaciones sobre este lead..."></textarea>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Historial de actividad</div>
+      <div class="actividad-feed" id="actividad-feed">
+        <div style="font-size:12px;color:#aaa;padding:8px 0">Sin actividad registrada</div>
+      </div>
+    </div>
+
     <div class="modal-footer">
-      <button class="btn" onclick="cerrarNotas()">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarNotas()">Guardar nota</button>
+      <button class="btn" onclick="cerrarDetalle()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarDetalle()">Guardar</button>
     </div>
   </div>
 </div>
@@ -347,16 +438,21 @@ td{transition:background .15s}
 let db
 let todosLeads = []
 let vistaActual = 'lista'
+let leadDetalleId = null
 
+// ── Vista ─────────────────────────────────────────────────────────────────────
 function setVista(v) {
   vistaActual = v
   document.getElementById('vista-lista').style.display = v === 'lista' ? '' : 'none'
   document.getElementById('vista-pipeline').classList.toggle('visible', v === 'pipeline')
+  document.getElementById('vista-seguimientos').style.display = v === 'seguimientos' ? '' : 'none'
   document.getElementById('filtros-lista').style.display = v === 'lista' ? '' : 'none'
   document.getElementById('btn-lista').classList.toggle('active', v === 'lista')
   document.getElementById('btn-pipeline').classList.toggle('active', v === 'pipeline')
+  document.getElementById('btn-seguimientos').classList.toggle('active', v === 'seguimientos')
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatFecha(iso) {
   if (!iso) return '-'
   const d = new Date(iso)
@@ -368,42 +464,31 @@ function formatFecha(iso) {
   return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}) + ` ${hora}`
 }
 
-function badgeEstado(e) {
-  const m = {nuevo:'badge-nuevo',caliente:'badge-caliente',tibio:'badge-tibio',frio:'badge-frio',visita:'badge-visita'}
-  const l = {nuevo:'Nuevo',caliente:'Caliente',tibio:'Tibio',frio:'Frio',visita:'Visita'}
-  return `<span class="badge ${m[e]||'badge-nuevo'}">${l[e]||e}</span>`
-}
-
 function badgeCanal(c) {
   return c === 'whatsapp'
     ? `<span class="badge badge-whatsapp">WhatsApp</span>`
     : `<span class="badge badge-web">Web</span>`
 }
 
-async function cambiarEstado(id, estado) {
-  await db.from('leads').update({ estado, updated_at: new Date().toISOString() }).eq('id', id)
-
-  // Notificar si el nuevo estado es caliente
-  if (estado === 'caliente') {
-    const lead = todosLeads.find(l => String(l.id) === String(id))
-    if (lead) {
-      fetch('/api/notificar-lead-caliente', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: lead.nombre,
-          telefono: lead.telefono,
-          propiedad_interes: lead.propiedad_interes,
-          canal: lead.canal,
-          created_at: lead.created_at
-        })
-      }).catch(() => {})
-    }
-  }
-
-  await cargarLeads()
+function dotPrioridad(p) {
+  const cls = {alta:'dot-alta', media:'dot-media', baja:'dot-baja'}
+  return `<span class="dot-prioridad ${cls[p]||'dot-media'}"></span>`
 }
 
+function formatSeguimiento(l) {
+  if (!l.fecha_seguimiento) return '<span style="color:#ccc">—</span>'
+  const hoy = new Date(); hoy.setHours(0,0,0,0)
+  const fecha = new Date(l.fecha_seguimiento + 'T00:00:00')
+  const diff = Math.round((fecha - hoy) / 86400000)
+  let label
+  if (diff < 0) label = `<span style="color:#E74C3C;font-weight:600">Vencido</span>`
+  else if (diff === 0) label = `<span style="color:#E67E22;font-weight:600">Hoy</span>`
+  else label = fecha.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'})
+  const accion = l.proxima_accion ? `<br><span style="font-size:11px;color:#888">${l.proxima_accion}</span>` : ''
+  return label + accion
+}
+
+// ── Render tabla ──────────────────────────────────────────────────────────────
 function renderTabla(leads) {
   const tbody = document.getElementById('tabla-leads')
   if (!leads.length) {
@@ -411,15 +496,10 @@ function renderTabla(leads) {
     return
   }
   tbody.innerHTML = leads.map(l => {
-    const tieneNota = l.notas && l.notas.trim() !== ''
-    const notaBtn = tieneNota
-      ? `<button class="btn-nota tiene-nota" onclick="abrirNotas('${l.id}','${(l.notas||'').replace(/'/g,"\\'")}','${(l.nombre||'').replace(/'/g,"\\'")}')">
-           <span class="nota-preview">${l.notas}</span>
-         </button>`
-      : `<button class="btn-nota" onclick="abrirNotas('${l.id}','','${(l.nombre||'').replace(/'/g,"\\'")}')">+ Nota</button>`
+    const tieneDetalle = l.notas || l.proxima_accion
     return `
     <tr>
-      <td><strong>${l.nombre||'-'}</strong></td>
+      <td><strong>${dotPrioridad(l.prioridad)}${l.nombre||'-'}</strong></td>
       <td class="tel"><a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">${l.telefono||'-'}</a></td>
       <td>${l.propiedad_interes||'-'}</td>
       <td>${badgeCanal(l.canal)}</td>
@@ -432,10 +512,11 @@ function renderTabla(leads) {
           <option value="visita" ${l.estado==='visita'?'selected':''}>Visita</option>
         </select>
       </td>
+      <td>${formatSeguimiento(l)}</td>
       <td style="color:#888">${formatFecha(l.created_at)}</td>
-      <td>${notaBtn}</td>
       <td>
-        <div style="display:flex;gap:5px">
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn-nota ${tieneDetalle?'tiene-nota':''}" onclick="abrirDetalle('${l.id}')">${tieneDetalle?'Ver detalle':'+ Detalle'}</button>
           <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank">
             <button class="btn btn-primary">Contactar</button>
           </a>
@@ -446,6 +527,7 @@ function renderTabla(leads) {
   }).join('')
 }
 
+// ── Render pipeline ───────────────────────────────────────────────────────────
 function renderPipeline(leads) {
   const estados = ['nuevo','tibio','caliente','visita','frio']
   estados.forEach(e => {
@@ -453,11 +535,10 @@ function renderPipeline(leads) {
     document.getElementById('cnt-' + e).textContent = grupo.length
     document.getElementById('cards-' + e).innerHTML = grupo.length
       ? grupo.map(l => {
-          const tieneNota = l.notas && l.notas.trim() !== ''
           const wa = (l.telefono||'').replace(/\D/g,'')
           return `
           <div class="card">
-            <div class="card-nombre">${l.nombre||'Sin nombre'}</div>
+            <div class="card-nombre">${dotPrioridad(l.prioridad)}${l.nombre||'Sin nombre'}</div>
             <div class="card-telefono"><a href="https://wa.me/${wa}" target="_blank">${l.telefono||'Sin telefono'}</a></div>
             <div class="card-propiedad">${l.propiedad_interes||'Consulta general'}</div>
             <div class="card-estado-wrap">
@@ -473,9 +554,7 @@ function renderPipeline(leads) {
             <div class="card-footer">
               <span class="card-fecha">${formatFecha(l.created_at)}</span>
               <div class="card-actions">
-                <button class="card-btn-nota ${tieneNota?'tiene':''}" onclick="abrirNotas('${l.id}','${(l.notas||'').replace(/'/g,"\\'")}','${(l.nombre||'').replace(/'/g,"\\'")}')">
-                  ${tieneNota ? 'Nota' : '+ Nota'}
-                </button>
+                <button class="card-btn-nota" onclick="abrirDetalle('${l.id}')">+ Detalle</button>
                 <a href="https://wa.me/${wa}" target="_blank">
                   <button class="card-btn-wa">WhatsApp</button>
                 </a>
@@ -487,6 +566,105 @@ function renderPipeline(leads) {
   })
 }
 
+// ── Render seguimientos ───────────────────────────────────────────────────────
+function renderSeguimientos(leads) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0)
+  const conSeg = leads.filter(l => l.fecha_seguimiento)
+  const el = document.getElementById('seg-list')
+  if (!conSeg.length) {
+    el.innerHTML = '<div class="seg-empty">Sin seguimientos programados</div>'
+    return
+  }
+  conSeg.sort((a,b) => new Date(a.fecha_seguimiento) - new Date(b.fecha_seguimiento))
+  el.innerHTML = conSeg.map(l => {
+    const fecha = new Date(l.fecha_seguimiento + 'T00:00:00')
+    const diff = Math.round((fecha - hoy) / 86400000)
+    let tipo, fechaLbl
+    if (diff < 0) { tipo='vencido'; fechaLbl='Vencido' }
+    else if (diff === 0) { tipo='hoy'; fechaLbl='Hoy' }
+    else { tipo='futuro'; fechaLbl=fecha.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'}) }
+    return `
+    <div class="seg-item ${tipo}" onclick="abrirDetalle('${l.id}')" style="cursor:pointer">
+      <div><div class="seg-fecha-lbl ${tipo}">${fechaLbl}</div></div>
+      <div style="flex:1">
+        <div class="seg-nombre">${dotPrioridad(l.prioridad)}${l.nombre||'-'}</div>
+        <div class="seg-accion">${l.proxima_accion||'Sin accion definida'} · ${l.propiedad_interes||'Consulta general'}</div>
+      </div>
+      <div>
+        <a href="https://wa.me/${(l.telefono||'').replace(/\D/g,'')}" target="_blank" onclick="event.stopPropagation()">
+          <button class="btn btn-primary" style="font-size:11px;padding:4px 10px">WhatsApp</button>
+        </a>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── Actividad ─────────────────────────────────────────────────────────────────
+async function registrarActividad(leadId, tipo, descripcion) {
+  await db.from('actividad_lead').insert({ lead_id: leadId, tipo, descripcion }).catch(()=>{})
+}
+
+async function cargarActividad(leadId) {
+  const { data } = await db.from('actividad_lead')
+    .select('*').eq('lead_id', leadId)
+    .order('created_at', { ascending: false }).limit(20)
+  const feed = document.getElementById('actividad-feed')
+  if (!data || !data.length) {
+    feed.innerHTML = '<div style="font-size:12px;color:#aaa;padding:8px 0">Sin actividad registrada</div>'
+    return
+  }
+  feed.innerHTML = data.map(a => {
+    const f = new Date(a.created_at)
+    const lbl = f.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit'}) + ' ' + f.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+    return `<div class="act-item"><div class="act-dot"></div><div><div class="act-desc">${a.descripcion}</div><div class="act-time">${lbl}</div></div></div>`
+  }).join('')
+}
+
+// ── Modal detalle ─────────────────────────────────────────────────────────────
+function abrirDetalle(id) {
+  leadDetalleId = id
+  const l = todosLeads.find(x => String(x.id) === String(id))
+  if (!l) return
+  document.getElementById('detalle-titulo').textContent = 'Detalle — ' + (l.nombre || 'Lead')
+  document.getElementById('detalle-sub').textContent = (l.propiedad_interes || 'Consulta general') + ' · ' + (l.canal || '')
+  document.getElementById('det-accion').value = l.proxima_accion || ''
+  document.getElementById('det-fecha').value = l.fecha_seguimiento || ''
+  document.getElementById('det-prioridad').value = l.prioridad || 'media'
+  document.getElementById('det-agente').value = l.agente || ''
+  document.getElementById('det-notas').value = l.notas || ''
+  document.getElementById('overlay-detalle').classList.add('activo')
+  cargarActividad(id)
+}
+
+function cerrarDetalle() {
+  document.getElementById('overlay-detalle').classList.remove('activo')
+  leadDetalleId = null
+}
+
+async function guardarDetalle() {
+  if (!leadDetalleId) return
+  const l = todosLeads.find(x => String(x.id) === String(leadDetalleId))
+  const updates = {
+    proxima_accion: document.getElementById('det-accion').value.trim() || null,
+    fecha_seguimiento: document.getElementById('det-fecha').value || null,
+    prioridad: document.getElementById('det-prioridad').value,
+    agente: document.getElementById('det-agente').value.trim() || null,
+    notas: document.getElementById('det-notas').value.trim() || null,
+    updated_at: new Date().toISOString()
+  }
+  const { error } = await db.from('leads').update(updates).eq('id', leadDetalleId)
+  if (error) { toast('Error al guardar'); return }
+  const cambios = []
+  if (updates.proxima_accion && updates.proxima_accion !== (l?.proxima_accion||'')) cambios.push(`Proxima accion: ${updates.proxima_accion}`)
+  if (updates.fecha_seguimiento && updates.fecha_seguimiento !== (l?.fecha_seguimiento||'')) cambios.push(`Seguimiento: ${updates.fecha_seguimiento}`)
+  if (updates.prioridad !== (l?.prioridad||'media')) cambios.push(`Prioridad: ${updates.prioridad}`)
+  if (cambios.length) await registrarActividad(leadDetalleId, 'edicion', 'Actualizado: ' + cambios.join(', '))
+  cerrarDetalle()
+  toast('Guardado')
+  await cargarLeads()
+}
+
+// ── Filtrar ───────────────────────────────────────────────────────────────────
 function filtrar() {
   const buscar = document.getElementById('f-buscar').value.toLowerCase()
   const estado = document.getElementById('f-estado').value
@@ -502,35 +680,70 @@ function filtrar() {
   renderTabla(filtrados)
 }
 
+// ── Cargar leads ──────────────────────────────────────────────────────────────
 async function cargarLeads() {
   try {
-  const elUpd = document.getElementById('ultimo-update'); if(elUpd) elUpd.textContent = 'Actualizando...'
-  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
-  const { data, error } = await db.from('leads')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) {
-    document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error Supabase: ' + error.message + '</td></tr>'
-    return
-  }
-  todosLeads = data || []
+    const elUpd = document.getElementById('ultimo-update'); if(elUpd) elUpd.textContent = 'Actualizando...'
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
+    const { data, error } = await db.from('leads').select('*').order('created_at', { ascending: false })
+    if (error) {
+      document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error Supabase: ' + error.message + '</td></tr>'
+      return
+    }
+    todosLeads = data || []
+    const esMes = l => new Date(l.created_at) >= inicioMes
+    const delMes = todosLeads.filter(esMes)
 
-  const esMes = l => new Date(l.created_at) >= inicioMes
-  const delMes = todosLeads.filter(esMes)
+    // Seguimientos hoy
+    const hoy = new Date(); hoy.setHours(0,0,0,0)
+    const manana = new Date(hoy); manana.setDate(manana.getDate()+1)
+    const seguimientosHoy = todosLeads.filter(l => {
+      if (!l.fecha_seguimiento) return false
+      const f = new Date(l.fecha_seguimiento + 'T00:00:00')
+      return f >= hoy && f < manana
+    }).length
 
-  document.getElementById('s-total').textContent = delMes.length
-  document.getElementById('s-calientes').textContent = delMes.filter(l=>l.estado==='caliente').length
-  document.getElementById('s-visitas').textContent = delMes.filter(l=>l.estado==='visita').length
-  document.getElementById('s-whatsapp').textContent = delMes.filter(l=>l.canal==='whatsapp').length
-  if(elUpd) elUpd.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+    document.getElementById('s-total').textContent = delMes.length
+    document.getElementById('s-calientes').textContent = delMes.filter(l=>l.estado==='caliente').length
+    document.getElementById('s-visitas').textContent = delMes.filter(l=>l.estado==='visita').length
+    document.getElementById('s-seguimientos').textContent = seguimientosHoy
 
-  filtrar()
-  renderPipeline(todosLeads)
+    // Badge en boton seguimientos (vencidos + hoy)
+    const segPendientes = todosLeads.filter(l => {
+      if (!l.fecha_seguimiento) return false
+      const f = new Date(l.fecha_seguimiento + 'T00:00:00')
+      return f <= new Date(hoy.getTime() + 86399999)
+    }).length
+    const badgeEl = document.getElementById('seg-badge')
+    if (segPendientes > 0) { badgeEl.textContent = segPendientes; badgeEl.style.display = '' }
+    else badgeEl.style.display = 'none'
+
+    if(elUpd) elUpd.textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})
+    filtrar()
+    renderPipeline(todosLeads)
+    renderSeguimientos(todosLeads)
   } catch(e) {
     document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error JS: ' + e.message + '</td></tr>'
   }
 }
 
+// ── Cambiar estado ────────────────────────────────────────────────────────────
+async function cambiarEstado(id, estado) {
+  const l = todosLeads.find(x => String(x.id) === String(id))
+  const estadoAnterior = l?.estado || '?'
+  await db.from('leads').update({ estado, updated_at: new Date().toISOString() }).eq('id', id)
+  await registrarActividad(id, 'estado', `Estado cambiado: ${estadoAnterior} → ${estado}`)
+  if (estado === 'caliente' && l) {
+    fetch('/api/notificar-lead-caliente', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: l.nombre, telefono: l.telefono, propiedad_interes: l.propiedad_interes, canal: l.canal, created_at: l.created_at })
+    }).catch(()=>{})
+  }
+  await cargarLeads()
+}
+
+// ── Eliminar ──────────────────────────────────────────────────────────────────
 async function eliminarLead(id, nombre) {
   if (!confirm(`Eliminar a ${nombre||'este lead'}?\n\nEsta accion no se puede deshacer.`)) return
   const { error } = await db.from('leads').delete().eq('id', id)
@@ -539,10 +752,7 @@ async function eliminarLead(id, nombre) {
   await cargarLeads()
 }
 
-// ─── Notas ────────────────────────────────────────────────────────────────────
-
-let leadNotasId = null
-
+// ── Toast ─────────────────────────────────────────────────────────────────────
 function toast(msg) {
   const t = document.getElementById('toast')
   t.textContent = msg
@@ -550,38 +760,9 @@ function toast(msg) {
   setTimeout(() => t.className = 'toast', 3000)
 }
 
-function abrirNotas(id, notasActuales, nombre) {
-  leadNotasId = id
-  document.getElementById('notas-titulo').textContent = 'Notas — ' + (nombre || 'Lead')
-  document.getElementById('notas-sub').textContent = 'Visible solo para ti en el CRM'
-  document.getElementById('notas-texto').value = notasActuales || ''
-  document.getElementById('overlay-notas').classList.add('activo')
-  setTimeout(() => document.getElementById('notas-texto').focus(), 100)
-}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarDetalle() })
 
-function cerrarNotas() {
-  document.getElementById('overlay-notas').classList.remove('activo')
-  leadNotasId = null
-}
-
-function cerrarNotasClickFuera(e) {
-  if (e.target.id === 'overlay-notas') cerrarNotas()
-}
-
-async function guardarNotas() {
-  if (!leadNotasId) return
-  const notas = document.getElementById('notas-texto').value.trim()
-  const { error } = await db.from('leads').update({ notas, updated_at: new Date().toISOString() }).eq('id', leadNotasId)
-  if (error) { toast('Error al guardar nota'); return }
-  cerrarNotas()
-  toast('Nota guardada')
-  await cargarLeads()
-}
-
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarNotas() })
-
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Init ──────────────────────────────────────────────────────────────────────
 fetch('/api/config')
   .then(r => r.json())
   .then(cfg => {
@@ -589,9 +770,7 @@ fetch('/api/config')
       if (cfg.siteName) {
         document.getElementById('page-title').textContent = cfg.siteName + ' — CRM'
         document.title = cfg.siteName + ' — CRM'
-        if (cfg.siteName.toLowerCase().includes('broker')) {
-          document.body.classList.add('broker')
-        }
+        if (cfg.siteName.toLowerCase().includes('broker')) document.body.classList.add('broker')
       }
       if (!cfg.supabaseUrl || !cfg.supabaseKey) {
         document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error: SUPABASE_URL o SUPABASE_KEY no configuradas</td></tr>'
