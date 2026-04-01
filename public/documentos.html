@@ -63,14 +63,25 @@ input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
 .doc-btn-close{background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .2s;line-height:1}
 .doc-btn-close:hover{background:rgba(255,255,255,.3)}
 .doc-preview-frame{flex:1;border:none;width:100%;background:#f5f5f5}
+/* Broker theme */
+body.broker .header{background:#3B52D4}
+body.broker input:focus,body.broker select:focus,body.broker textarea:focus{border-color:#3B52D4}
+body.broker .btn-generar{background:#3B52D4}
+body.broker .btn-generar:hover{background:#2D40B8}
+body.broker h1{color:#3B52D4}
+body.broker .section-title{color:#3B52D4}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div>
-    <div class="header-brand">Nova Documentos</div>
-    <div class="header-sub">Prolig Propiedades</div>
+  <div class="broker-brand" id="broker-brand" style="display:none;align-items:center;gap:10px">
+    <svg width="30" height="26" viewBox="0 0 36 30" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,17 11,10 11,18"/><line x1="2" y1="17" x2="2" y2="25"/><line x1="2" y1="25" x2="11" y2="25"/><polyline points="11,17 20,8 29,17"/><polyline points="11,17 11,27 29,27 29,17"/><line x1="20" y1="27" x2="20" y2="29"/></svg>
+    <div><div style="color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px">BROKER INMOBILIARIA</div><div style="color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px">UN PACTO DE CONFIANZA</div></div>
+  </div>
+  <div id="header-default">
+    <div class="header-brand" id="header-brand-text">Nova Documentos</div>
+    <div class="header-sub" id="header-sub-text">Prolig Propiedades</div>
   </div>
   <nav class="nav">
     <a href="/admin.html">Propiedades</a>
@@ -433,7 +444,7 @@ function removerLogo() {
 
 function getLogoHeader() {
   if (!logoBase64) return ''
-  return `<div class="doc-logo-header"><img src="${logoBase64}" class="doc-logo-img"></div>`
+  return `<div class="doc-logo-header" style="text-align:left;margin-bottom:1.5em;padding-bottom:6px;border-bottom:1.5px solid #1A3A5C"><img src="${logoBase64}" style="height:36px;width:auto;max-width:160px;object-fit:contain;display:block"></div>`
 }
 // ─────────────────────────────────────────────────────────
 
@@ -477,8 +488,8 @@ function cerrarPreview() {
 const estiloDoc = `
   <style>
     body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.7;color:#000;padding:3cm 2.5cm;max-width:21cm;margin:0 auto}
-    .doc-logo-header{text-align:left;margin-bottom:2em;padding-bottom:8px;border-bottom:2px solid #1A3A5C}
-    .doc-logo-img{height:40px;width:auto;object-fit:contain}
+    .doc-logo-header{text-align:left;margin-bottom:1.5em;padding-bottom:6px;border-bottom:1.5px solid #1A3A5C}
+    .doc-logo-img{height:36px;width:auto;max-width:160px;object-fit:contain}
     h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:2em;font-weight:bold}
     h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}
     p{margin-bottom:.75em;text-align:justify}
@@ -724,16 +735,39 @@ function numeroALetras(n) {
   return resultado.trim()
 }
 
-// ── Logo Prolig por defecto ───────────────────────────────
-const LOGO_PROLIG_DEFAULT = 'data:image/jpeg;base64,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'
-window.addEventListener('DOMContentLoaded', () => {
+// ── Config y logo por defecto ────────────────────────────
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  const esBroker = cfg.siteName && cfg.siteName.toLowerCase().includes('broker')
+  if (esBroker) {
+    document.body.classList.add('broker')
+    document.getElementById('broker-brand').style.display = 'flex'
+    document.getElementById('header-default').style.display = 'none'
+    document.title = cfg.siteName + ' — Documentos'
+    // Para Broker: dejar el logo vacío para que suban el suyo
+    document.getElementById('logo-hint').textContent = 'Sube el logo de tu empresa para que aparezca en los documentos'
+  } else if (cfg.siteName) {
+    document.getElementById('header-brand-text').textContent = cfg.siteName
+    document.getElementById('header-sub-text').textContent = 'Documentos'
+    document.title = cfg.siteName + ' — Documentos'
+  }
+  if (!esBroker) {
+    // Solo cargar logo Prolig si NO es Broker
+    cargarLogoDefecto()
+  }
+}).catch(()=>{ cargarLogoDefecto() })
+
+function cargarLogoDefecto() {
   logoBase64 = LOGO_PROLIG_DEFAULT
   document.getElementById('logo-preview-img').src = LOGO_PROLIG_DEFAULT
   document.getElementById('logo-sin').style.display = 'none'
   document.getElementById('logo-con').style.display = 'flex'
-  document.getElementById('logo-hint').textContent = 'Logo Prolig cargado automáticamente'
+  document.getElementById('logo-hint').textContent = 'Logo cargado automáticamente'
   document.getElementById('logo-hint').style.color = '#0F6E56'
-})
+}
+
+// ── Logo Prolig por defecto ───────────────────────────────
+const LOGO_PROLIG_DEFAULT = 'data:image/jpeg;base64,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'
+// El logo Prolig se carga en el fetch de config arriba (solo si no es Broker)
 // ─────────────────────────────────────────────────────────
 </script>
 </body>
