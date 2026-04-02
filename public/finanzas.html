@@ -318,7 +318,11 @@ async function enviarReporte() {
   const totalComision = filtradas.reduce((s,t) => s + (Number(t.comision_total)||0), 0)
   const ventas = filtradas.filter(t=>t.tipo==='venta').length
   const arriendos = filtradas.filter(t=>t.tipo==='arriendo').length
-  const mesLabel = mes ? new Date(mes+'-01').toLocaleDateString('es-CL',{month:'long',year:'numeric'}) : 'Todo el historial'
+  const mesLabel = mes ? (() => {
+    const [anio, m] = mes.split('-')
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    return meses[parseInt(m,10)-1] + ' ' + anio
+  })() : 'Todo el historial'
 
   const filas = filtradas.map(t =>
     `<tr style="border-bottom:1px solid #f0f0f0">
