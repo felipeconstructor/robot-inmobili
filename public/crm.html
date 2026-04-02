@@ -411,7 +411,9 @@ body.broker .det-textarea:focus{border-color:#3B52D4}
         </div>
         <div>
           <label>Agente</label>
-          <input type="text" id="det-agente" placeholder="Nombre del agente">
+          <select id="det-agente">
+            <option value="">Sin asignar</option>
+          </select>
         </div>
       </div>
     </div>
@@ -625,7 +627,7 @@ async function cargarActividad(leadId) {
 }
 
 // ── Modal detalle ─────────────────────────────────────────────────────────────
-function abrirDetalle(id) {
+async function abrirDetalle(id) {
   leadDetalleId = id
   const l = todosLeads.find(x => String(x.id) === String(id))
   if (!l) return
@@ -634,8 +636,31 @@ function abrirDetalle(id) {
   document.getElementById('det-accion').value = l.proxima_accion || ''
   document.getElementById('det-fecha').value = l.fecha_seguimiento || ''
   document.getElementById('det-prioridad').value = l.prioridad || 'media'
-  document.getElementById('det-agente').value = l.agente || ''
   document.getElementById('det-notas').value = l.notas || ''
+  // Cargar dropdown de agentes
+  const sel = document.getElementById('det-agente')
+  sel.innerHTML = '<option value="">Sin asignar</option>'
+  try {
+    const res = await fetch('/api/usuarios')
+    if (res.ok) {
+      const usuarios = await res.json()
+      usuarios.filter(u => u.activo).forEach(u => {
+        const opt = document.createElement('option')
+        opt.value = u.nombre
+        opt.textContent = u.nombre + (u.rol === 'admin' ? ' (admin)' : '')
+        if (u.nombre === l.agente) opt.selected = true
+        sel.appendChild(opt)
+      })
+    }
+  } catch(e) { /* no bloquea */ }
+  // Si el agente actual no está en la lista (usuario eliminado), lo agrega igual
+  if (l.agente && !sel.querySelector(`option[value="${l.agente}"]`)) {
+    const opt = document.createElement('option')
+    opt.value = l.agente
+    opt.textContent = l.agente
+    opt.selected = true
+    sel.appendChild(opt)
+  }
   document.getElementById('overlay-detalle').classList.add('activo')
   cargarActividad(id)
 }
