@@ -64,6 +64,11 @@ body.broker .form-group input:focus,body.broker .input-wrap input:focus{box-shad
   </div>
 
   <div class="form-group">
+    <label>Correo</label>
+    <input type="email" id="email" placeholder="usuario@correo.com" onkeydown="if(event.key==='Enter')document.getElementById('password').focus()">
+  </div>
+
+  <div class="form-group">
     <label>Contrasena</label>
     <div class="input-wrap">
       <input type="password" id="password" placeholder="Ingresa tu contrasena" onkeydown="if(event.key==='Enter')login()">
@@ -96,6 +101,7 @@ function togglePw(btn) {
   btn.textContent = show ? 'Ocultar' : 'Ver'
 }
 async function login() {
+  const email = document.getElementById('email').value.trim()
   const password = document.getElementById('password').value
   const btn = document.getElementById('btn')
   const errorEl = document.getElementById('error')
@@ -107,14 +113,16 @@ async function login() {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
+      body: JSON.stringify({ email, password })
     })
     const data = await res.json()
     if (res.ok) {
-      const destino = new URLSearchParams(location.search).get('next') || '/admin.html'
+      const params = new URLSearchParams(location.search)
+      const next = params.get('next')
+      const destino = next || (data.rol === 'agente' ? '/crm.html' : '/admin.html')
       location.href = destino
     } else {
-      errorEl.textContent = data.error || 'Contrasena incorrecta'
+      errorEl.textContent = data.error || 'Credenciales incorrectas'
       btn.disabled = false
       btn.textContent = 'Ingresar'
     }

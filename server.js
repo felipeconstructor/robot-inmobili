@@ -13,7 +13,11 @@ app.use(express.urlencoded({ extended: false }))
 
 // ─── Autenticacion paneles ────────────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'nova2026'
-const sesionesActivas = new Set()
+const sesionesActivas = new Map() // token → { email, nombre, rol }
+
+function hashPassword(pw) {
+  return require('crypto').createHash('sha256').update(pw + 'nova_salt_2026').digest('hex')
+}
 
 function parseCookies(req) {
   const cookies = {}
@@ -34,8 +38,15 @@ function requireAuth(req, res, next) {
   res.redirect('/login.html?next=' + destino)
 }
 
+function requireAdmin(req, res, next) {
+  const cookies = parseCookies(req)
+  const sesion = sesionesActivas.get(cookies.nova_session)
+  if (sesion && sesion.rol === 'admin') return next()
+  res.redirect('/crm.html')
+}
+
 // Rutas protegidas — ANTES de express.static
-app.get('/admin.html', requireAuth, (req, res) => {
+app.get('/admin.html', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'))
 })
 app.get('/crm.html', requireAuth, (req, res) => {
@@ -44,25 +55,53 @@ app.get('/crm.html', requireAuth, (req, res) => {
 app.get('/documentos.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'documentos.html'))
 })
-
-app.get('/administraciones.html', requireAuth, (req, res) => {
+app.get('/administraciones.html', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'administraciones.html'))
 })
-
-app.get('/finanzas.html', requireAuth, (req, res) => {
+app.get('/finanzas.html', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'finanzas.html'))
 })
+app.get('/usuarios.html', requireAuth, requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'usuarios.html'))
+})
 
-app.post('/api/login', (req, res) => {
-  const { password } = req.body
-  if (!password || password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Contrasena incorrecta' })
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body
+  if (!password) return res.status(401).json({ error: 'Contrasena requerida' })
+
+  let sesionData = null
+
+  // Login con email + password — busca en tabla usuarios
+  if (email) {
+    try {
+      const { data: usuario } = await supabase
+        .from('usuarios')
+        .select('id, nombre, email, rol, password_hash, activo')
+        .eq('email', email.toLowerCase().trim())
+        .eq('activo', true)
+        .single()
+      if (usuario && usuario.password_hash === hashPassword(password)) {
+        sesionData = { email: usuario.email, nombre: usuario.nombre, rol: usuario.rol }
+      }
+    } catch (err) {
+      // tabla no existe aun — cae al fallback
+    }
   }
+
+  // Fallback: solo password contra ADMIN_PASSWORD (retrocompatibilidad)
+  if (!sesionData && password === ADMIN_PASSWORD) {
+    sesionData = { email: 'admin', nombre: 'Admin', rol: 'admin' }
+  }
+
+  if (!sesionData) {
+    return res.status(401).json({ error: 'Credenciales incorrectas' })
+  }
+
   const token = require('crypto').randomBytes(32).toString('hex')
-  sesionesActivas.add(token)
-  const maxAge = 7 * 24 * 3600 // 7 dias
+  sesionesActivas.set(token, sesionData)
+  const maxAge = 7 * 24 * 3600
   res.setHeader('Set-Cookie', `nova_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`)
-  res.json({ ok: true })
+  res.json({ ok: true, rol: sesionData.rol, nombre: sesionData.nombre })
 })
 
 app.get('/api/logout', (req, res) => {
@@ -70,6 +109,51 @@ app.get('/api/logout', (req, res) => {
   sesionesActivas.delete(cookies.nova_session)
   res.setHeader('Set-Cookie', 'nova_session=; Path=/; HttpOnly; Max-Age=0')
   res.redirect('/login.html')
+})
+
+app.get('/api/me', requireAuth, (req, res) => {
+  const cookies = parseCookies(req)
+  const sesion = sesionesActivas.get(cookies.nova_session)
+  res.json(sesion)
+})
+
+// ─── CRUD usuarios (solo admin) ───────────────────────────────────────────────
+app.get('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, nombre, email, rol, activo, created_at')
+    .order('created_at')
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data)
+})
+
+app.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
+  const { nombre, email, password, rol } = req.body
+  if (!nombre || !email || !password) return res.status(400).json({ error: 'Faltan datos: nombre, email, password' })
+  const { data, error } = await supabase
+    .from('usuarios')
+    .insert({ nombre, email: email.toLowerCase().trim(), password_hash: hashPassword(password), rol: rol || 'agente', activo: true })
+    .select('id, nombre, email, rol, activo, created_at')
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json(data)
+})
+
+app.put('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { nombre, rol, activo, password } = req.body
+  const updates = {}
+  if (nombre !== undefined) updates.nombre = nombre
+  if (rol !== undefined) updates.rol = rol
+  if (activo !== undefined) updates.activo = activo
+  if (password) updates.password_hash = hashPassword(password)
+  const { data, error } = await supabase
+    .from('usuarios')
+    .update(updates)
+    .eq('id', req.params.id)
+    .select('id, nombre, email, rol, activo')
+    .single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json(data)
 })
 // ─────────────────────────────────────────────────────────────────────────────
 

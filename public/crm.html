@@ -246,12 +246,14 @@ body.broker .det-textarea:focus{border-color:#3B52D4}
   </div>
   <h1 id="page-title">Nova CRM — Prolig Propiedades</h1>
   <nav class="nav">
-    <a href="/admin.html">Propiedades</a>
+    <a href="/admin.html" class="nav-admin-only">Propiedades</a>
     <a href="/crm.html" class="activo">CRM</a>
-    <a href="/administraciones.html">Administraciones</a>
-    <a href="/finanzas.html">Finanzas</a>
+    <a href="/administraciones.html" class="nav-admin-only">Administraciones</a>
+    <a href="/finanzas.html" class="nav-admin-only">Finanzas</a>
     <a href="/documentos.html">Documentos</a>
+    <a href="/usuarios.html" class="nav-admin-only">Usuarios</a>
     <a href="/">Chat</a>
+    <span id="nav-usuario" style="color:#C9A96E;font-size:12px;padding:5px 8px;border:1px solid rgba(201,169,110,.3);border-radius:20px;white-space:nowrap"></span>
     <a href="/api/logout" class="nav-salir">Salir</a>
   </nav>
 </div>
@@ -440,6 +442,7 @@ let db
 let todosLeads = []
 let vistaActual = 'lista'
 let leadDetalleId = null
+let usuarioActual = null
 
 // ── Vista ─────────────────────────────────────────────────────────────────────
 function setVista(v) {
@@ -694,7 +697,11 @@ async function cargarLeads() {
   try {
     const elUpd = document.getElementById('ultimo-update'); if(elUpd) elUpd.textContent = 'Actualizando...'
     const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
-    const { data, error } = await db.from('leads').select('*').order('created_at', { ascending: false })
+    let query = db.from('leads').select('*').order('created_at', { ascending: false })
+    if (usuarioActual && usuarioActual.rol === 'agente') {
+      query = query.eq('agente', usuarioActual.nombre)
+    }
+    const { data, error } = await query
     if (error) {
       document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error Supabase: ' + error.message + '</td></tr>'
       return
@@ -786,6 +793,18 @@ fetch('/api/config')
         return
       }
       db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+      // Cargar usuario actual y aplicar restricciones de rol
+      try {
+        const meRes = await fetch('/api/me')
+        if (meRes.ok) {
+          usuarioActual = await meRes.json()
+          const navUsuario = document.getElementById('nav-usuario')
+          if (navUsuario && usuarioActual.nombre) navUsuario.textContent = usuarioActual.nombre
+          if (usuarioActual.rol !== 'admin') {
+            document.querySelectorAll('.nav-admin-only').forEach(el => el.style.display = 'none')
+          }
+        }
+      } catch(e) { /* no bloquea */ }
       cargarLeads()
       setInterval(cargarLeads, 30000)
     } catch(e) {
