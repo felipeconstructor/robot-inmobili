@@ -46,7 +46,7 @@ function requireAdmin(req, res, next) {
 }
 
 // Rutas protegidas — ANTES de express.static
-app.get('/admin.html', requireAuth, requireAdmin, (req, res) => {
+app.get('/admin.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'))
 })
 app.get('/crm.html', requireAuth, (req, res) => {

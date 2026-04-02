@@ -164,10 +164,10 @@ tr:hover .thumb{transform:scale(1.08)}
   <nav class="nav">
     <a href="/admin.html" class="activo">Propiedades</a>
     <a href="/crm.html">CRM</a>
-    <a href="/administraciones.html">Administraciones</a>
-    <a href="/finanzas.html">Finanzas</a>
+    <a href="/administraciones.html" class="nav-admin-only">Administraciones</a>
+    <a href="/finanzas.html" class="nav-admin-only">Finanzas</a>
     <a href="/documentos.html">Documentos</a>
-    <a href="/usuarios.html">Usuarios</a>
+    <a href="/usuarios.html" class="nav-admin-only">Usuarios</a>
     <a href="/">Chat</a>
     <a href="/api/logout" class="nav-salir">Salir</a>
   </nav>
@@ -215,8 +215,8 @@ tr:hover .thumb{transform:scale(1.08)}
             <option value="false">No disponibles</option>
           </select>
         </div>
-        <button class="btn btn-outline" onclick="abrirImportar()">Importar Excel</button>
-        <button class="btn btn-gold" onclick="abrirModal()">+ Nueva propiedad</button>
+        <button class="btn btn-outline admin-only" onclick="abrirImportar()">Importar Excel</button>
+        <button class="btn btn-gold admin-only" onclick="abrirModal()">+ Nueva propiedad</button>
       </div>
     </div>
     <div class="table-wrap">
@@ -452,13 +452,12 @@ function renderTabla(props) {
       <td>${dispBadge}</td>
       <td>
         <div class="acciones">
-          ${p.disponible
+          ${window._esAdmin ? (p.disponible
             ? `<button class="btn btn-sm btn-gold" onclick="abrirCierre('${p.id}','${p.operacion}',${p.precio||0},'${(p.direccion||'').replace(/'/g,"\\'")}','${p.moneda||'CLP'}')">Cerrar</button>`
-            : `<button class="btn btn-sm" onclick="toggleDisponible('${p.id}',false)">Activar</button>`
-          }
-          <button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>
+            : `<button class="btn btn-sm" onclick="toggleDisponible('${p.id}',false)">Activar</button>`) : ''}
+          ${window._esAdmin ? `<button class="btn btn-sm btn-primary" onclick="abrirEditar('${p.id}')">Editar</button>` : ''}
           <a class="btn btn-sm" href="/propiedad/${p.id}" target="_blank">Ficha</a>
-          <button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>
+          ${window._esAdmin ? `<button class="btn btn-sm btn-danger" onclick="eliminarPropiedad('${p.id}')">Eliminar</button>` : ''}
         </div>
       </td>
     </tr>`
@@ -990,9 +989,11 @@ async function confirmarImportar() {
 
 // ─── Inicializacion ───────────────────────────────────────────────────────────
 
+window._esAdmin = false
+
 fetch('/api/config')
   .then(r => r.json())
-  .then(cfg => {
+  .then(async cfg => {
     if (cfg.siteName) {
       document.getElementById('page-title').textContent = cfg.siteName + ' — Propiedades'
       document.title = cfg.siteName + ' — Admin'
@@ -1005,6 +1006,18 @@ fetch('/api/config')
         '<tr><td colspan="9" class="empty" style="color:#c0392b">Error: variables SUPABASE_URL y SUPABASE_KEY no configuradas en Railway</td></tr>'
       return
     }
+    // Determinar rol
+    try {
+      const meRes = await fetch('/api/me')
+      if (meRes.ok) {
+        const me = await meRes.json()
+        window._esAdmin = me.rol === 'admin'
+        if (!window._esAdmin) {
+          document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none')
+          document.querySelectorAll('.nav-admin-only').forEach(el => el.style.display = 'none')
+        }
+      }
+    } catch(e) { window._esAdmin = true /* fallback seguro */ }
     db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
     cargarPropiedades()
   })
