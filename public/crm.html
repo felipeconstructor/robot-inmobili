@@ -781,7 +781,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarDetall
 // ── Init ──────────────────────────────────────────────────────────────────────
 fetch('/api/config')
   .then(r => r.json())
-  .then(cfg => {
+  .then(async cfg => {
     try {
       if (cfg.siteName) {
         document.getElementById('page-title').textContent = cfg.siteName + ' — CRM'
