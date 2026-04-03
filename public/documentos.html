@@ -6,7 +6,8 @@
 <title>Nova — Documentos</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+html{overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh;max-width:100%}
 .header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
 .header-brand{color:#fff;font-size:16px;font-weight:500}
 .header-sub{color:#C9A96E;font-size:12px}
@@ -49,7 +50,11 @@ input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
 .section-title{font-size:12px;font-weight:600;color:#1A3A5C;text-transform:uppercase;letter-spacing:.5px;margin:1.25rem 0 .75rem;padding-bottom:4px;border-bottom:1px solid #f0f0f0}
 .btn-generar{width:100%;padding:13px;background:#1A3A5C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;margin-top:1.25rem;transition:background .2s}
 .btn-generar:hover{background:#0f2540}
+/* Fab Usuarios */
+.fab-usuarios{position:fixed;bottom:1.5rem;left:1.5rem;background:#1A3A5C;color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:50;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
+.fab-usuarios:hover{background:#0f2540;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
 @media(max-width:500px){.form-row{grid-template-columns:1fr}}
+@media(max-width:768px){.header{flex-wrap:wrap;gap:.5rem}.nav{gap:4px}.nav a{padding:4px 8px;font-size:11px}}
 /* Document overlay */
 .doc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1rem}
 .doc-overlay-box{background:#fff;border-radius:16px;width:100%;max-width:880px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -770,5 +775,9 @@ const LOGO_PROLIG_DEFAULT = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/
 // El logo Prolig se carga en el fetch de config arriba (solo si no es Broker)
 // ─────────────────────────────────────────────────────────
 </script>
+<a href="/usuarios.html" class="fab-usuarios">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  Usuarios
+</a>
 </body>
 </html>
