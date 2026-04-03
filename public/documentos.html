@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(location.hostname.includes('broker'))document.documentElement.classList.add('broker')</script>
 <title>Nova — Documentos</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -69,12 +70,12 @@ input:focus,select:focus,textarea:focus{border-color:#1A3A5C;background:#fff}
 .doc-btn-close:hover{background:rgba(255,255,255,.3)}
 .doc-preview-frame{flex:1;border:none;width:100%;background:#f5f5f5}
 /* Broker theme */
-body.broker .header{background:#3B52D4}
-body.broker input:focus,body.broker select:focus,body.broker textarea:focus{border-color:#3B52D4}
-body.broker .btn-generar{background:#3B52D4}
-body.broker .btn-generar:hover{background:#2D40B8}
-body.broker h1{color:#3B52D4}
-body.broker .section-title{color:#3B52D4}
+.broker .header{background:#3B52D4}
+.broker input:focus,.broker select:focus,.broker textarea:focus{border-color:#3B52D4}
+.broker .btn-generar{background:#3B52D4}
+.broker .btn-generar:hover{background:#2D40B8}
+.broker h1{color:#3B52D4}
+.broker .section-title{color:#3B52D4}
 </style>
 </head>
 <body>
@@ -744,7 +745,7 @@ function numeroALetras(n) {
 fetch('/api/config').then(r=>r.json()).then(cfg=>{
   const esBroker = cfg.siteName && cfg.siteName.toLowerCase().includes('broker')
   if (esBroker) {
-    document.body.classList.add('broker')
+    document.documentElement.classList.add('broker')
     document.getElementById('broker-brand').style.display = 'flex'
     document.getElementById('header-default').style.display = 'none'
     document.title = cfg.siteName + ' — Documentos'
