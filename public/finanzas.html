@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(location.hostname.includes('broker'))document.documentElement.classList.add('broker')</script>
+<title>Nova Finanzas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box}
+.header h1{color:#fff;font-size:18px;font-weight:500;min-width:0;flex-shrink:1}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
+.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
+.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
+.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
+.container{width:100%;max-width:1200px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:.5px solid #e0e0e0;min-width:0}
+.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
+.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
+.panel{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;overflow:hidden;margin-bottom:1rem}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
+.panel-header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+select,input[type=text],input[type=month]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+select:focus,input:focus{border-color:#1A3A5C}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+td{padding:11px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8;vertical-align:middle}
+tr:hover td{background:#fafcff}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-venta{background:#E6F1FB;color:#0C447C}
+.badge-arriendo{background:#EEEDFE;color:#3C3489}
+.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333;transition:all .18s}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
+.btn-primary:hover{background:#0f2540}
+.btn-gold{background:#C9A96E;color:#fff;border-color:#C9A96E}
+.btn-gold:hover{background:#b8944f}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-danger{background:#fff;color:#c0392b;border-color:#e0a0a0}
+.btn-danger:hover{background:#FCEBEB}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
+.monto{font-weight:600;color:#1A3A5C;white-space:nowrap}
+.comision{color:#0F6E56;font-weight:600;white-space:nowrap}
+.refresh{font-size:11px;color:#aaa;cursor:pointer;margin-left:8px}
+.refresh:hover{color:#1A3A5C}
+.resumen-box{background:#f0f8f4;border:1px solid #c8e6d4;border-radius:10px;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.resumen-label{font-size:13px;color:#0F6E56;font-weight:500}
+.resumen-val{font-size:22px;font-weight:700;color:#0F6E56}
+
+/* Broker theme */
+.broker-brand{display:none;align-items:center;gap:10px;flex-shrink:0}
+.broker .header{background:#3B52D4}
+.broker .broker-brand{display:flex !important}
+.broker #page-title{display:none}
+.broker .stat-val{color:#3B52D4}
+.broker .panel-header h2{color:#3B52D4}
+.broker .btn-primary{background:#3B52D4;border-color:#3B52D4}
+.broker .btn-primary:hover{background:#2D40B8}
+.broker .monto{color:#3B52D4}
+.broker tr:hover td{background:#EEF1FB}
+.broker select:focus,.broker input:focus{border-color:#3B52D4}
+.broker .resumen-box{background:#EEF1FB;border-color:#b0bef5}
+.broker .resumen-label{color:#3B52D4}
+.broker .resumen-val{color:#3B52D4}
+.broker-name-text{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px;line-height:1.3}
+.broker-slogan-text{color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px;line-height:1}
+
+/* Animaciones */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.header{animation:fadeIn .3s ease}
+.stat{animation:fadeUp .4s ease both;transition:box-shadow .2s}
+.stat:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
+.stat:nth-child(1){animation-delay:.02s}
+.stat:nth-child(2){animation-delay:.09s}
+.stat:nth-child(3){animation-delay:.16s}
+.stat:nth-child(4){animation-delay:.23s}
+.panel{animation:fadeUp .4s .18s ease both}
+td{transition:background .15s}
+
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
+.toast.activo{opacity:1}
+
+/* Fab Usuarios */
+.fab-usuarios{position:fixed;bottom:1.5rem;left:1.5rem;background:#1A3A5C;color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:50;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
+.fab-usuarios:hover{background:#0f2540;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.broker .fab-usuarios{background:#3B52D4}
+.broker .fab-usuarios:hover{background:#2D40B8}
+
+@media(max-width:768px){
+  .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
+  .stat-val{font-size:20px}
+  .container{padding:1rem .75rem}
+  th,td{font-size:12px;padding:8px 10px;white-space:nowrap}
+  .nav{gap:4px}
+  .nav a{padding:4px 8px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="broker-brand" id="broker-brand">
+    <svg width="30" height="26" viewBox="0 0 36 30" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,17 11,10 11,18"/><line x1="2" y1="17" x2="2" y2="25"/><line x1="2" y1="25" x2="11" y2="25"/><polyline points="11,17 20,8 29,17"/><polyline points="11,17 11,27 29,27 29,17"/><line x1="20" y1="27" x2="20" y2="29"/></svg>
+    <div><div class="broker-name-text">BROKER INMOBILIARIA</div><div class="broker-slogan-text">UN PACTO DE CONFIANZA</div></div>
+  </div>
+  <h1 id="page-title">Nova — Finanzas</h1>
+  <nav class="nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/administraciones.html">Administraciones</a>
+    <a href="/finanzas.html" class="activo">Finanzas</a>
+    <a href="/documentos.html">Documentos</a>
+    <a href="/">Chat</a>
+    <a href="/api/logout" class="nav-salir">Salir</a>
+  </nav>
+</div>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-lbl">Ventas este mes</div>
+      <div class="stat-val" id="s-ventas">0</div>
+      <div class="stat-sub" id="s-ventas-sub">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Arriendos este mes</div>
+      <div class="stat-val" id="s-arriendos">0</div>
+      <div class="stat-sub" id="s-arriendos-sub">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Comisiones este mes</div>
+      <div class="stat-val" id="s-comisiones" style="color:#0F6E56">$0</div>
+      <div class="stat-sub">total ingresado</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Total acumulado</div>
+      <div class="stat-val" id="s-acumulado">$0</div>
+      <div class="stat-sub">todas las operaciones</div>
+    </div>
+  </div>
+
+  <!-- Resumen mes seleccionado -->
+  <div class="resumen-box" id="resumen-box" style="margin-bottom:1rem">
+    <div>
+      <div class="resumen-label">Comisiones del mes seleccionado</div>
+      <div class="resumen-val" id="resumen-total">$0</div>
+    </div>
+    <div style="font-size:12px;color:#555;text-align:right" id="resumen-detalle"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Historial de cierres <span class="refresh" onclick="cargarTransacciones()">Actualizar</span></h2>
+      <div class="panel-header-right">
+        <input type="month" id="f-mes" onchange="filtrar()">
+        <select id="f-tipo" onchange="filtrar()">
+          <option value="">Ventas y arriendos</option>
+          <option value="venta">Solo ventas</option>
+          <option value="arriendo">Solo arriendos</option>
+        </select>
+        <button class="btn btn-gold" onclick="enviarReporte()">Enviar reporte por email</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha cierre</th>
+            <th>Tipo</th>
+            <th>Propiedad</th>
+            <th>Precio</th>
+            <th>Comision parte 1</th>
+            <th>Comision parte 2</th>
+            <th>Total comision</th>
+            <th>Agente</th>
+            <th>Cliente</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-tx">
+          <tr><td colspan="10" class="empty">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let db
+let todasTx = []
+
+function fmt(v, moneda) {
+  if (!v && v !== 0) return '-'
+  if (moneda === 'UF') return Number(v).toLocaleString('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' UF'
+  return '$' + Math.round(v).toLocaleString('es-CL')
+}
+
+function fmtFecha(d) {
+  if (!d) return '-'
+  const f = new Date(d + 'T00:00:00')
+  return f.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'})
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = 'toast activo'
+  setTimeout(() => t.className = 'toast', 3000)
+}
+
+function filtrar() {
+  const mes = document.getElementById('f-mes').value
+  const tipo = document.getElementById('f-tipo').value
+  let filtradas = todasTx
+  if (mes) filtradas = filtradas.filter(t => t.fecha_cierre && t.fecha_cierre.startsWith(mes))
+  if (tipo) filtradas = filtradas.filter(t => t.tipo === tipo)
+  renderTabla(filtradas)
+  actualizarResumen(filtradas)
+}
+
+function actualizarResumen(tx) {
+  const total = tx.reduce((s, t) => s + (Number(t.comision_total) || 0), 0)
+  const ventas = tx.filter(t => t.tipo === 'venta')
+  const arriendos = tx.filter(t => t.tipo === 'arriendo')
+  const totalVentas = ventas.reduce((s, t) => s + (Number(t.comision_total) || 0), 0)
+  const totalArriendos = arriendos.reduce((s, t) => s + (Number(t.comision_total) || 0), 0)
+  document.getElementById('resumen-total').textContent = '$' + Math.round(total).toLocaleString('es-CL')
+  document.getElementById('resumen-detalle').innerHTML =
+    `${ventas.length} venta(s): $${Math.round(totalVentas).toLocaleString('es-CL')}<br>` +
+    `${arriendos.length} arriendo(s): $${Math.round(totalArriendos).toLocaleString('es-CL')}`
+}
+
+function renderTabla(tx) {
+  const tbody = document.getElementById('tabla-tx')
+  if (!tx.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Sin operaciones en este periodo</td></tr>'
+    return
+  }
+  tbody.innerHTML = tx.map(t => {
+    const tipoBadge = t.tipo === 'venta'
+      ? `<span class="badge badge-venta">Venta</span>`
+      : `<span class="badge badge-arriendo">Arriendo</span>`
+    const lbl1 = t.tipo === 'venta' ? 'Vendedor 2%' : 'Arrendador 50%'
+    const lbl2 = t.tipo === 'venta' ? 'Comprador 2%' : 'Arrendatario 50%'
+    return `<tr>
+      <td>${fmtFecha(t.fecha_cierre)}</td>
+      <td>${tipoBadge}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.direccion||'-'}</td>
+      <td class="monto">${fmt(t.precio, t.moneda)}</td>
+      <td style="font-size:12px;color:#555">${lbl1}<br><strong>${fmt(t.comision_parte1, t.moneda)}</strong></td>
+      <td style="font-size:12px;color:#555">${lbl2}<br><strong>${fmt(t.comision_parte2, t.moneda)}</strong></td>
+      <td class="comision">${fmt(t.comision_total, t.moneda)}</td>
+      <td>${t.agente||'-'}</td>
+      <td>${t.cliente||'-'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-danger" onclick="eliminarTx(${t.id})">Eliminar</button>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+async function cargarTransacciones() {
+  const { data, error } = await db.from('transacciones').select('*').order('fecha_cierre', { ascending: false })
+  if (error) {
+    document.getElementById('tabla-tx').innerHTML = '<tr><td colspan="10" class="empty" style="color:#c0392b">Error: ' + error.message + '</td></tr>'
+    return
+  }
+  todasTx = data || []
+
+  // Stats del mes actual
+  const hoy = new Date()
+  const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`
+  const delMes = todasTx.filter(t => t.fecha_cierre && t.fecha_cierre.startsWith(mesActual))
+  const ventasMes = delMes.filter(t => t.tipo === 'venta')
+  const arriendosMes = delMes.filter(t => t.tipo === 'arriendo')
+  const comisionesMes = delMes.reduce((s, t) => s + (Number(t.comision_total) || 0), 0)
+  const acumulado = todasTx.reduce((s, t) => s + (Number(t.comision_total) || 0), 0)
+
+  document.getElementById('s-ventas').textContent = ventasMes.length
+  document.getElementById('s-ventas-sub').textContent = ventasMes.length
+    ? '$' + Math.round(ventasMes.reduce((s,t)=>s+(Number(t.precio)||0),0)).toLocaleString('es-CL') + ' vendido'
+    : 'sin ventas'
+  document.getElementById('s-arriendos').textContent = arriendosMes.length
+  document.getElementById('s-arriendos-sub').textContent = arriendosMes.length
+    ? arriendosMes.length + ' contrato(s)'
+    : 'sin arriendos'
+  document.getElementById('s-comisiones').textContent = '$' + Math.round(comisionesMes).toLocaleString('es-CL')
+  document.getElementById('s-acumulado').textContent = '$' + Math.round(acumulado).toLocaleString('es-CL')
+
+  // Setear filtro al mes actual por defecto
+  if (!document.getElementById('f-mes').value) {
+    document.getElementById('f-mes').value = mesActual
+  }
+
+  filtrar()
+}
+
+async function eliminarTx(id) {
+  if (!confirm('Eliminar este registro?\n\nEsta accion no se puede deshacer.')) return
+  const { error } = await db.from('transacciones').delete().eq('id', id)
+  if (error) { toast('Error al eliminar'); return }
+  toast('Registro eliminado')
+  await cargarTransacciones()
+}
+
+async function enviarReporte() {
+  const mes = document.getElementById('f-mes').value
+  const tipo = document.getElementById('f-tipo').value
+  let filtradas = todasTx
+  if (mes) filtradas = filtradas.filter(t => t.fecha_cierre && t.fecha_cierre.startsWith(mes))
+  if (tipo) filtradas = filtradas.filter(t => t.tipo === tipo)
+  if (!filtradas.length) { toast('No hay operaciones para reportar'); return }
+
+  const totalComision = filtradas.reduce((s,t) => s + (Number(t.comision_total)||0), 0)
+  const ventas = filtradas.filter(t=>t.tipo==='venta').length
+  const arriendos = filtradas.filter(t=>t.tipo==='arriendo').length
+  const mesLabel = mes ? (() => {
+    const [anio, m] = mes.split('-')
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    return meses[parseInt(m,10)-1] + ' ' + anio
+  })() : 'Todo el historial'
+
+  const filas = filtradas.map(t =>
+    `<tr style="border-bottom:1px solid #f0f0f0">
+      <td style="padding:8px 12px">${fmtFecha(t.fecha_cierre)}</td>
+      <td style="padding:8px 12px">${t.tipo==='venta'?'Venta':'Arriendo'}</td>
+      <td style="padding:8px 12px">${t.direccion||'-'}</td>
+      <td style="padding:8px 12px;font-weight:600">$${Math.round(t.comision_total||0).toLocaleString('es-CL')}</td>
+      <td style="padding:8px 12px">${t.agente||'-'}</td>
+    </tr>`
+  ).join('')
+
+  const html = `<div style="font-family:sans-serif;max-width:680px;margin:0 auto">
+    <div style="background:#1A3A5C;padding:24px 32px;border-radius:12px 12px 0 0">
+      <h1 style="color:#fff;font-size:20px;margin:0">Reporte Finanzas</h1>
+      <p style="color:#C9A96E;margin:4px 0 0;font-size:14px">${mesLabel}</p>
+    </div>
+    <div style="background:#fff;padding:24px 32px;border:1px solid #e0e0e0">
+      <div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap">
+        <div style="background:#f0f8f4;border-radius:10px;padding:16px 20px;flex:1;min-width:140px">
+          <div style="font-size:12px;color:#888">Ventas</div>
+          <div style="font-size:24px;font-weight:700;color:#1A3A5C">${ventas}</div>
+        </div>
+        <div style="background:#f0f8f4;border-radius:10px;padding:16px 20px;flex:1;min-width:140px">
+          <div style="font-size:12px;color:#888">Arriendos</div>
+          <div style="font-size:24px;font-weight:700;color:#1A3A5C">${arriendos}</div>
+        </div>
+        <div style="background:#f0f8f4;border-radius:10px;padding:16px 20px;flex:1;min-width:140px">
+          <div style="font-size:12px;color:#888">Total comisiones</div>
+          <div style="font-size:24px;font-weight:700;color:#0F6E56">$${Math.round(totalComision).toLocaleString('es-CL')}</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#f5f5f5">
+            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#888">Fecha</th>
+            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#888">Tipo</th>
+            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#888">Propiedad</th>
+            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#888">Comision</th>
+            <th style="padding:8px 12px;text-align:left;font-size:12px;color:#888">Agente</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div style="background:#f9f9f9;padding:16px 32px;border-radius:0 0 12px 12px;border:1px solid #e0e0e0;border-top:none;text-align:center;font-size:12px;color:#aaa">
+      Generado por Nova Inmobiliario
+    </div>
+  </div>`
+
+  try {
+    const r = await fetch('/api/enviar-reporte-finanzas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html, mes: mesLabel, ventas, arriendos, totalComision })
+    })
+    const d = await r.json()
+    if (d.ok) toast('Reporte enviado al correo')
+    else toast('Error: ' + (d.error || 'revisa configuracion'))
+  } catch(e) {
+    toast('Error de conexion')
+  }
+}
+
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  if (cfg.siteName) {
+    document.getElementById('page-title').textContent = cfg.siteName + ' — Finanzas'
+    document.title = cfg.siteName + ' — Finanzas'
+    if (cfg.siteName.toLowerCase().includes('broker')) document.documentElement.classList.add('broker')
+  }
+  if (!cfg.supabaseUrl || !cfg.supabaseKey) {
+    document.getElementById('tabla-tx').innerHTML = '<tr><td colspan="10" class="empty" style="color:#c0392b">Error: Supabase no configurado</td></tr>'
+    return
+  }
+  db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+  cargarTransacciones()
+}).catch(e => {
+  document.getElementById('tabla-tx').innerHTML = '<tr><td colspan="10" class="empty" style="color:#c0392b">Error conectando servidor</td></tr>'
+})
+</script>
+<a href="/usuarios.html" class="fab-usuarios">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  Usuarios
+</a>
+</body>
+</html>
