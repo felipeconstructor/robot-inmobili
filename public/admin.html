@@ -9,26 +9,27 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html{overflow-x:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh;max-width:100%}
-.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-.header h1{color:#fff;font-size:18px;font-weight:500}
-.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+html,body{overflow-x:hidden;max-width:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box}
+.header h1{color:#fff;font-size:18px;font-weight:500;min-width:0;flex-shrink:1}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
 .nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
 .nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
 .nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
 .nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
 .nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
-.container{max-width:1300px;margin:0 auto;padding:1.5rem}
+.container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{min-width:0}
 .stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:.5px solid #e0e0e0}
 .stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
 .stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
 .stat-sub{font-size:11px;color:#aaa;margin-top:2px}
-.panel{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;overflow:hidden}
-.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
-.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
-.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.panel{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;overflow:hidden;min-width:0;width:100%}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;min-width:0}
+.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C;min-width:0}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0}
 select,input[type=text],input[type=number]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
 select:focus,input:focus{border-color:#1A3A5C}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -143,6 +144,10 @@ tr:hover .thumb{transform:scale(1.08)}
 .broker .fab-usuarios{background:#3B52D4}
 .broker .fab-usuarios:hover{background:#2D40B8}
 
+@media(max-width:1024px){
+  .stats{grid-template-columns:repeat(4,1fr)}
+  .panel-header>div{flex-wrap:wrap}
+}
 @media(max-width:768px){
   .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
   .container{padding:1rem .75rem}
@@ -213,7 +218,7 @@ tr:hover .thumb{transform:scale(1.08)}
       <h2>Todas las propiedades <span class="refresh" onclick="cargarPropiedades()">Actualizar</span></h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <div class="filters">
-          <input type="text" id="f-buscar" placeholder="Buscar..." style="width:160px" oninput="filtrar()">
+          <input type="text" id="f-buscar" placeholder="Buscar..." style="width:140px;max-width:100%" oninput="filtrar()">
           <select id="f-tipo" onchange="filtrar()">
             <option value="">Todos los tipos</option>
             <option>Casa</option><option>Departamento</option><option>Oficina</option>
