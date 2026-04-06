@@ -527,7 +527,7 @@ function generarAdministracion() {
   const comisionTexto = comisionMonto ? `${formatPeso(comisionMonto)} (${numeroALetras(comisionMonto)} pesos)` : '___'
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<link rel="stylesheet" href="/nova-premium.css"><title>Contrato Administración</title>${estiloDoc}</head><body>
+<title>Contrato Administración</title>${estiloDoc}</head><body>
   ${getLogoHeader()}
   <h1>Acuerdo de Prestación de Servicios de<br>Administración de Propiedad</h1>
   <p>En ${ciudad}, a ${fecha}, comparecen por una parte <strong>Felipe Ignacio Campos Pizarro, RUT 19.447.149-1</strong>, en representación de <strong>Prolig</strong>, en adelante "EL ADMINISTRADOR"; y por otra parte <strong>${propNombre}, RUT ${propRut}</strong>, en adelante "LA PROPIETARIA". Ambas partes mayores de edad, quienes convienen celebrar el siguiente Contrato de Prestación de Servicios de Administración de Propiedad, que se regirá por las siguientes cláusulas:</p>
@@ -608,7 +608,7 @@ function generarArriendo() {
     : ''
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<link rel="stylesheet" href="/nova-premium.css"><title>Contrato de Arrendamiento</title>${estiloDoc}</head><body>
+<title>Contrato de Arrendamiento</title>${estiloDoc}</head><body>
   ${getLogoHeader()}
   <h1>Contrato de Arrendamiento</h1>
   <p style="text-align:center"><strong>${arrendadorNombre}</strong><br><strong>A</strong><br><strong>${arrendatarioNombre}</strong></p>
@@ -699,7 +699,7 @@ function generarVisita() {
   const obs = document.getElementById('vis-obs').value
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<link rel="stylesheet" href="/nova-premium.css"><title>Orden de Visita</title>${estiloDoc}</head><body>
+<title>Orden de Visita</title>${estiloDoc}</head><body>
   ${getLogoHeader()}
   <h1>Orden de Visita</h1>
   <p style="text-align:center;color:#888;margin-bottom:2em">Prolig Propiedades — Documento de Confirmación</p>
