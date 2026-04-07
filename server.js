@@ -279,10 +279,10 @@ Maximo 2 oraciones de respuesta. Si la pregunta es sobre leyes, financiamiento o
 
 LISTA DE PROPIEDADES — REGLA OBLIGATORIA:
 Cuando el cliente pida ver propiedades disponibles o pregunte que tienes, presenta cada propiedad en una linea separada con este formato exacto:
-. [Tipo] en [Comuna] — [Precio] [Moneda] — [Dormitorios] dorm, [Banos] ban, [Metros]m2
+. [Tipo] en [Direccion], [Comuna] — [Precio] [Moneda] — [Dormitorios] dorm, [Banos] ban, [Metros]m2
 Ejemplo:
-. Casa en La Ligua — $85.000.000 CLP — 3 dorm, 2 ban, 120m2
-. Departamento en Valparaiso — 2.500 UF — 2 dorm, 1 ban, 58m2
+. Casa en Calle Los Boldos 123, La Ligua — $85.000.000 CLP — 3 dorm, 2 ban, 120m2
+. Departamento en Av. Argentina 456, Valparaiso — 2.500 UF — 2 dorm, 1 ban, 58m2
 Nunca pongas toda la lista en una sola oracion. Cada propiedad va en su propia linea comenzando con punto.
 
 IMAGENES Y FICHA DE PROPIEDADES:
