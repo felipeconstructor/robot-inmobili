@@ -232,9 +232,9 @@ app.get('/manifest.json', (req, res) => {
     orientation: 'portrait-primary',
     categories: ['business', 'productivity'],
     icons: [
-      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-      { src: '/icons/icon.svg',     sizes: 'any',     type: 'image/svg+xml', purpose: 'any maskable' }
+      { src: isBroker ? '/icons/broker-icon-192.png' : '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: isBroker ? '/icons/broker-icon-512.png' : '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      { src: '/icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
     ],
     shortcuts: [
       { name: 'CRM', short_name: 'CRM', url: '/crm.html', description: 'Ver leads' },
