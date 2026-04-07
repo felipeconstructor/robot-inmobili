@@ -173,6 +173,36 @@ app.get('/api/config', (req, res) => {
   })
 })
 
+// ─── PWA Manifest dinámico ───────────────────────────────────────────────────
+app.get('/manifest.json', (req, res) => {
+  const siteName = process.env.SITE_NAME || 'Nova — Prolig Propiedades'
+  const isBroker = siteName.toLowerCase().includes('broker')
+  const themeColor = isBroker ? '#3B52D4' : '#1A3A5C'
+  const shortName = isBroker ? 'Broker CRM' : 'Nova CRM'
+
+  res.json({
+    name: siteName,
+    short_name: shortName,
+    description: 'CRM inmobiliario con inteligencia artificial',
+    start_url: '/login.html',
+    scope: '/',
+    display: 'standalone',
+    background_color: '#0A0E1A',
+    theme_color: themeColor,
+    orientation: 'portrait-primary',
+    categories: ['business', 'productivity'],
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      { src: '/icons/icon.svg',     sizes: 'any',     type: 'image/svg+xml', purpose: 'any maskable' }
+    ],
+    shortcuts: [
+      { name: 'CRM', short_name: 'CRM', url: '/crm.html', description: 'Ver leads' },
+      { name: 'Propiedades', short_name: 'Propiedades', url: '/admin.html', description: 'Gestionar propiedades' }
+    ]
+  })
+})
+
 app.use(express.static(path.join(__dirname, 'public')))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)

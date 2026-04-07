@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo -->
+  <rect width="512" height="512" rx="80" fill="#1A3A5C"/>
+  <!-- Gradiente -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A3A5C"/>
+      <stop offset="100%" style="stop-color:#0F2540"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00D9FF;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#00D9FF;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#00D9FF;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+  <!-- Línea cyan top -->
+  <rect x="60" y="60" width="392" height="2" rx="1" fill="url(#glow)" opacity="0.8"/>
+  <!-- Casa / N estilizada -->
+  <!-- Letra N futurista -->
+  <text x="256" y="320" font-family="IBM Plex Sans, Arial, sans-serif" font-weight="700"
+        font-size="260" fill="#E0E8FF" text-anchor="middle" dominant-baseline="middle"
+        letter-spacing="-10">N</text>
+  <!-- Cyan accent line bottom -->
+  <rect x="156" y="370" width="200" height="3" rx="1.5" fill="#00D9FF" opacity="0.7"/>
+  <!-- Dot cyan -->
+  <circle cx="256" cy="400" r="6" fill="#00D9FF" opacity="0.9"/>
+</svg>
