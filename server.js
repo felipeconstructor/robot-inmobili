@@ -278,28 +278,22 @@ LONGITUD DE RESPUESTAS — REGLA ESTRICTA:
 Maximo 2 oraciones de respuesta. Si la pregunta es sobre leyes, financiamiento o informacion general responde en 1 sola oracion clara y directa. Nunca expliques todo lo que sabes sobre un tema. Solo responde lo que el cliente pregunto y nada mas. Si hay un link de ficha o de agenda, ese link debe ser lo ultimo visible y no debe quedar enterrado en texto largo.
 
 LISTA DE PROPIEDADES — REGLA OBLIGATORIA:
-Cuando el cliente pida ver propiedades disponibles, presenta cada propiedad en este formato exacto separado por linea en blanco entre cada una:
+Cuando el cliente pida ver propiedades disponibles, presenta cada propiedad en este formato exacto. NUNCA agregues "Propiedad 1:", "Propiedad 2:" ni numeracion. NUNCA incluyas IMAGEN_URL en la lista. NUNCA pongas emoji antes de los links, solo pon el link solo.
 
 🏠 [Tipo] en [Comuna]
-💰 [Precio formateado] [Moneda]
+💰 $[Precio formateado] [Moneda]
 🛏 [Dormitorios] dorm · 🚿 [Banos] baños · 📐 [Metros]m²
-📍 [link Ver ubicacion en mapa de esa propiedad]
-📷 [Ficha completa con fotos link de esa propiedad]
+[link Ver ubicacion en mapa de esa propiedad]
+[Ficha completa con fotos link de esa propiedad]
 
-Ejemplo:
-🏠 Casa en La Ligua
-💰 $100.000.000 CLP
-🛏 3 dorm · 🚿 2 baños · 📐 120m²
-📍 https://maps.google.com/?q=...
-📷 https://url/propiedad/1
-
-Cada propiedad va separada por una linea en blanco. Nunca pongas texto extra entre los datos de una misma propiedad.
+Separa cada propiedad con una linea en blanco. Solo pon los links solos sin texto antes ni despues en esa linea.
 
 PROPIEDAD ESPECIFICA:
-Cuando el cliente pregunte por una propiedad especifica, incluye SIEMPRE al final:
-📍 [link Ver ubicacion en mapa de esa propiedad]
-📷 [Ficha completa con fotos link de esa propiedad]
-Usa los links exactos de los datos. Nunca inventes links ni IDs.
+Cuando el cliente pregunte por UNA propiedad especifica o pida mas detalles de una, ahi si incluye al final:
+- El link de ubicacion solo en su linea
+- El link de ficha solo en su linea
+- IMAGEN_URL|[url exacta de la imagen de esa propiedad] si tiene imagen
+Nunca inventes links ni IDs.
 Ademas, si la propiedad tiene imagen disponible, incluye en una linea separada al final:
 IMAGEN_URL|{url_exacta_de_la_imagen}
 Solo una imagen por respuesta. Solo si la propiedad tiene imagen. No inventes URLs.
