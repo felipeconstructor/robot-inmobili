@@ -554,6 +554,7 @@ async function procesarRespuesta(texto, sesionId, canal) {
       const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
       if (disponible) {
         await agendarVisita(nombre, telefono, propiedad, fecha, parseInt(hora))
+        programarRecordatorioVisita(nombre, telefono, propiedad, fecha, parseInt(hora))
         respuestaFinal = `Listo, agende tu visita correctamente.\n\nResumen:\nNombre: ${nombre}\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe esperamos. Si necesitas cambiar escríbenos con anticipacion.`
       } else {
         historial[sesionId].push({ role: 'user', content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario.` })
@@ -569,6 +570,7 @@ async function procesarRespuesta(texto, sesionId, canal) {
     const [nombre, telefono, propiedad, tipo, temperatura] = partes
     const estadoLead = temperatura === 'caliente' ? 'caliente' : temperatura === 'tibio' ? 'tibio' : 'nuevo'
     await guardarLead(nombre, telefono, propiedad, '', canal, estadoLead, tipo || 'sin_clasificar')
+    if (temperatura === 'caliente') notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal)
     respuestaFinal = respuestaFinal.replace(/LEAD_DATOS\|.*/, '').trim()
   }
 
@@ -1024,6 +1026,101 @@ app.post('/api/informe-test', async (req, res) => {
 // Cron: todos los lunes a las 8:00am hora Santiago
 cron.schedule('0 8 * * 1', enviarInformeSemanal, { timezone: 'America/Santiago' })
 console.log('Cron informe semanal activo — lunes 8:00am Santiago')
+
+// ─── AUTOMATIZACIONES DE SEGUIMIENTO ─────────────────────────────────────────
+
+async function enviarWhatsAppAuto(telefono, mensaje, tipo, leadId) {
+  if (!telefono || !process.env.TWILIO_ACCOUNT_SID) return
+  const tel = telefono.replace(/\D/g, '')
+  const to = `whatsapp:+${tel.startsWith('56') ? tel : '56' + tel}`
+  try {
+    const twilio = require('twilio')
+    const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    await tc.messages.create({ from: process.env.TWILIO_WHATSAPP_NUMBER, to, body: mensaje })
+    await supabase.from('auto_followups').insert({ lead_id: leadId, tipo, canal: 'whatsapp', mensaje, exitoso: true }).catch(() => {})
+    console.log(`Auto-followup [${tipo}] enviado a ${telefono}`)
+  } catch (err) {
+    console.error(`Error auto-followup [${tipo}]:`, err.message)
+    await supabase.from('auto_followups').insert({ lead_id: leadId, tipo, canal: 'whatsapp', mensaje, exitoso: false }).catch(() => {})
+  }
+}
+
+// 1C: Notificación instantánea al agente cuando lead es CALIENTE
+async function notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal) {
+  if (!NOTIFY_PHONE || !process.env.TWILIO_ACCOUNT_SID) return
+  try {
+    const twilio = require('twilio')
+    const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    const waLink = telefono ? `https://wa.me/${telefono.replace(/\D/g, '')}` : ''
+    const msg = `LEAD CALIENTE\nNombre: ${nombre}\nTelefono: ${telefono || '-'}\nInteres: ${propiedad || 'Consulta general'}\nCanal: ${canal || '-'}${waLink ? '\nContactar: ' + waLink : ''}`
+    await tc.messages.create({ from: process.env.TWILIO_WHATSAPP_NUMBER, to: NOTIFY_PHONE, body: msg })
+    console.log('Notificacion LEAD CALIENTE enviada al agente:', nombre)
+  } catch (err) {
+    console.error('Error notificacion agente:', err.message)
+  }
+}
+
+// 1A: Seguimiento post-visita — cron diario 10am Santiago
+cron.schedule('0 10 * * *', async () => {
+  console.log('Cron: seguimiento post-visita')
+  try {
+    const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const hace48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+    const { data: leads } = await supabase
+      .from('leads').select('*')
+      .eq('estado', 'visita')
+      .is('ultimo_auto_followup', null)
+      .gte('updated_at', hace48h)
+      .lte('updated_at', hace24h)
+    if (!leads || !leads.length) { console.log('Sin leads post-visita hoy'); return }
+    for (const lead of leads) {
+      const msg = `Hola ${lead.nombre}, esperamos que la visita a ${lead.propiedad_interes || 'la propiedad'} haya sido de tu agrado. Quedamos atentos ante cualquier consulta o si deseas avanzar con el proceso.`
+      await enviarWhatsAppAuto(lead.telefono, msg, 'post_visita', lead.id)
+      await supabase.from('leads').update({ estado: 'post_visita', ultimo_auto_followup: new Date().toISOString() }).eq('id', lead.id)
+    }
+    console.log(`Post-visita: ${leads.length} leads contactados`)
+  } catch (err) { console.error('Error cron post-visita:', err.message) }
+}, { timezone: 'America/Santiago' })
+
+// 1B: Reactivación leads fríos — cron cada 4 días 11am Santiago
+cron.schedule('0 11 */4 * *', async () => {
+  console.log('Cron: reactivacion leads frios')
+  try {
+    const hace4dias = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: leads } = await supabase
+      .from('leads').select('*')
+      .in('estado', ['frio', 'nuevo'])
+      .lt('created_at', hace4dias)
+      .lt('contador_reactivaciones', 2)
+      .eq('canal', 'whatsapp')
+    if (!leads || !leads.length) { console.log('Sin leads frios para reactivar'); return }
+    for (const lead of leads) {
+      const msg = `Hola ${lead.nombre}, vimos que consultaste por ${lead.propiedad_interes || 'propiedades'}. Seguimos disponibles y tenemos nuevas opciones que podrian interesarte. Hablame cuando quieras.`
+      await enviarWhatsAppAuto(lead.telefono, msg, 'reactivacion', lead.id)
+      await supabase.from('leads').update({
+        contador_reactivaciones: (lead.contador_reactivaciones || 0) + 1,
+        ultimo_auto_followup: new Date().toISOString()
+      }).eq('id', lead.id)
+    }
+    console.log(`Reactivacion: ${leads.length} leads contactados`)
+  } catch (err) { console.error('Error cron reactivacion:', err.message) }
+}, { timezone: 'America/Santiago' })
+
+// 1D: Recordatorio 24h antes de visita (se programa al agendar)
+function programarRecordatorioVisita(nombre, telefono, propiedad, fecha, hora) {
+  const fechaVisita = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00-03:00`)
+  const fechaRecordatorio = new Date(fechaVisita.getTime() - 24 * 60 * 60 * 1000)
+  const ahora = new Date()
+  const msHastaRecordatorio = fechaRecordatorio - ahora
+  if (msHastaRecordatorio < 60000) return // menos de 1 minuto → no programar
+  setTimeout(async () => {
+    const msg = `Hola ${nombre}, te recordamos tu visita manana a ${propiedad} a las ${hora}:00 hrs. Te esperamos. Ante cualquier cambio escríbenos con anticipacion.`
+    await enviarWhatsAppAuto(telefono, msg, 'recordatorio_visita', null)
+  }, msHastaRecordatorio)
+  console.log(`Recordatorio visita programado para ${nombre} en ${Math.round(msHastaRecordatorio / 3600000)}h`)
+}
+
+console.log('Automatizaciones activas: post-visita 10am, reactivacion frios cada 4 dias')
 
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => {
