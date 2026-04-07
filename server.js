@@ -460,6 +460,13 @@ async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
       end: { dateTime: fin.toISOString(), timeZone: 'America/Santiago' }
     }
   })
+  // Guardar hora exacta de fin de visita para post-followup automático
+  await supabase.from('leads')
+    .update({ fecha_visita: fin.toISOString() })
+    .eq('nombre', nombre).eq('telefono', telefono)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .catch(() => {})
   return evento.data
 }
 
@@ -1060,19 +1067,19 @@ async function notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal) {
   }
 }
 
-// 1A: Seguimiento post-visita — cron diario 10am Santiago
-cron.schedule('0 10 * * *', async () => {
-  console.log('Cron: seguimiento post-visita')
+// 1A: Seguimiento post-visita — cron cada hora, exacto al horario del Calendar
+cron.schedule('0 * * * *', async () => {
   try {
-    const hace24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    const hace48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+    const ahora = new Date()
+    const hace1h = new Date(ahora.getTime() - 60 * 60 * 1000).toISOString()
     const { data: leads } = await supabase
       .from('leads').select('*')
       .eq('estado', 'visita')
       .is('ultimo_auto_followup', null)
-      .gte('updated_at', hace48h)
-      .lte('updated_at', hace24h)
-    if (!leads || !leads.length) { console.log('Sin leads post-visita hoy'); return }
+      .not('fecha_visita', 'is', null)
+      .lte('fecha_visita', ahora.toISOString())
+      .gte('fecha_visita', hace1h)
+    if (!leads || !leads.length) return
     for (const lead of leads) {
       const msg = `Hola ${lead.nombre}, esperamos que la visita a ${lead.propiedad_interes || 'la propiedad'} haya sido de tu agrado. Quedamos atentos ante cualquier consulta o si deseas avanzar con el proceso.`
       await enviarWhatsAppAuto(lead.telefono, msg, 'post_visita', lead.id)
