@@ -549,14 +549,19 @@ async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
       end: { dateTime: fin.toISOString(), timeZone: 'America/Santiago' }
     }
   })
-  // Guardar hora exacta de fin de visita para post-followup automático
+  // Guardar calendar_event_id, fecha_visita y cancel_token en el lead
+  const cancelToken = require('crypto').randomBytes(16).toString('hex')
   await supabase.from('leads')
-    .update({ fecha_visita: fin.toISOString() })
+    .update({
+      fecha_visita: fin.toISOString(),
+      calendar_event_id: evento.data.id,
+      cancel_token: cancelToken
+    })
     .eq('nombre', nombre).eq('telefono', telefono)
     .order('created_at', { ascending: false })
     .limit(1)
     .catch(() => {})
-  return evento.data
+  return { ...evento.data, cancelToken }
 }
 
 async function obtenerRespuestaNova(mensaje, sesionId) {
@@ -1103,6 +1108,55 @@ async function enviarInformeSemanal() {
   }
 }
 
+// ─── CANCELACION DE VISITAS ───────────────────────────────────────────────────
+app.get('/cancelar-visita/:token', async (req, res) => {
+  const { token } = req.params
+  try {
+    const { data: leads } = await supabase.from('leads').select('*').eq('cancel_token', token).limit(1)
+    const lead = leads && leads[0]
+    if (!lead) return res.send('<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>Link no valido o visita ya cancelada</h2></body></html>')
+
+    // Eliminar evento de Google Calendar
+    if (lead.calendar_event_id) {
+      try {
+        await calendar.events.delete({ calendarId: CALENDAR_ID, eventId: lead.calendar_event_id })
+      } catch(e) { /* puede que ya no exista */ }
+    }
+
+    // Actualizar lead
+    await supabase.from('leads').update({
+      estado: 'cancelado',
+      cancel_token: null,
+      notas: (lead.notas || '') + '\nVisita cancelada por el cliente via link.'
+    }).eq('id', lead.id)
+
+    // Notificar al agente
+    if (NOTIFY_PHONE && process.env.TWILIO_ACCOUNT_SID) {
+      const twilio = require('twilio')
+      const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+      await tc.messages.create({
+        from: process.env.TWILIO_WHATSAPP_NUMBER,
+        to: NOTIFY_PHONE,
+        body: `VISITA CANCELADA\n\nCliente: ${lead.nombre}\nTelefono: ${lead.telefono}\nPropiedad: ${lead.propiedad_interes}\nFecha visita: ${lead.fecha_visita ? new Date(lead.fecha_visita).toLocaleString('es-CL', { timeZone: 'America/Santiago' }) : '-'}`
+      }).catch(() => {})
+    }
+
+    // Enviar confirmacion al cliente
+    if (lead.canal === 'whatsapp' && lead.telefono) {
+      await enviarWhatsAppAuto(lead.telefono, `Tu visita ha sido cancelada correctamente. Si quieres reagendar, escríbenos cuando quieras.`, 'cancelacion', lead.id)
+    }
+
+    res.send(`<html><body style="font-family:sans-serif;text-align:center;padding:60px;max-width:500px;margin:0 auto">
+      <div style="font-size:48px">✅</div>
+      <h2 style="color:#1A3A5C">Visita cancelada</h2>
+      <p style="color:#666">Tu visita ha sido cancelada correctamente. Si deseas reagendar, escríbenos por WhatsApp.</p>
+    </body></html>`)
+  } catch(err) {
+    console.error('Error cancelar visita:', err.message)
+    res.status(500).send('<html><body style="text-align:center;padding:60px"><h2>Error al cancelar. Contacta directamente a la inmobiliaria.</h2></body></html>')
+  }
+})
+
 // Ruta debug para verificar variables de entorno
 app.get('/api/debug-env', (req, res) => {
   res.json({
@@ -1205,19 +1259,54 @@ cron.schedule('0 11 */4 * *', async () => {
   } catch (err) { console.error('Error cron reactivacion:', err.message) }
 }, { timezone: 'America/Santiago' })
 
-// 1D: Recordatorio 24h antes de visita (se programa al agendar)
+// 1D: Recordatorios de visita — cron cada hora busca visitas proximas
 function programarRecordatorioVisita(nombre, telefono, propiedad, fecha, hora) {
-  const fechaVisita = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00-03:00`)
-  const fechaRecordatorio = new Date(fechaVisita.getTime() - 24 * 60 * 60 * 1000)
-  const ahora = new Date()
-  const msHastaRecordatorio = fechaRecordatorio - ahora
-  if (msHastaRecordatorio < 60000) return // menos de 1 minuto → no programar
-  setTimeout(async () => {
-    const msg = `Hola ${nombre}, te recordamos tu visita manana a ${propiedad} a las ${hora}:00 hrs. Te esperamos. Ante cualquier cambio escríbenos con anticipacion.`
-    await enviarWhatsAppAuto(telefono, msg, 'recordatorio_visita', null)
-  }, msHastaRecordatorio)
-  console.log(`Recordatorio visita programado para ${nombre} en ${Math.round(msHastaRecordatorio / 3600000)}h`)
+  // No hace nada — el cron de recordatorios maneja todo via Supabase
+  console.log(`Visita agendada para ${nombre} — recordatorios via cron`)
 }
+
+// Cron cada hora: recordatorio 24h y 1h antes de la visita
+cron.schedule('5 * * * *', async () => {
+  try {
+    const ahora = new Date()
+    const en24h = new Date(ahora.getTime() + 24 * 60 * 60 * 1000)
+    const en1h = new Date(ahora.getTime() + 60 * 60 * 1000)
+    const ventana = 30 * 60 * 1000 // ventana de 30 min para no duplicar
+
+    // Recordatorio 24h
+    const { data: leads24 } = await supabase.from('leads').select('*')
+      .eq('estado', 'visita').eq('recordatorio_24h_enviado', false)
+      .not('fecha_visita', 'is', null).not('cancel_token', 'is', null)
+      .gte('fecha_visita', new Date(en24h.getTime() - ventana).toISOString())
+      .lte('fecha_visita', new Date(en24h.getTime() + ventana).toISOString())
+
+    for (const lead of (leads24 || [])) {
+      const fechaStr = new Date(lead.fecha_visita).toLocaleString('es-CL', { timeZone: 'America/Santiago', weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' })
+      const cancelUrl = `${APP_URL}/cancelar-visita/${lead.cancel_token}`
+      const msg = `Hola ${lead.nombre}, te recordamos tu visita manana para ${lead.propiedad_interes}.\n\nFecha: ${fechaStr} hrs.\n\nTe esperamos. Si no puedes asistir, puedes cancelar aqui: ${cancelUrl}`
+      await enviarWhatsAppAuto(lead.telefono, msg, 'recordatorio_24h', lead.id)
+      await supabase.from('leads').update({ recordatorio_24h_enviado: true }).eq('id', lead.id)
+    }
+
+    // Recordatorio 1h
+    const { data: leads1h } = await supabase.from('leads').select('*')
+      .eq('estado', 'visita').eq('recordatorio_1h_enviado', false)
+      .not('fecha_visita', 'is', null).not('cancel_token', 'is', null)
+      .gte('fecha_visita', new Date(en1h.getTime() - ventana).toISOString())
+      .lte('fecha_visita', new Date(en1h.getTime() + ventana).toISOString())
+
+    for (const lead of (leads1h || [])) {
+      const fechaStr = new Date(lead.fecha_visita).toLocaleString('es-CL', { timeZone: 'America/Santiago', hour:'2-digit', minute:'2-digit' })
+      const cancelUrl = `${APP_URL}/cancelar-visita/${lead.cancel_token}`
+      const msg = `Hola ${lead.nombre}, tu visita a ${lead.propiedad_interes} es en 1 hora (${fechaStr} hrs). Te esperamos.\n\nSi no puedes asistir, cancela aqui: ${cancelUrl}`
+      await enviarWhatsAppAuto(lead.telefono, msg, 'recordatorio_1h', lead.id)
+      await supabase.from('leads').update({ recordatorio_1h_enviado: true }).eq('id', lead.id)
+    }
+
+    if ((leads24 || []).length + (leads1h || []).length > 0)
+      console.log(`Recordatorios: ${(leads24||[]).length} de 24h, ${(leads1h||[]).length} de 1h`)
+  } catch(err) { console.error('Error cron recordatorios:', err.message) }
+}, { timezone: 'America/Santiago' })
 
 console.log('Automatizaciones activas: post-visita 10am, reactivacion frios cada 4 dias')
 
