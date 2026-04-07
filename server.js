@@ -173,63 +173,44 @@ app.get('/api/config', (req, res) => {
   })
 })
 
-// ─── PWA ícono PNG — generado con zlib puro (sin dependencias) ───────────────
-const zlib = require('zlib')
-
-function pngChunk(type, data) {
-  const buf = Buffer.alloc(12 + data.length)
-  buf.writeUInt32BE(data.length, 0)
-  buf.write(type, 4, 'ascii')
-  data.copy(buf, 8)
-  // CRC32
-  const crcTable = (() => {
-    const t = new Uint32Array(256)
-    for (let i = 0; i < 256; i++) {
-      let c = i
-      for (let j = 0; j < 8; j++) c = (c & 1) ? 0xEDB88320 ^ (c >>> 1) : c >>> 1
-      t[i] = c
-    }
-    return t
-  })()
-  let crc = 0xFFFFFFFF
-  const crcData = Buffer.concat([Buffer.from(type, 'ascii'), data])
-  for (const byte of crcData) crc = crcTable[(crc ^ byte) & 0xFF] ^ (crc >>> 8)
-  buf.writeUInt32BE((crc ^ 0xFFFFFFFF) >>> 0, 8 + data.length)
-  return buf
-}
-
-function generarPNG(size, r, g, b) {
-  // IHDR
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4)
-  ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0
-
-  // Imagen: fondo de color sólido
-  const raw = Buffer.alloc(size * (size * 3 + 1))
-  for (let y = 0; y < size; y++) {
-    const row = y * (size * 3 + 1)
-    raw[row] = 0 // filter byte
-    for (let x = 0; x < size; x++) {
-      raw[row + 1 + x * 3] = r
-      raw[row + 2 + x * 3] = g
-      raw[row + 3 + x * 3] = b
-    }
-  }
-  const idat = zlib.deflateSync(raw)
-  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-  return Buffer.concat([sig, pngChunk('IHDR', ihdr), pngChunk('IDAT', idat), pngChunk('IEND', Buffer.alloc(0))])
-}
-
-app.get('/icons/icon-:size.png', (req, res) => {
-  const size = Math.min(parseInt(req.params.size) || 192, 512)
+// ─── PWA íconos ───────────────────────────────────────────────────────────────
+function generarSVGIcono() {
   const siteName = process.env.SITE_NAME || ''
   const isBroker = siteName.toLowerCase().includes('broker')
-  // Nova: #1A3A5C  Broker: #3B52D4
-  const [r, g, b] = isBroker ? [59, 82, 212] : [26, 58, 92]
-  const png = generarPNG(size, r, g, b)
-  res.setHeader('Content-Type', 'image/png')
-  res.setHeader('Cache-Control', 'public, max-age=86400')
-  res.send(png)
+  const blue = isBroker ? '#3B52D4' : '#1A3A5C'
+  const blueDark = isBroker ? '#2D40B8' : '#0F2540'
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${blue}"/>
+      <stop offset="100%" stop-color="${blueDark}"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D9FF" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#00D9FF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#00D9FF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="90" fill="url(#bg)"/>
+  <rect x="60" y="62" width="392" height="2" rx="1" fill="url(#cyan)"/>
+  <text x="256" y="295" font-family="Arial Black, Arial, sans-serif" font-weight="900"
+        font-size="280" fill="#E0E8FF" text-anchor="middle" dominant-baseline="middle"
+        letter-spacing="-8">N</text>
+  <rect x="176" y="388" width="160" height="4" rx="2" fill="#00D9FF" opacity="0.85"/>
+  <rect x="60" y="448" width="392" height="2" rx="1" fill="url(#cyan)"/>
+</svg>`
+}
+
+// SVG dinámico (se adapta a Nova o Broker)
+app.get('/icons/icon.svg', (_req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml')
+  res.setHeader('Cache-Control', 'public, max-age=3600')
+  res.send(generarSVGIcono())
+})
+
+// PNGs redirigen al SVG dinámico
+app.get('/icons/icon-:size.png', (_req, res) => {
+  res.redirect('/icons/icon.svg')
 })
 
 // ─── PWA Manifest dinámico ───────────────────────────────────────────────────
