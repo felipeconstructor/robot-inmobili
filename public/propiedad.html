@@ -203,7 +203,8 @@ async function cargar() {
 
   // Texto
   document.getElementById('titulo').textContent = `${prop.tipo} en ${prop.direccion}`
-  document.getElementById('direccion').textContent = prop.comuna || ''
+  const mapsQ = encodeURIComponent(`${prop.direccion}, ${prop.comuna}, Chile`)
+  document.getElementById('direccion').innerHTML = `<a href="https://maps.google.com/?q=${mapsQ}" target="_blank" style="color:#888;text-decoration:none;border-bottom:1px dashed #ccc">${prop.direccion}, ${prop.comuna} 📍</a>`
   document.getElementById('precio').textContent = formatPrecio(prop.precio, prop.moneda)
   document.getElementById('descripcion').textContent = prop['descripción'] || 'Sin descripcion disponible.'
 
