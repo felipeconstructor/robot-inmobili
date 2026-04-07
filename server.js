@@ -497,7 +497,10 @@ Ficha completa con fotos: ${APP_URL}/propiedad/${p.id}
   })
 
   const data = await respuesta.json()
-  if (data.error) throw new Error(data.error.message)
+  if (data.error) {
+    console.error('Anthropic API error:', JSON.stringify(data.error))
+    throw new Error(data.error.message)
+  }
 
   const texto = data.content[0].text
   historial[sesionId].push({ role: 'assistant', content: texto })
@@ -670,8 +673,8 @@ app.post('/api/chat', async (req, res) => {
     const resultado = await procesarRespuesta(respuestaNova, sesionId, 'web')
     res.json({ respuesta: resultado.respuesta, imagenUrl: resultado.imagenUrl || null })
   } catch (err) {
-    console.error('Error chat:', err)
-    res.status(500).json({ error: 'Error del servidor' })
+    console.error('Error chat:', err.message)
+    res.status(500).json({ error: err.message || 'Error del servidor' })
   }
 })
 
