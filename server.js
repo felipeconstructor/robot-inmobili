@@ -1029,4 +1029,6 @@ const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => {
   console.log(`Servidor corriendo en puerto ${PUERTO}`)
   console.log(`Ambiente: ${process.env.SITE_NAME || 'Nova — Prolig Propiedades'}`)
+  const apiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || ''
+  console.log(`Anthropic key: ${apiKey ? apiKey.substring(0,15) + '...' : 'NO CONFIGURADA'}`)
 })
