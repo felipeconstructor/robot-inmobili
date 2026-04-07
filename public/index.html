@@ -115,11 +115,12 @@ const SID='sid_'+Date.now()+'_'+Math.random().toString(36).slice(2)
 let ocupado=false
 
 function formatearTexto(txt){
-  // Convierte links de ficha en botones y otros links en anchors
   return txt
     .replace(/\n/g,'<br>')
     .replace(/(https?:\/\/[^\s<"]+\/propiedad\/\d+)/g,
       '<br><a href="$1" target="_blank" class="btn-ficha">📷 Ver ficha y fotos</a>')
+    .replace(/(https?:\/\/(?:maps\.google\.com|www\.google\.com\/maps)[^\s<"]+)/g,
+      '<a href="$1" target="_blank" style="color:#1a73e8;text-decoration:none;font-weight:500">📍 Ver en Google Maps</a>')
     .replace(/(https?:\/\/wa\.me\/[^\s<"]+)/g,
       '<a href="$1" target="_blank" style="color:#c9a96e">WhatsApp</a>')
 }
