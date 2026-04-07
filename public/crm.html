@@ -50,6 +50,8 @@ tr:hover td{background:#fafcff}
 .badge-visita{background:#EEEDFE;color:#3C3489}
 .badge-web{background:#f0f0f0;color:#666}
 .badge-whatsapp{background:#E1F5EE;color:#085041}
+.badge-messenger{background:#E8F0FE;color:#1a73e8}
+.badge-instagram{background:#FDE8F5;color:#C13584}
 .btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333}
 .btn:hover{background:#f0f0f0}
 .btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
@@ -496,9 +498,10 @@ function formatFecha(iso) {
 }
 
 function badgeCanal(c) {
-  return c === 'whatsapp'
-    ? `<span class="badge badge-whatsapp">WhatsApp</span>`
-    : `<span class="badge badge-web">Web</span>`
+  if (c === 'whatsapp') return `<span class="badge badge-whatsapp">WhatsApp</span>`
+  if (c === 'messenger') return `<span class="badge badge-messenger">Messenger</span>`
+  if (c === 'instagram') return `<span class="badge badge-instagram">Instagram</span>`
+  return `<span class="badge badge-web">Web</span>`
 }
 
 function dotPrioridad(p) {
