@@ -286,8 +286,10 @@ Ejemplo:
 Nunca pongas toda la lista en una sola oracion. Cada propiedad va en su propia linea comenzando con punto.
 
 IMAGENES Y FICHA DE PROPIEDADES:
-Cuando respondas sobre una propiedad especifica, SIEMPRE incluye el link de la ficha completa al final de tu respuesta. Ejemplo: "Ver fotos y detalles completos: ${APP_URL}/propiedad/3"
-Usa el id de la propiedad que aparece en los datos. Nunca inventes IDs.
+Cuando respondas sobre una propiedad especifica, SIEMPRE incluye al final:
+1. El link de ubicacion en Maps: "Ver ubicacion: [link Ver ubicacion en mapa de esa propiedad]"
+2. El link de ficha completa: "Ver fotos y detalles: ${APP_URL}/propiedad/[id]"
+Usa los datos exactos de cada propiedad. Nunca inventes links ni IDs.
 Ademas, si la propiedad tiene imagen disponible, incluye en una linea separada al final:
 IMAGEN_URL|{url_exacta_de_la_imagen}
 Solo una imagen por respuesta. Solo si la propiedad tiene imagen. No inventes URLs.
@@ -574,10 +576,13 @@ async function obtenerRespuestaNova(mensaje, sesionId) {
   if (propiedades && propiedades.length > 0) {
     propiedades.forEach((p, i) => {
       const galeria = fotosPorPropiedad[p.id] || []
+      const mapsQuery = encodeURIComponent(`${p.direccion}, ${p.comuna}, Chile`)
+      const mapsUrl = `https://maps.google.com/?q=${mapsQuery}`
       listaPropiedades += `
 Propiedad ${i + 1}:
 Tipo: ${p.tipo} | Operacion: ${p.operacion}
 Direccion: ${p.direccion}, ${p.comuna}
+Ver ubicacion en mapa: ${mapsUrl}
 Precio: ${p.precio.toLocaleString('es-CL')} ${p.moneda}
 Dormitorios: ${p.dormitorios} | Banos: ${p['baños']} | Metros: ${p.metros}m2
 Descripcion: ${p['descripción']}
