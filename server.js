@@ -302,8 +302,34 @@ Cuando un cliente quiera ver una propiedad debes:
 6. Cuando tengas todos los datos responde EXACTAMENTE asi sin nada mas:
 AGENDAR_VISITA|nombre|telefono|propiedad|fecha|hora
 
-GUARDAR_LEAD: Cuando el cliente te diga su nombre y telefono aunque no agende visita responde tambien:
-LEAD_DATOS|nombre|telefono|propiedad_consultada
+GUARDAR_LEAD: Cuando el cliente te diga su nombre y telefono aunque no agende visita, analiza la conversacion y clasifica al lead. Responde exactamente:
+LEAD_DATOS|nombre|telefono|propiedad_consultada|tipo|temperatura
+Donde TIPO es uno de: comprador | arrendatario | inversor | comercial
+Donde TEMPERATURA es uno de: caliente | tibio | frio
+Criterios TEMPERATURA: caliente = quiere visitar pronto, da sus datos sin que se los pidas, tiene financiamiento claro o urgencia real. tibio = interesado pero sin urgencia ni fecha definida. frio = solo consulta informacion sin interes claro de compra o arriendo.
+Ejemplo: LEAD_DATOS|Juan Perez|912345678|Casa La Ligua|comprador|caliente
+
+REQUISITOS DE ARRIENDO — ENTREGAR AUTOMATICAMENTE:
+Cuando un cliente consulte sobre arrendar cualquier propiedad, antes de mostrar propiedades disponibles entrega esta informacion de forma clara y ordenada:
+Para persona natural:
+. Ultimas 3 liquidaciones de sueldo (o declaracion de renta si eres independiente)
+. Contrato de trabajo vigente
+. Cedula de identidad vigente por ambas caras
+. Garantia equivalente a 1 mes de arriendo
+. Renta minima: 3 veces el valor del arriendo mensual
+Para empresa o local comercial:
+. RUT empresa y escritura de constitucion de sociedad
+. Balance y declaracion de renta del ultimo ano
+. Cedula de identidad del representante legal
+. Garantia equivalente a 2 meses de arriendo
+. Documentos que acrediten giro comercial compatible con el inmueble
+
+CONSULTAS DE COMPRA — FLUJO OBLIGATORIO:
+Cuando un cliente muestre interes en comprar una propiedad, antes de entregar toda la informacion debes preguntar UNA pregunta a la vez en este orden:
+1. La compra la realizaras al contado o mediante credito hipotecario?
+2. Si dice credito: Tienes pre-aprobacion en algun banco? Y con cuanto pie aproximadamente cuentas?
+3. Si dice contado: Cual es tu presupuesto maximo?
+Con esa informacion orienta al cliente: si el pie es menor al 20% del valor, explicale que los bancos generalmente financian hasta el 80% y que necesitara ese minimo de pie. Si tiene pre-aprobacion, felicitalo y muestra propiedades en su rango. Si el presupuesto no alcanza, comunicalo con tacto y ofrece alternativas de menor valor o arriendos.
 
 LEYES (usar solo si te preguntan directamente — responder en 1 oracion):
 - Ley 18.101 Arrendamiento predios urbanos
@@ -328,7 +354,7 @@ INVERSION (usar solo si te preguntan directamente — responder en 1 oracion):
 
 const historial = {}
 
-async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, canal, estado = 'nuevo') {
+async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, canal, estado = 'nuevo', tipo_lead = 'sin_clasificar') {
   try {
     await supabase.from('leads').insert({
       nombre: nombre || 'Sin nombre',
@@ -336,7 +362,8 @@ async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, c
       propiedad_interes: propiedadInteres || 'Consulta general',
       mensaje_inicial: mensajeInicial || '',
       estado,
-      canal: canal || 'web'
+      canal: canal || 'web',
+      tipo_lead
     })
   } catch (err) {
     console.error('Error guardando lead:', err.message)
@@ -539,8 +566,9 @@ async function procesarRespuesta(texto, sesionId, canal) {
   } else if (respuestaFinal.includes('LEAD_DATOS|')) {
     // Solo guardar lead si no hubo agenda (evita duplicados)
     const partes = respuestaFinal.split('LEAD_DATOS|')[1].split('|')
-    const [nombre, telefono, propiedad] = partes
-    await guardarLead(nombre, telefono, propiedad, '', canal)
+    const [nombre, telefono, propiedad, tipo, temperatura] = partes
+    const estadoLead = temperatura === 'caliente' ? 'caliente' : temperatura === 'tibio' ? 'tibio' : 'nuevo'
+    await guardarLead(nombre, telefono, propiedad, '', canal, estadoLead, tipo || 'sin_clasificar')
     respuestaFinal = respuestaFinal.replace(/LEAD_DATOS\|.*/, '').trim()
   }
 

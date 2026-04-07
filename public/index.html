@@ -9,6 +9,7 @@
 fetch('/api/config').then(r=>r.json()).then(cfg=>{
   if(cfg.siteName){
     const esBroker=cfg.siteName.toLowerCase().includes('broker')
+    if(esBroker){const la=document.getElementById('link-administraciones');if(la)la.style.display='none'}
     document.title=cfg.siteName+' — Asistente Inmobiliaria'
     const h=document.getElementById('chat-title')
     if(h)h.textContent=cfg.siteName
@@ -81,7 +82,7 @@ textarea::placeholder{color:#bbb}
   <div class="panel-nav">
     <a href="/admin.html">Propiedades</a>
     <a href="/crm.html">CRM</a>
-    <a href="/administraciones.html">Administraciones</a>
+    <a href="/administraciones.html" id="link-administraciones">Administraciones</a>
     <a href="/documentos.html">Documentos</a>
   </div>
   <div class="chips">
