@@ -445,7 +445,7 @@ const historial = {}
 
 async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, canal, estado = 'nuevo', tipo_lead = 'sin_clasificar') {
   try {
-    await supabase.from('leads').insert({
+    const { data } = await supabase.from('leads').insert({
       nombre: nombre || 'Sin nombre',
       telefono: telefono || 'Sin telefono',
       propiedad_interes: propiedadInteres || 'Consulta general',
@@ -453,9 +453,11 @@ async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, c
       estado,
       canal: canal || 'web',
       tipo_lead
-    })
+    }).select('id').single()
+    return data?.id || null
   } catch (err) {
     console.error('Error guardando lead:', err.message)
+    return null
   }
 }
 
@@ -498,7 +500,7 @@ function detectarDatosCriticos(texto) {
   ]
   const expresionInteres = palabrasClaveInteres.some(p => textoLimpio.includes(p))
 
-  return { tiemeNombreCompleto, tieneTelefono, expresionInteres }
+  return { tieneNombreCompleto, tieneTelefono, expresionInteres }
 }
 
 /**
@@ -673,8 +675,9 @@ async function procesarRespuesta(texto, sesionId, canal) {
     const partes = respuestaFinal.split('LEAD_DATOS|')[1].split('|')
     const [nombre, telefono, propiedad, tipo, temperatura] = partes
     const estadoLead = temperatura === 'caliente' ? 'caliente' : temperatura === 'tibio' ? 'tibio' : 'nuevo'
-    await guardarLead(nombre, telefono, propiedad, '', canal, estadoLead, tipo || 'sin_clasificar')
+    const leadId = await guardarLead(nombre, telefono, propiedad, '', canal, estadoLead, tipo || 'sin_clasificar')
     if (temperatura === 'caliente') notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal)
+    if (leadId && canal === 'whatsapp') iniciarSecuenciaDrip(leadId)
     respuestaFinal = respuestaFinal.replace(/LEAD_DATOS\|.*/, '').trim()
   }
 
@@ -947,6 +950,39 @@ app.post('/api/notificar-lead-caliente', async (req, res) => {
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── API: auto_followups para pestaña Automatizaciones ───────────────────────
+app.get('/api/automatizaciones', requireAuth, async (_req, res) => {
+  try {
+    const { data: followups } = await supabase
+      .from('auto_followups')
+      .select('*, leads(nombre, telefono)')
+      .order('enviado_at', { ascending: false })
+      .limit(100)
+
+    const inicioMes = new Date()
+    inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0)
+    const { count: totalMes } = await supabase
+      .from('auto_followups')
+      .select('id', { count: 'exact', head: true })
+      .gte('enviado_at', inicioMes.toISOString())
+
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+    const mañana = new Date(hoy.getTime() + 48 * 60 * 60 * 1000)
+
+    // Leads que recibirán follow-up hoy (visitas proximas 48h)
+    const { data: proximasVisitas } = await supabase
+      .from('leads')
+      .select('nombre, telefono, propiedad_interes, fecha_visita')
+      .eq('estado', 'visita')
+      .gte('fecha_visita', hoy.toISOString())
+      .lte('fecha_visita', mañana.toISOString())
+
+    res.json({ followups: followups || [], totalMes: totalMes || 0, proximasVisitas: proximasVisitas || [] })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.post('/api/limpiar', (req, res) => {
   const { sesionId } = req.body
   if (sesionId) delete historial[sesionId]
@@ -1012,6 +1048,8 @@ async function enviarInformeSemanal() {
     const visitas = leads ? leads.filter(l => l.estado === 'visita').length : 0
     const porWhatsapp = leads ? leads.filter(l => l.canal === 'whatsapp').length : 0
     const porWeb = leads ? leads.filter(l => l.canal === 'web').length : 0
+    const porMessenger = leads ? leads.filter(l => l.canal === 'messenger').length : 0
+    const porInstagram = leads ? leads.filter(l => l.canal === 'instagram').length : 0
 
     // Tabla HTML de leads de la semana
     const filas = leads && leads.length > 0
@@ -1065,7 +1103,7 @@ async function enviarInformeSemanal() {
       <!-- Canal breakdown -->
       <div style="background:#fafafa;padding:16px 32px;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0">
         <p style="margin:0;font-size:13px;color:#666">
-          Canal web: <strong>${porWeb} leads</strong> &nbsp;|&nbsp; Canal WhatsApp: <strong>${porWhatsapp} leads</strong>
+          WhatsApp: <strong>${porWhatsapp}</strong> &nbsp;|&nbsp; Web: <strong>${porWeb}</strong>${porMessenger > 0 ? ` &nbsp;|&nbsp; Messenger: <strong>${porMessenger}</strong>` : ''}${porInstagram > 0 ? ` &nbsp;|&nbsp; Instagram: <strong>${porInstagram}</strong>` : ''}
         </p>
       </div>
 
@@ -1309,6 +1347,92 @@ cron.schedule('5 * * * *', async () => {
 }, { timezone: 'America/Santiago' })
 
 console.log('Automatizaciones activas: post-visita 10am, reactivacion frios cada 4 dias')
+
+// ─── Fase 2: Secuencias drip multi-toque ─────────────────────────────────────
+// Se llama cada vez que se guarda un lead nuevo (solo canal whatsapp)
+async function iniciarSecuenciaDrip(leadId) {
+  // El día 0 ya fue atendido por el bot. Marcamos secuencia_dia = 1 para que
+  // el cron envíe el segundo toque en ~2 días.
+  await supabase.from('leads').update({ secuencia_dia: 1 }).eq('id', leadId).catch(() => {})
+  console.log(`Secuencia drip iniciada para lead ${leadId}`)
+}
+
+// Los mensajes de la secuencia según el día
+const MENSAJES_DRIP = {
+  1: (nombre) => `Hola ${nombre}, ¿pudiste ver las opciones que te compartimos? Podemos mostrarte más propiedades según tu presupuesto o zona. Escríbenos cuando quieras.`,
+  2: (nombre, propiedad) => `Hola ${nombre}, muchas personas nos preguntan por subsidios habitacionales y financiamiento. ¿Ya tienes claro cómo piensas financiar tu ${propiedad ? 'próxima propiedad' : 'compra'}? Con gusto te orientamos.`,
+  3: (nombre) => `Hola ${nombre}, último mensaje de nuestra parte. Tenemos propiedades disponibles y nuestro equipo está listo para ayudarte. Si en algún momento quieres retomar la búsqueda, aquí estaremos.`
+}
+
+// Cron diario 10am: avanza secuencias drip
+cron.schedule('0 10 * * *', async () => {
+  console.log('Cron: secuencias drip')
+  try {
+    // Día 1: leads nuevos con secuencia_dia=1 creados hace ~2 días
+    // Día 2: secuencia_dia=2 hace ~5 días desde inicio (día 1 enviado hace ~3 días)
+    // Día 3: secuencia_dia=3 hace ~9 días desde inicio
+    const etapas = [
+      { dia: 1, diasDesde: 2 },
+      { dia: 2, diasDesde: 5 },
+      { dia: 3, diasDesde: 9 }
+    ]
+
+    for (const { dia, diasDesde } of etapas) {
+      const fechaCorte = new Date(Date.now() - diasDesde * 24 * 60 * 60 * 1000).toISOString()
+      const { data: leads } = await supabase.from('leads').select('*')
+        .eq('secuencia_dia', dia)
+        .eq('canal', 'whatsapp')
+        .in('estado', ['nuevo', 'frio', 'tibio'])
+        .lt('updated_at', fechaCorte)
+
+      if (!leads || !leads.length) continue
+
+      for (const lead of leads) {
+        const generarMensaje = MENSAJES_DRIP[dia]
+        if (!generarMensaje) continue
+        const msg = generarMensaje(lead.nombre, lead.propiedad_interes)
+        await enviarWhatsAppAuto(lead.telefono, msg, `secuencia_dia_${dia}`, lead.id)
+        const siguienteDia = dia < 3 ? dia + 1 : null
+        await supabase.from('leads').update({
+          secuencia_dia: siguienteDia,
+          ultimo_auto_followup: new Date().toISOString()
+        }).eq('id', lead.id)
+      }
+      console.log(`Secuencia drip día ${dia}: ${leads.length} leads contactados`)
+    }
+  } catch (err) { console.error('Error cron drip:', err.message) }
+}, { timezone: 'America/Santiago' })
+
+// ─── Fase 4: Degradación automática de score ─────────────────────────────────
+// Cron diario 9am Santiago: caliente→tibio tras 7 días, tibio→frio tras 14 días
+cron.schedule('0 9 * * *', async () => {
+  console.log('Cron: degradacion automatica de score')
+  try {
+    const ahora = new Date()
+    const hace7dias = new Date(ahora.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const hace14dias = new Date(ahora.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString()
+
+    // caliente sin actividad 7 días → tibio
+    const { data: calientes } = await supabase.from('leads').select('id, nombre')
+      .eq('estado', 'caliente')
+      .lt('updated_at', hace7dias)
+    if (calientes && calientes.length) {
+      await supabase.from('leads').update({ estado: 'tibio' })
+        .in('id', calientes.map(l => l.id))
+      console.log(`Score degradado: ${calientes.length} caliente→tibio`)
+    }
+
+    // tibio sin actividad 14 días → frio
+    const { data: tibios } = await supabase.from('leads').select('id, nombre')
+      .eq('estado', 'tibio')
+      .lt('updated_at', hace14dias)
+    if (tibios && tibios.length) {
+      await supabase.from('leads').update({ estado: 'frio' })
+        .in('id', tibios.map(l => l.id))
+      console.log(`Score degradado: ${tibios.length} tibio→frio`)
+    }
+  } catch (err) { console.error('Error cron degradacion score:', err.message) }
+}, { timezone: 'America/Santiago' })
 
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => {

@@ -327,6 +327,8 @@ td{transition:background .15s}
           <select id="f-canal" onchange="filtrar()">
             <option value="">Todos los canales</option>
             <option value="whatsapp">WhatsApp</option>
+            <option value="messenger">Messenger</option>
+            <option value="instagram">Instagram</option>
             <option value="web">Web</option>
           </select>
           <span class="refresh" onclick="cargarLeads()">Actualizar</span>
@@ -335,6 +337,7 @@ td{transition:background .15s}
           <button class="view-btn active" id="btn-lista" onclick="setVista('lista')">Lista</button>
           <button class="view-btn" id="btn-pipeline" onclick="setVista('pipeline')">Pipeline</button>
           <button class="view-btn" id="btn-seguimientos" onclick="setVista('seguimientos')">Seguimientos<span class="seg-badge-count" id="seg-badge" style="display:none">0</span></button>
+          <button class="view-btn" id="btn-automatizaciones" onclick="setVista('automatizaciones')">Automatizaciones</button>
         </div>
       </div>
     </div>
@@ -366,6 +369,26 @@ td{transition:background .15s}
     <div id="vista-seguimientos" style="display:none">
       <div class="seg-wrap" id="seg-list">
         <div class="seg-empty">Sin seguimientos pendientes</div>
+      </div>
+    </div>
+
+    <!-- Vista Automatizaciones -->
+    <div id="vista-automatizaciones" style="display:none;padding:20px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+        <div class="stat"><div class="stat-lbl">Enviados este mes</div><div class="stat-val" id="auto-total-mes" style="color:#1A3A5C">0</div><div class="stat-sub">follow-ups automáticos</div></div>
+        <div class="stat"><div class="stat-lbl">Visitas próximas 48h</div><div class="stat-val" id="auto-visitas-prox" style="color:#534AB7">0</div><div class="stat-sub">recordatorio pendiente</div></div>
+        <div class="stat"><div class="stat-lbl">Último envío</div><div class="stat-val" id="auto-ultimo" style="color:#0F6E56;font-size:14px">—</div><div class="stat-sub">hora del último mensaje</div></div>
+      </div>
+      <h3 style="margin:0 0 12px;font-size:14px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.5px">Próximas visitas (48h)</h3>
+      <div id="auto-proximas" style="margin-bottom:24px;background:#fafafa;border-radius:8px;border:1px solid #f0f0f0;padding:12px;font-size:13px;color:#666">Cargando...</div>
+      <h3 style="margin:0 0 12px;font-size:14px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.5px">Historial de envíos automáticos</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cliente</th><th>Tipo</th><th>Canal</th><th>Mensaje</th><th>Fecha</th><th>Estado</th></tr></thead>
+          <tbody id="auto-tabla">
+            <tr><td colspan="6" class="empty">Cargando...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -479,10 +502,60 @@ function setVista(v) {
   document.getElementById('vista-lista').style.display = v === 'lista' ? '' : 'none'
   document.getElementById('vista-pipeline').classList.toggle('visible', v === 'pipeline')
   document.getElementById('vista-seguimientos').style.display = v === 'seguimientos' ? '' : 'none'
+  document.getElementById('vista-automatizaciones').style.display = v === 'automatizaciones' ? '' : 'none'
   document.getElementById('filtros-lista').style.display = v === 'lista' ? '' : 'none'
+  if (v === 'automatizaciones') cargarAutomatizaciones()
   document.getElementById('btn-lista').classList.toggle('active', v === 'lista')
   document.getElementById('btn-pipeline').classList.toggle('active', v === 'pipeline')
   document.getElementById('btn-seguimientos').classList.toggle('active', v === 'seguimientos')
+  document.getElementById('btn-automatizaciones').classList.toggle('active', v === 'automatizaciones')
+}
+
+// ── Automatizaciones ──────────────────────────────────────────────────────────
+async function cargarAutomatizaciones() {
+  try {
+    const res = await fetch('/api/automatizaciones')
+    const data = await res.json()
+    if (data.error) return
+
+    document.getElementById('auto-total-mes').textContent = data.totalMes
+    document.getElementById('auto-visitas-prox').textContent = data.proximasVisitas.length
+
+    // Último envío
+    if (data.followups.length) {
+      const ultimo = new Date(data.followups[0].enviado_at)
+      document.getElementById('auto-ultimo').textContent = ultimo.toLocaleString('es-CL', { timeZone:'America/Santiago', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) + ' hrs'
+    }
+
+    // Próximas visitas
+    const proxEl = document.getElementById('auto-proximas')
+    if (data.proximasVisitas.length) {
+      proxEl.innerHTML = data.proximasVisitas.map(v => {
+        const fecha = new Date(v.fecha_visita).toLocaleString('es-CL', { timeZone:'America/Santiago', weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' })
+        return `<div style="padding:6px 0;border-bottom:1px solid #f0f0f0"><strong>${v.nombre}</strong> · ${v.propiedad_interes || '-'} · <span style="color:#534AB7">${fecha} hrs</span></div>`
+      }).join('')
+    } else {
+      proxEl.innerHTML = '<span style="color:#aaa">Sin visitas en las próximas 48 horas</span>'
+    }
+
+    // Tabla historial
+    const tipoLabel = { post_visita:'Post-visita', reactivacion:'Reactivación', recordatorio_24h:'Recordatorio 24h', recordatorio_1h:'Recordatorio 1h', cancelacion:'Cancelación', secuencia_dia_1:'Drip día 1', secuencia_dia_2:'Drip día 2', secuencia_dia_3:'Drip día 3' }
+    const tbody = document.getElementById('auto-tabla')
+    if (!data.followups.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">Sin envíos automáticos aún</td></tr>'
+      return
+    }
+    tbody.innerHTML = data.followups.map(f => {
+      const nombre = f.leads?.nombre || f.lead_id || '-'
+      const tipo = tipoLabel[f.tipo] || f.tipo
+      const fecha = new Date(f.enviado_at).toLocaleString('es-CL', { timeZone:'America/Santiago', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+      const msg = f.mensaje ? f.mensaje.substring(0, 60) + (f.mensaje.length > 60 ? '…' : '') : '-'
+      const estado = f.exitoso ? '<span style="color:#0F6E56">✓ Enviado</span>' : '<span style="color:#c0392b">✗ Error</span>'
+      return `<tr><td>${nombre}</td><td>${tipo}</td><td>${f.canal || '-'}</td><td style="color:#666;font-size:12px">${msg}</td><td style="color:#888;font-size:12px">${fecha}</td><td>${estado}</td></tr>`
+    }).join('')
+  } catch(err) {
+    console.error('Error cargando automatizaciones:', err)
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -586,7 +659,7 @@ function renderPipeline(leads) {
           <div class="card">
             <div class="card-nombre">${dotPrioridad(l.prioridad)}${l.nombre||'Sin nombre'}${badgeTipo(l.tipo_lead)}</div>
             <div class="card-telefono"><a href="https://wa.me/${wa}" target="_blank">${l.telefono||'Sin telefono'}</a></div>
-            <div class="card-propiedad">${l.propiedad_interes||'Consulta general'}</div>
+            <div class="card-propiedad">${l.propiedad_interes||'Consulta general'} ${badgeCanal(l.canal)}</div>
             <div class="card-estado-wrap">
               <select class="card-estado-select" onchange="cambiarEstado('${l.id}',this.value)">
                 <option value="nuevo" ${l.estado==='nuevo'?'selected':''}>Nuevo</option>
@@ -672,7 +745,8 @@ async function abrirDetalle(id) {
   const l = todosLeads.find(x => String(x.id) === String(id))
   if (!l) return
   document.getElementById('detalle-titulo').textContent = 'Detalle — ' + (l.nombre || 'Lead')
-  document.getElementById('detalle-sub').textContent = (l.propiedad_interes || 'Consulta general') + ' · ' + (l.canal || '')
+  const canalLabels = { whatsapp:'WhatsApp', messenger:'Messenger', instagram:'Instagram', web:'Web' }
+  document.getElementById('detalle-sub').textContent = (l.propiedad_interes || 'Consulta general') + ' · ' + (canalLabels[l.canal] || l.canal || 'Web')
   document.getElementById('det-accion').value = l.proxima_accion || ''
   document.getElementById('det-fecha').value = l.fecha_seguimiento || ''
   document.getElementById('det-prioridad').value = l.prioridad || 'media'
