@@ -379,6 +379,32 @@ td{transition:background .15s}
         <div class="stat"><div class="stat-lbl">Visitas próximas 48h</div><div class="stat-val" id="auto-visitas-prox" style="color:#534AB7">0</div><div class="stat-sub">recordatorio pendiente</div></div>
         <div class="stat"><div class="stat-lbl">Último envío</div><div class="stat-val" id="auto-ultimo" style="color:#0F6E56;font-size:14px">—</div><div class="stat-sub">hora del último mensaje</div></div>
       </div>
+
+      <!-- Brecha 4: Campaña masiva -->
+      <div style="background:#f0f7ff;border:1px solid #c8e0ff;border-radius:10px;padding:18px;margin-bottom:24px">
+        <h3 style="margin:0 0 12px;font-size:14px;font-weight:600;color:#1A3A5C">Enviar campaña WhatsApp</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <select id="camp-estado" style="flex:1;min-width:140px;padding:8px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px">
+            <option value="">Todos los estados</option>
+            <option value="caliente">Solo calientes</option>
+            <option value="tibio">Solo tibios</option>
+            <option value="frio">Solo fríos</option>
+            <option value="nuevo">Solo nuevos</option>
+          </select>
+          <select id="camp-tipo" style="flex:1;min-width:140px;padding:8px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px">
+            <option value="">Todos los tipos</option>
+            <option value="comprador">Compradores</option>
+            <option value="arrendatario">Arrendatarios</option>
+            <option value="inversor">Inversores</option>
+          </select>
+        </div>
+        <textarea id="camp-mensaje" placeholder="Escribe el mensaje... Usa {nombre} para personalizar. Ej: Hola {nombre}, tenemos novedades para ti." style="width:100%;box-sizing:border-box;padding:10px;border-radius:6px;border:1px solid #ddd;font-size:13px;resize:vertical;min-height:80px;font-family:inherit"></textarea>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+          <button onclick="enviarCampana()" style="background:#1A3A5C;color:#fff;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Enviar campaña</button>
+          <span id="camp-resultado" style="font-size:12px;color:#666"></span>
+        </div>
+      </div>
+
       <h3 style="margin:0 0 12px;font-size:14px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.5px">Próximas visitas (48h)</h3>
       <div id="auto-proximas" style="margin-bottom:24px;background:#fafafa;border-radius:8px;border:1px solid #f0f0f0;padding:12px;font-size:13px;color:#666">Cargando...</div>
       <h3 style="margin:0 0 12px;font-size:14px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.5px">Historial de envíos automáticos</h3>
@@ -480,6 +506,15 @@ td{transition:background .15s}
       </div>
     </div>
 
+    <!-- Brecha 3: Confirmar asistencia a visita -->
+    <div class="modal-section" id="seccion-asistencia" style="display:none">
+      <div class="modal-section-title">¿El cliente asistió a la visita?</div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button onclick="marcarAsistencia(true)" style="flex:1;padding:9px;background:#0F6E56;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">✓ Sí asistió</button>
+        <button onclick="marcarAsistencia(false)" style="flex:1;padding:9px;background:#c0392b;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">✗ No asistió</button>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn" onclick="cerrarDetalle()">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarDetalle()">Guardar</button>
@@ -509,6 +544,42 @@ function setVista(v) {
   document.getElementById('btn-pipeline').classList.toggle('active', v === 'pipeline')
   document.getElementById('btn-seguimientos').classList.toggle('active', v === 'seguimientos')
   document.getElementById('btn-automatizaciones').classList.toggle('active', v === 'automatizaciones')
+}
+
+// ── Campaña masiva ────────────────────────────────────────────────────────────
+async function enviarCampana() {
+  const mensaje = document.getElementById('camp-mensaje').value.trim()
+  const filtro_estado = document.getElementById('camp-estado').value
+  const filtro_tipo = document.getElementById('camp-tipo').value
+  const resultado = document.getElementById('camp-resultado')
+
+  if (!mensaje || mensaje.length < 5) { resultado.textContent = 'Escribe un mensaje primero.'; resultado.style.color = '#c0392b'; return }
+
+  const confirmar = confirm(`¿Confirmas el envío de esta campaña WhatsApp a los leads seleccionados?\n\nMensaje: "${mensaje.substring(0,100)}${mensaje.length > 100 ? '...' : ''}"`)
+  if (!confirmar) return
+
+  resultado.textContent = 'Enviando...'
+  resultado.style.color = '#888'
+  try {
+    const res = await fetch('/api/campana', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje, filtro_estado, filtro_tipo })
+    })
+    const data = await res.json()
+    if (data.ok) {
+      resultado.textContent = `✓ Campaña enviada a ${data.enviados} leads`
+      resultado.style.color = '#0F6E56'
+      document.getElementById('camp-mensaje').value = ''
+      setTimeout(cargarAutomatizaciones, 3000)
+    } else {
+      resultado.textContent = 'Error: ' + (data.error || 'desconocido')
+      resultado.style.color = '#c0392b'
+    }
+  } catch(err) {
+    resultado.textContent = 'Error de conexión'
+    resultado.style.color = '#c0392b'
+  }
 }
 
 // ── Automatizaciones ──────────────────────────────────────────────────────────
@@ -775,6 +846,10 @@ async function abrirDetalle(id) {
     opt.selected = true
     sel.appendChild(opt)
   }
+  // Brecha 3: mostrar sección asistencia solo si estado=visita y asistio_visita es null
+  const secAsistencia = document.getElementById('seccion-asistencia')
+  secAsistencia.style.display = (l.estado === 'visita' && l.asistio_visita === null) ? '' : 'none'
+
   document.getElementById('overlay-detalle').classList.add('activo')
   cargarActividad(id)
 }
@@ -782,6 +857,27 @@ async function abrirDetalle(id) {
 function cerrarDetalle() {
   document.getElementById('overlay-detalle').classList.remove('activo')
   leadDetalleId = null
+}
+
+async function marcarAsistencia(asistio) {
+  if (!leadDetalleId) return
+  const confirmMsg = asistio ? '¿Confirmas que el cliente asistió a la visita?' : '¿Confirmas que el cliente NO asistió? Se enviará WhatsApp automático para reagendar.'
+  if (!confirm(confirmMsg)) return
+  try {
+    const res = await fetch('/api/marcar-asistencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lead_id: leadDetalleId, asistio })
+    })
+    const data = await res.json()
+    if (data.ok) {
+      toast(asistio ? 'Visita confirmada — lead movido a post-visita' : 'Marcado como no-show — WhatsApp enviado para reagendar')
+      cerrarDetalle()
+      await cargarLeads()
+    }
+  } catch(err) {
+    toast('Error al marcar asistencia', true)
+  }
 }
 
 async function guardarDetalle() {

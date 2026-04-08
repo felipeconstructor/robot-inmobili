@@ -676,7 +676,16 @@ async function procesarRespuesta(texto, sesionId, canal) {
     const [nombre, telefono, propiedad, tipo, temperatura] = partes
     const estadoLead = temperatura === 'caliente' ? 'caliente' : temperatura === 'tibio' ? 'tibio' : 'nuevo'
     const leadId = await guardarLead(nombre, telefono, propiedad, '', canal, estadoLead, tipo || 'sin_clasificar')
-    if (temperatura === 'caliente') notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal)
+    if (temperatura === 'caliente') {
+      notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal)
+      // Brecha 2: enviar checklist de documentos automático al cliente
+      if (canal === 'whatsapp' && leadId) {
+        const checklist = tipo === 'arrendatario'
+          ? `Hola ${nombre}, para agilizar el proceso de arriendo te compartimos los documentos que necesitas preparar:\n- 3 ultimas liquidaciones de sueldo (o declaracion de renta si eres independiente)\n- Contrato de trabajo vigente\n- Cedula de identidad por ambas caras\n- Garantia equivalente a 1 mes de arriendo\nCualquier duda estamos para ayudarte.`
+          : `Hola ${nombre}, para agilizar tu proceso de compra te compartimos los documentos basicos que necesitaras:\n- Cedula de identidad vigente\n- 3 ultimas liquidaciones de sueldo (o formulario 22 si eres independiente)\n- Certificado AFP\n- Estado de cuenta bancaria ultimos 3 meses\n- Comprobante del pie disponible\nSi tienes alguna opcion de subsidio o financiamiento especifico, con gusto te orientamos.`
+        setTimeout(() => enviarWhatsAppAuto(telefono, checklist, 'checklist_documentos', leadId), 3000)
+      }
+    }
     if (leadId && canal === 'whatsapp') iniciarSecuenciaDrip(leadId)
     respuestaFinal = respuestaFinal.replace(/LEAD_DATOS\|.*/, '').trim()
   }
@@ -888,6 +897,63 @@ app.post('/api/publicar-propiedad', async (req, res) => {
   }
 })
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Brecha 1: Matching propiedad nueva → leads interesados ──────────────────
+app.post('/api/notificar-nueva-propiedad', requireAuth, async (req, res) => {
+  const { tipo, operacion, comuna, precio, moneda, id } = req.body
+  if (!tipo || !operacion) return res.status(400).json({ error: 'Datos incompletos' })
+  res.json({ ok: true }) // responder rápido, el envío es async
+
+  try {
+    // Buscar leads calientes y tibios que sean compradores o inversores por WhatsApp
+    const { data: leads } = await supabase.from('leads').select('*')
+      .in('tipo_lead', ['comprador', 'inversor', 'sin_clasificar'])
+      .in('estado', ['caliente', 'tibio'])
+      .eq('canal', 'whatsapp')
+
+    if (!leads || !leads.length) { console.log('Matching propiedad: sin leads para notificar'); return }
+
+    const precioFmt = moneda === 'UF'
+      ? `${Number(precio).toLocaleString('es-CL')} UF`
+      : `$${Number(precio).toLocaleString('es-CL')}`
+    const fichaUrl = id ? `${APP_URL}/propiedad/${id}` : ''
+
+    for (const lead of leads) {
+      const msg = `Hola ${lead.nombre}, tenemos una nueva propiedad que podria interesarte: ${tipo} en ${operacion} en ${comuna}, ${precioFmt}.${fichaUrl ? ' Ver ficha: ' + fichaUrl : ''} Si quieres mas informacion o agendar una visita, escribenos.`
+      await enviarWhatsAppAuto(lead.telefono, msg, 'matching_propiedad', lead.id)
+    }
+    console.log(`Matching propiedad: ${leads.length} leads notificados`)
+  } catch (err) {
+    console.error('Error matching propiedad:', err.message)
+  }
+})
+
+// ─── Brecha 4: Campaña masiva WhatsApp desde CRM ─────────────────────────────
+app.post('/api/campana', requireAuth, async (req, res) => {
+  const { mensaje, filtro_estado, filtro_tipo } = req.body
+  if (!mensaje || mensaje.trim().length < 5) return res.status(400).json({ error: 'Mensaje muy corto' })
+
+  try {
+    let query = supabase.from('leads').select('*').eq('canal', 'whatsapp')
+    if (filtro_estado) query = query.eq('estado', filtro_estado)
+    if (filtro_tipo) query = query.eq('tipo_lead', filtro_tipo)
+    const { data: leads } = await query
+
+    if (!leads || !leads.length) return res.json({ ok: true, enviados: 0 })
+
+    res.json({ ok: true, enviados: leads.length })
+
+    for (const lead of leads) {
+      const msg = mensaje.replace('{nombre}', lead.nombre || 'cliente')
+      await enviarWhatsAppAuto(lead.telefono, msg, 'campana', lead.id)
+      await new Promise(r => setTimeout(r, 500)) // 500ms entre envíos para no saturar Twilio
+    }
+    console.log(`Campaña enviada: ${leads.length} leads`)
+  } catch (err) {
+    console.error('Error campaña:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // ─── Notificacion lead caliente ───────────────────────────────────────────────
 const NOTIFY_PHONE = process.env.NOTIFY_PHONE // numero personal de Felipe ej: whatsapp:+56912345678
@@ -1347,6 +1413,65 @@ cron.schedule('5 * * * *', async () => {
 }, { timezone: 'America/Santiago' })
 
 console.log('Automatizaciones activas: post-visita 10am, reactivacion frios cada 4 dias')
+
+// ─── Brecha 3: No-show automático ────────────────────────────────────────────
+// Cron cada hora: detecta visitas que pasaron hace 3h sin confirmar asistencia
+cron.schedule('30 * * * *', async () => {
+  try {
+    const ahora = new Date()
+    const hace3h = new Date(ahora.getTime() - 3 * 60 * 60 * 1000).toISOString()
+    const hace6h = new Date(ahora.getTime() - 6 * 60 * 60 * 1000).toISOString()
+
+    // Leads con visita pasada (entre 3h y 6h atrás) sin marcar asistencia
+    const { data: leads } = await supabase.from('leads').select('*')
+      .eq('estado', 'visita')
+      .is('asistio_visita', null)
+      .not('fecha_visita', 'is', null)
+      .lte('fecha_visita', hace3h)
+      .gte('fecha_visita', hace6h)
+
+    if (!leads || !leads.length) return
+
+    for (const lead of leads) {
+      // Notificar al agente para que confirme
+      if (NOTIFY_PHONE && process.env.TWILIO_ACCOUNT_SID) {
+        const twilio = require('twilio')
+        const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+        await tc.messages.create({
+          from: process.env.TWILIO_WHATSAPP_NUMBER,
+          to: NOTIFY_PHONE,
+          body: `VISITA REALIZADA?\n\n${lead.nombre} tenia visita a ${lead.propiedad_interes || 'propiedad'}.\n\nMarca en el CRM si asistio o no para activar el seguimiento automatico.`
+        }).catch(() => {})
+      }
+      // Marcar como pendiente de confirmacion para no enviar de nuevo
+      await supabase.from('leads').update({ asistio_visita: null, notas: (lead.notas || '') + '\n[Auto] Pendiente confirmar asistencia visita.' }).eq('id', lead.id)
+    }
+    if (leads.length) console.log(`No-show check: ${leads.length} visitas pendientes de confirmacion`)
+  } catch (err) { console.error('Error cron no-show:', err.message) }
+}, { timezone: 'America/Santiago' })
+
+// Endpoint para que el agente marque asistencia desde el CRM
+app.post('/api/marcar-asistencia', requireAuth, async (req, res) => {
+  const { lead_id, asistio } = req.body
+  if (!lead_id) return res.status(400).json({ error: 'lead_id requerido' })
+
+  await supabase.from('leads').update({ asistio_visita: asistio }).eq('id', lead_id)
+
+  // Si NO asistió → WhatsApp automático al cliente
+  if (!asistio) {
+    const { data: lead } = await supabase.from('leads').select('*').eq('id', lead_id).single()
+    if (lead && lead.canal === 'whatsapp' && lead.telefono) {
+      const msg = `Hola ${lead.nombre}, vimos que no pudiste llegar a la visita de ${lead.propiedad_interes || 'la propiedad'}. Sin problema, podemos reagendar cuando te acomode. Escribenos cuando quieras.`
+      await enviarWhatsAppAuto(lead.telefono, msg, 'no_show', lead_id)
+      await supabase.from('leads').update({ estado: 'tibio' }).eq('id', lead_id)
+    }
+  } else {
+    // Si asistió → cambiar a post_visita
+    await supabase.from('leads').update({ estado: 'post_visita' }).eq('id', lead_id)
+  }
+
+  res.json({ ok: true })
+})
 
 // ─── Fase 2: Secuencias drip multi-toque ─────────────────────────────────────
 // Se llama cada vez que se guarda un lead nuevo (solo canal whatsapp)

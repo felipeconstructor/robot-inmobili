@@ -890,6 +890,15 @@ async function guardarPropiedad() {
           descripcion: nueva['descripción'], imagen_url: nueva.imagen_url
         })
       }).then(() => toast('Publicando en redes sociales...')).catch(() => {})
+      // Brecha 1: notificar leads interesados via WhatsApp
+      fetch('/api/notificar-nueva-propiedad', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: nueva.id, tipo: nueva.tipo, operacion: nueva.operacion,
+          comuna: nueva.comuna, precio: nueva.precio, moneda: nueva.moneda
+        })
+      }).then(() => toast('Notificando leads interesados...')).catch(() => {})
     }
   }
 }
