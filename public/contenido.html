@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="/nova-premium.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1A3A5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/icon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>if(location.hostname.includes('broker'))document.documentElement.classList.add('broker')</script>
+<title>Nova — Contenido Social</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box}
+.header h1{color:#fff;font-size:18px;font-weight:500;min-width:0;flex-shrink:1}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
+.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
+.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
+.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
+.container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:.5px solid #e0e0e0;min-width:0;transition:box-shadow .2s}
+.stat:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
+.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
+
+/* Toolbar */
+.toolbar{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:.5px solid #e0e0e0;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+.toolbar-filtros{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.toolbar label{font-size:12px;color:#888;margin-right:4px}
+select,input[type=text],input[type=date],input[type=time],textarea{padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
+select:focus,input:focus,textarea:focus{border-color:#1A3A5C}
+
+/* Botones */
+.btn{padding:6px 16px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;color:#333;transition:all .18s;white-space:nowrap}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
+.btn-primary:hover{background:#0f2540}
+.btn-gold{background:#C9A96E;color:#fff;border-color:#C9A96E}
+.btn-gold:hover{background:#b8944f}
+.btn-success{background:#0F6E56;color:#fff;border-color:#0F6E56}
+.btn-success:hover{background:#0a5540}
+.btn-danger{color:#c0392b;border-color:#e0a0a0;background:#fff}
+.btn-danger:hover{background:#FCEBEB}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Grid de posts */
+.posts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.post-card{background:#fff;border-radius:14px;border:.5px solid #e0e0e0;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .15s}
+.post-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.1);transform:translateY(-2px)}
+.post-imagen{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f0f2f5;display:flex;align-items:center;justify-content:center;position:relative}
+.post-imagen img{width:100%;height:100%;object-fit:cover}
+.post-imagen-placeholder{width:100%;aspect-ratio:1/1;background:linear-gradient(135deg,#e8edf2 0%,#d0d8e4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;color:#aab;font-size:12px}
+.post-tipo-chip{position:absolute;top:8px;left:8px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.chip-propiedad{background:rgba(0,217,255,.15);color:#00A8CC;border:1px solid rgba(0,217,255,.3)}
+.chip-tip{background:rgba(139,92,246,.15);color:#7C3AED;border:1px solid rgba(139,92,246,.3)}
+.chip-mercado{background:rgba(201,169,110,.2);color:#a07840;border:1px solid rgba(201,169,110,.4)}
+.chip-cta{background:rgba(16,185,129,.15);color:#059669;border:1px solid rgba(16,185,129,.3)}
+.post-body{padding:1rem;flex:1;display:flex;flex-direction:column;gap:.5rem}
+.post-fecha{font-size:11px;color:#aaa;font-weight:500}
+.post-titulo{font-size:14px;font-weight:600;color:#1A3A5C;line-height:1.35}
+.post-contenido{font-size:12px;color:#555;line-height:1.5;flex:1;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.post-hashtags{font-size:11px;color:#9B8FBF;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.post-footer{padding:.75rem 1rem;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.estado-badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.estado-borrador{background:rgba(0,217,255,.1);color:#00A8CC;border:1px solid rgba(0,217,255,.3)}
+.estado-aprobado{background:rgba(16,185,129,.1);color:#059669;border:1px solid rgba(16,185,129,.3)}
+.estado-publicado{background:rgba(201,169,110,.15);color:#a07840;border:1px solid rgba(201,169,110,.4)}
+.estado-fallido{background:rgba(255,80,80,.1);color:#c0392b;border:1px solid rgba(255,80,80,.3)}
+.post-acciones{display:flex;gap:4px;flex-wrap:wrap}
+
+/* Loading skeleton */
+.skeleton{background:linear-gradient(90deg,#f0f2f5 25%,#e4e8ed 50%,#f0f2f5 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-card{background:#fff;border-radius:14px;border:.5px solid #e0e0e0;overflow:hidden}
+.skeleton-img{aspect-ratio:1/1;width:100%}
+.skeleton-body{padding:1rem;display:flex;flex-direction:column;gap:8px}
+.skeleton-line{height:12px;border-radius:6px}
+
+/* Empty state */
+.empty{text-align:center;padding:4rem 2rem;color:#aaa}
+.empty-icon{font-size:48px;margin-bottom:1rem;opacity:.4}
+.empty p{font-size:14px;margin-bottom:.5rem}
+.empty small{font-size:12px}
+
+/* Modales */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal h2{font-size:18px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
+.form-row{margin-bottom:1rem}
+.form-row label{display:block;font-size:12px;color:#888;margin-bottom:5px;font-weight:500}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical}
+.form-row textarea{min-height:80px}
+.modal-footer{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem;border-top:1px solid #f0f0f0;padding-top:1rem}
+.modal-gen-info{background:#f8f9fa;border:1px solid #e8eaed;border-radius:10px;padding:.875rem 1rem;font-size:12px;color:#666;line-height:1.6;margin-bottom:1rem}
+.modal-gen-info strong{color:#1A3A5C}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{width:100%;height:6px;background:#f0f2f5;border-radius:3px;overflow:hidden;margin-top:.75rem}
+.progress-fill{height:100%;background:linear-gradient(90deg,#1A3A5C,#00D9FF);border-radius:3px;transition:width .5s ease;width:0%}
+.progress-text{font-size:11px;color:#888;margin-top:6px;text-align:center}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:2000;pointer-events:none;max-width:320px}
+.toast.show{opacity:1}
+.toast.error{background:#c0392b}
+.toast.success{background:#0F6E56}
+
+/* Broker theme */
+.broker-brand{display:none;align-items:center;gap:10px;flex-shrink:0}
+.broker .header{background:#3B52D4}
+.broker .broker-brand{display:flex !important}
+.broker #page-title{display:none}
+.broker .stat-val{color:#3B52D4}
+.broker .btn-primary{background:#3B52D4;border-color:#3B52D4}
+.broker .btn-primary:hover{background:#2D40B8}
+.broker .post-titulo{color:#3B52D4}
+.broker .modal h2{color:#3B52D4}
+.broker select:focus,.broker input:focus,.broker textarea:focus{border-color:#3B52D4}
+.broker-name-text{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px;line-height:1.3}
+.broker-slogan-text{color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px;line-height:1}
+.broker .nav-broker-hide{display:none !important}
+
+/* Animaciones de entrada */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.header{animation:fadeIn .3s ease}
+.stat{animation:fadeUp .4s ease both}
+.stat:nth-child(1){animation-delay:.02s}
+.stat:nth-child(2){animation-delay:.09s}
+.stat:nth-child(3){animation-delay:.16s}
+.stat:nth-child(4){animation-delay:.23s}
+.toolbar{animation:fadeUp .35s .1s ease both}
+
+@media(max-width:1024px){.posts-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .posts-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
+  .stat-val{font-size:20px}
+  .container{padding:1rem .75rem}
+  .toolbar{flex-direction:column;align-items:flex-start}
+  .toolbar-filtros{width:100%}
+  .nav{gap:4px}
+  .nav a{padding:4px 8px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="broker-brand" id="broker-brand">
+    <svg width="30" height="26" viewBox="0 0 36 30" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,17 11,10 11,18"/><line x1="2" y1="17" x2="2" y2="25"/><line x1="2" y1="25" x2="11" y2="25"/><polyline points="11,17 20,8 29,17"/><polyline points="11,17 11,27 29,27 29,17"/><line x1="20" y1="27" x2="20" y2="29"/></svg>
+    <div><div class="broker-name-text">BROKER INMOBILIARIA</div><div class="broker-slogan-text">UN PACTO DE CONFIANZA</div></div>
+  </div>
+  <h1 id="page-title">Nova — Contenido Social</h1>
+  <nav class="nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/administraciones.html" class="nav-broker-hide">Administraciones</a>
+    <a href="/finanzas.html" class="nav-broker-hide">Finanzas</a>
+    <a href="/documentos.html">Documentos</a>
+    <a href="/contenido.html" class="activo">Contenido</a>
+    <a href="/">Chat</a>
+    <a href="/api/logout" class="nav-salir">Salir</a>
+  </nav>
+</div>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-lbl">Total posts</div>
+      <div class="stat-val" id="stat-total">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Borradores</div>
+      <div class="stat-val" id="stat-borradores" style="color:#00A8CC">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Aprobados</div>
+      <div class="stat-val" id="stat-aprobados" style="color:#059669">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Publicados</div>
+      <div class="stat-val" id="stat-publicados" style="color:#a07840">—</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-filtros">
+      <div>
+        <label>Cliente</label>
+        <select id="filtro-cliente" onchange="cargarPosts()">
+          <option value="">Todos</option>
+          <option value="nova">Nova</option>
+          <option value="broker">Broker</option>
+        </select>
+      </div>
+      <div>
+        <label>Mes</label>
+        <input type="month" id="filtro-mes" onchange="cargarPosts()">
+      </div>
+      <div>
+        <label>Estado</label>
+        <select id="filtro-estado" onchange="cargarPosts()">
+          <option value="">Todos</option>
+          <option value="borrador">Borradores</option>
+          <option value="aprobado">Aprobados</option>
+          <option value="publicado">Publicados</option>
+          <option value="fallido">Fallidos</option>
+        </select>
+      </div>
+      <button class="btn btn-sm" onclick="cargarPosts()" title="Actualizar">Actualizar</button>
+    </div>
+    <button class="btn btn-gold" onclick="abrirModalGenerar()">+ Generar mes de contenido</button>
+  </div>
+
+  <div id="posts-container" class="posts-grid"></div>
+
+</div>
+
+<!-- Modal: Generar contenido -->
+<div id="modal-generar" class="modal-overlay" style="display:none" onclick="if(event.target===this)cerrarModalGenerar()">
+  <div class="modal">
+    <h2>Generar contenido del mes</h2>
+    <div class="modal-gen-info">
+      Claude creara los textos y DALL-E 3 generara las imagenes automaticamente.<br>
+      <strong>Tiempo estimado: 4-6 minutos</strong> para generar las imagenes de un mes completo.<br>
+      Los posts apareceran como borradores para que puedas revisarlos antes de aprobar.
+    </div>
+    <div class="form-row">
+      <label>Cliente</label>
+      <select id="gen-cliente">
+        <option value="nova">Nova — Prolig Propiedades</option>
+        <option value="broker">Broker Inmobiliario</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Mes a programar</label>
+      <input type="month" id="gen-mes">
+    </div>
+    <div class="form-row">
+      <label>Cantidad de posts</label>
+      <select id="gen-cantidad">
+        <option value="12">12 posts (~3 por semana)</option>
+        <option value="16">16 posts (~4 por semana)</option>
+        <option value="20" selected>20 posts (~5 por semana)</option>
+        <option value="24">24 posts (~6 por semana)</option>
+      </select>
+    </div>
+    <div id="gen-progress" style="display:none">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">Generando posts con Claude...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarModalGenerar()" id="btn-cancelar-gen">Cancelar</button>
+      <button class="btn btn-gold" id="btn-generar" onclick="generarContenido()">Generar ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Editar post -->
+<div id="modal-editar" class="modal-overlay" style="display:none" onclick="if(event.target===this)cerrarModalEditar()">
+  <div class="modal">
+    <h2>Editar post</h2>
+    <input type="hidden" id="edit-id">
+    <div class="form-row">
+      <label>Titulo</label>
+      <input type="text" id="edit-titulo" maxlength="100">
+    </div>
+    <div class="form-row">
+      <label>Contenido (caption)</label>
+      <textarea id="edit-contenido" rows="4" maxlength="500"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Hashtags</label>
+      <input type="text" id="edit-hashtags" placeholder="#inmobiliaria #chile #propiedad">
+    </div>
+    <div class="form-row">
+      <label>Fecha programada</label>
+      <input type="date" id="edit-fecha">
+    </div>
+    <div class="form-row">
+      <label>Hora de publicacion</label>
+      <input type="time" id="edit-hora" value="10:00">
+    </div>
+    <div class="form-row">
+      <label>Plataforma</label>
+      <select id="edit-plataforma">
+        <option value="ambas">Instagram + Facebook</option>
+        <option value="instagram">Solo Instagram</option>
+        <option value="facebook">Solo Facebook</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cerrarModalEditar()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let todosLosPosts = []
+
+// Detectar cliente por defecto segun el hostname
+const clientePorDefecto = location.hostname.includes('broker') ? 'broker' : 'nova'
+
+// Inicializar filtros
+window.addEventListener('DOMContentLoaded', () => {
+  const hoy = new Date()
+  const mesActual = hoy.toISOString().slice(0, 7)
+  document.getElementById('filtro-mes').value = mesActual
+  document.getElementById('filtro-cliente').value = clientePorDefecto
+  document.getElementById('gen-cliente').value = clientePorDefecto
+
+  // Mes siguiente por defecto en modal de generacion
+  const proximo = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
+  document.getElementById('gen-mes').value = proximo.toISOString().slice(0, 7)
+
+  cargarPosts()
+})
+
+async function cargarPosts() {
+  const cliente = document.getElementById('filtro-cliente').value
+  const mes = document.getElementById('filtro-mes').value
+  const estado = document.getElementById('filtro-estado').value
+
+  const params = new URLSearchParams()
+  if (cliente) params.set('cliente', cliente)
+  if (mes) params.set('mes', mes)
+  if (estado) params.set('estado', estado)
+
+  mostrarSkeletons()
+
+  try {
+    const res = await fetch('/api/posts-sociales?' + params.toString())
+    if (!res.ok) throw new Error('Error ' + res.status)
+    todosLosPosts = await res.json()
+    renderizarPosts(todosLosPosts)
+    actualizarStats(todosLosPosts)
+  } catch (err) {
+    mostrarToast('Error cargando posts: ' + err.message, 'error')
+    document.getElementById('posts-container').innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Error al cargar</p><small>' + err.message + '</small></div>'
+  }
+}
+
+function actualizarStats(posts) {
+  document.getElementById('stat-total').textContent = posts.length
+  document.getElementById('stat-borradores').textContent = posts.filter(p => p.estado === 'borrador').length
+  document.getElementById('stat-aprobados').textContent = posts.filter(p => p.estado === 'aprobado').length
+  document.getElementById('stat-publicados').textContent = posts.filter(p => p.estado === 'publicado').length
+}
+
+function renderizarPosts(posts) {
+  const container = document.getElementById('posts-container')
+  if (!posts.length) {
+    container.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📅</div><p>No hay posts para este filtro</p><small>Usa "Generar mes de contenido" para crear tu calendario editorial</small></div>'
+    return
+  }
+
+  container.innerHTML = posts.map(p => {
+    const fecha = p.fecha_programada ? formatearFecha(p.fecha_programada) : '—'
+    const chipClase = 'chip-' + (p.tipo || 'tip')
+    const estadoClase = 'estado-' + (p.estado || 'borrador')
+    const imagenHtml = p.imagen_url
+      ? `<img src="${escHtml(p.imagen_url)}" alt="Imagen del post" loading="lazy" onerror="this.parentElement.innerHTML='<div class=post-imagen-placeholder><svg width=32 height=32 fill=none stroke=%23bbb stroke-width=1.5 viewBox=0 0 24 24><rect x=3 y=3 width=18 height=18 rx=2/><circle cx=8.5 cy=8.5 r=1.5/><path d=M21 15l-5-5L5 21/></svg><span>Sin imagen</span></div>'">`
+      : `<div class="post-imagen-placeholder"><svg width="32" height="32" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Generando...</span></div>`
+
+    const accionesBorrador = p.estado === 'borrador' ? `
+      <button class="btn btn-success btn-sm" onclick="aprobarPost('${p.id}')">Aprobar</button>` : ''
+    const accionPublicar = (p.estado === 'aprobado' || p.estado === 'fallido') ? `
+      <button class="btn btn-primary btn-sm" onclick="publicarAhora('${p.id}')">Publicar ya</button>` : ''
+    const accionEditar = p.estado !== 'publicado' ? `
+      <button class="btn btn-sm" onclick="abrirModalEditar(${JSON.stringify(p).replace(/"/g, '&quot;')})">Editar</button>` : ''
+    const accionImagen = p.estado !== 'publicado' ? `
+      <button class="btn btn-sm" onclick="regenerarImagen('${p.id}', this)" title="Regenerar imagen con IA">Img IA</button>` : ''
+    const accionEliminar = p.estado !== 'publicado' ? `
+      <button class="btn btn-danger btn-sm" onclick="eliminarPost('${p.id}', this)">Borrar</button>` : ''
+
+    return `<div class="post-card" id="card-${p.id}">
+      <div class="post-imagen" style="position:relative">
+        ${imagenHtml}
+        <span class="post-tipo-chip ${chipClase}" style="position:absolute;top:8px;left:8px">${p.tipo || '—'}</span>
+      </div>
+      <div class="post-body">
+        <div class="post-fecha">${fecha}</div>
+        <div class="post-titulo">${escHtml(p.titulo || '')}</div>
+        <div class="post-contenido">${escHtml(p.contenido || '')}</div>
+        <div class="post-hashtags">${escHtml(p.hashtags || '')}</div>
+      </div>
+      <div class="post-footer">
+        <span class="estado-badge ${estadoClase}">${p.estado}</span>
+        <div class="post-acciones">
+          ${accionesBorrador}${accionPublicar}${accionEditar}${accionImagen}${accionEliminar}
+        </div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function mostrarSkeletons(n = 6) {
+  const container = document.getElementById('posts-container')
+  container.innerHTML = Array(n).fill(`
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-img"></div>
+      <div class="skeleton-body">
+        <div class="skeleton skeleton-line" style="width:30%"></div>
+        <div class="skeleton skeleton-line" style="width:80%"></div>
+        <div class="skeleton skeleton-line" style="width:95%"></div>
+        <div class="skeleton skeleton-line" style="width:95%"></div>
+        <div class="skeleton skeleton-line" style="width:70%"></div>
+      </div>
+    </div>`).join('')
+}
+
+async function aprobarPost(id) {
+  try {
+    const res = await fetch(`/api/posts-sociales/${id}/aprobar`, { method: 'POST' })
+    if (!res.ok) throw new Error('Error ' + res.status)
+    mostrarToast('Post aprobado', 'success')
+    cargarPosts()
+  } catch (err) {
+    mostrarToast('Error: ' + err.message, 'error')
+  }
+}
+
+async function publicarAhora(id) {
+  if (!confirm('Publicar este post ahora via Make.com?')) return
+  try {
+    const res = await fetch(`/api/posts-sociales/${id}/publicar`, { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error')
+    mostrarToast('Post enviado a Make.com', 'success')
+    cargarPosts()
+  } catch (err) {
+    mostrarToast('Error: ' + err.message, 'error')
+  }
+}
+
+async function eliminarPost(id, btn) {
+  if (!confirm('Eliminar este post? Esta accion no se puede deshacer.')) return
+  btn.disabled = true
+  try {
+    const res = await fetch(`/api/posts-sociales/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Error ' + res.status)
+    mostrarToast('Post eliminado')
+    const card = document.getElementById('card-' + id)
+    if (card) card.remove()
+    todosLosPosts = todosLosPosts.filter(p => p.id !== id)
+    actualizarStats(todosLosPosts)
+  } catch (err) {
+    btn.disabled = false
+    mostrarToast('Error: ' + err.message, 'error')
+  }
+}
+
+async function regenerarImagen(id, btn) {
+  if (!confirm('Regenerar la imagen con DALL-E 3? Tardara unos segundos.')) return
+  btn.disabled = true
+  btn.textContent = '...'
+  try {
+    const res = await fetch(`/api/posts-sociales/${id}/regenerar-imagen`, { method: 'POST' })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error')
+    mostrarToast('Imagen regenerada', 'success')
+    cargarPosts()
+  } catch (err) {
+    btn.disabled = false
+    btn.textContent = 'Img IA'
+    mostrarToast('Error: ' + err.message, 'error')
+  }
+}
+
+function abrirModalEditar(post) {
+  document.getElementById('edit-id').value = post.id
+  document.getElementById('edit-titulo').value = post.titulo || ''
+  document.getElementById('edit-contenido').value = post.contenido || ''
+  document.getElementById('edit-hashtags').value = post.hashtags || ''
+  document.getElementById('edit-fecha').value = post.fecha_programada || ''
+  document.getElementById('edit-hora').value = (post.hora_publicacion || '10:00').slice(0, 5)
+  document.getElementById('edit-plataforma').value = post.plataforma || 'ambas'
+  document.getElementById('modal-editar').style.display = 'flex'
+}
+
+function cerrarModalEditar() {
+  document.getElementById('modal-editar').style.display = 'none'
+}
+
+async function guardarEdicion() {
+  const id = document.getElementById('edit-id').value
+  const body = {
+    titulo: document.getElementById('edit-titulo').value,
+    contenido: document.getElementById('edit-contenido').value,
+    hashtags: document.getElementById('edit-hashtags').value,
+    fecha_programada: document.getElementById('edit-fecha').value,
+    hora_publicacion: document.getElementById('edit-hora').value,
+    plataforma: document.getElementById('edit-plataforma').value
+  }
+  try {
+    const res = await fetch(`/api/posts-sociales/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error')
+    mostrarToast('Cambios guardados', 'success')
+    cerrarModalEditar()
+    cargarPosts()
+  } catch (err) {
+    mostrarToast('Error: ' + err.message, 'error')
+  }
+}
+
+function abrirModalGenerar() {
+  document.getElementById('modal-generar').style.display = 'flex'
+  document.getElementById('gen-progress').style.display = 'none'
+  document.getElementById('btn-generar').disabled = false
+  document.getElementById('btn-generar').innerHTML = 'Generar ahora'
+  document.getElementById('btn-cancelar-gen').disabled = false
+}
+
+function cerrarModalGenerar() {
+  document.getElementById('modal-generar').style.display = 'none'
+}
+
+async function generarContenido() {
+  const cliente = document.getElementById('gen-cliente').value
+  const mes = document.getElementById('gen-mes').value
+  const cantidad = parseInt(document.getElementById('gen-cantidad').value)
+
+  if (!mes) { mostrarToast('Selecciona un mes', 'error'); return }
+
+  const btnGen = document.getElementById('btn-generar')
+  const btnCanc = document.getElementById('btn-cancelar-gen')
+  btnGen.disabled = true
+  btnCanc.disabled = true
+  btnGen.innerHTML = '<span class="spinner"></span>Generando...'
+  document.getElementById('gen-progress').style.display = 'block'
+
+  // Animar barra de progreso simulando el tiempo (4-6 min)
+  const tiempoEstimado = cantidad * 14000 // 14s por imagen aprox
+  const intervalo = 2000
+  let progreso = 0
+  const fillEl = document.getElementById('progress-fill')
+  const textEl = document.getElementById('progress-text')
+
+  const timer = setInterval(() => {
+    progreso = Math.min(progreso + (intervalo / tiempoEstimado) * 85, 85)
+    fillEl.style.width = progreso + '%'
+    const restantes = Math.round(((100 - progreso) / 100) * tiempoEstimado / 1000 / 60)
+    textEl.textContent = restantes > 0
+      ? `Generando imagenes con IA... ~${restantes} min restantes`
+      : 'Finalizando...'
+  }, intervalo)
+
+  try {
+    const res = await fetch('/api/generar-contenido-mes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cliente, mes, cantidad })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error del servidor')
+
+    fillEl.style.width = '100%'
+    textEl.textContent = 'Solicitud enviada. Los posts apareceran en breve...'
+    clearInterval(timer)
+
+    mostrarToast('Generando contenido en background. Los posts apareceran en los proximos minutos.', 'success')
+
+    // Actualizar filtros para mostrar el mes generado
+    document.getElementById('filtro-cliente').value = cliente
+    document.getElementById('filtro-mes').value = mes
+
+    // Polling cada 15s para detectar cuando aparecen los posts
+    let intentos = 0
+    const poll = setInterval(async () => {
+      intentos++
+      await cargarPosts()
+      const postsNuevos = todosLosPosts.filter(p => p.cliente === cliente && p.fecha_programada && p.fecha_programada.startsWith(mes))
+      if (postsNuevos.length >= Math.floor(cantidad * 0.5) || intentos >= 30) {
+        clearInterval(poll)
+        cerrarModalGenerar()
+        if (postsNuevos.length > 0) mostrarToast(`${postsNuevos.length} posts generados listos para revisar`, 'success')
+      }
+    }, 15000)
+
+  } catch (err) {
+    clearInterval(timer)
+    btnGen.disabled = false
+    btnCanc.disabled = false
+    btnGen.innerHTML = 'Reintentar'
+    mostrarToast('Error: ' + err.message, 'error')
+    textEl.textContent = 'Error al generar. Intenta de nuevo.'
+  }
+}
+
+// Utilidades
+function formatearFecha(fechaStr) {
+  const [anio, mes, dia] = fechaStr.split('-')
+  const d = new Date(Number(anio), Number(mes) - 1, Number(dia))
+  const dias = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab']
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  return `${dias[d.getDay()]} ${dia} ${meses[Number(mes) - 1]} ${anio}`
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+let toastTimer = null
+function mostrarToast(msg, tipo = '') {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = 'toast show' + (tipo ? ' ' + tipo : '')
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { el.className = 'toast' }, 3500)
+}
+</script>
+</body>
+</html>

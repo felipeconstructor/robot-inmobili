@@ -64,6 +64,9 @@ app.get('/finanzas.html', requireAuth, requireAdmin, (req, res) => {
 app.get('/usuarios.html', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'usuarios.html'))
 })
+app.get('/contenido.html', requireAuth, requireAdmin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'contenido.html'))
+})
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body
@@ -898,6 +901,276 @@ app.post('/api/publicar-propiedad', async (req, res) => {
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Sistema de contenido editorial para redes sociales ──────────────────────
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+
+// Distribuye N posts en lun/mie/vie del mes (agrega mar/jue si necesita más)
+function generarCalendarioMes(mesAno, cantidad) {
+  const [anio, mes] = mesAno.split('-').map(Number)
+  const fechas = []
+  const diasSemana = [1, 3, 5] // lun, mie, vie
+  let d = new Date(anio, mes - 1, 1)
+  while (d.getMonth() === mes - 1 && fechas.length < cantidad) {
+    if (diasSemana.includes(d.getDay())) {
+      fechas.push(d.toLocaleDateString('en-CA'))
+    }
+    d.setDate(d.getDate() + 1)
+    // Si el mes se acaba y aún faltan posts, agregar mar y jue
+    if (d.getDay() === 1 && fechas.length < cantidad && !diasSemana.includes(2)) {
+      diasSemana.push(2, 4)
+    }
+  }
+  return fechas
+}
+
+// Genera imagen con DALL-E 3, la descarga y la sube a Supabase Storage
+async function generarImagenDalle(prompt, postId) {
+  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY no configurado')
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + OPENAI_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1024x1024', quality: 'standard' })
+  })
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}))
+    throw new Error('DALL-E error ' + res.status + ': ' + (errData.error?.message || ''))
+  }
+  const data = await res.json()
+  const urlTemporal = data.data[0].url
+  // Descargar imagen temporal
+  const imgRes = await fetch(urlTemporal)
+  const buffer = Buffer.from(await imgRes.arrayBuffer())
+  // Subir a Supabase Storage
+  const storagePath = `posts/${postId}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from('post-images')
+    .upload(storagePath, buffer, { contentType: 'image/jpeg', upsert: true })
+  if (uploadError) throw new Error('Storage error: ' + uploadError.message)
+  const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(storagePath)
+  return urlData.publicUrl
+}
+
+// GET /api/posts-sociales — lista con filtros opcionales: cliente, estado, mes (YYYY-MM)
+app.get('/api/posts-sociales', requireAuth, async (req, res) => {
+  try {
+    const { cliente, estado, mes } = req.query
+    let query = supabase.from('posts_sociales').select('*').order('fecha_programada')
+    if (cliente) query = query.eq('cliente', cliente)
+    if (estado) query = query.eq('estado', estado)
+    if (mes) {
+      const [anio, m] = mes.split('-')
+      const desde = `${anio}-${m}-01`
+      const hasta = new Date(Number(anio), Number(m), 0).toLocaleDateString('en-CA')
+      query = query.gte('fecha_programada', desde).lte('fecha_programada', hasta)
+    }
+    const { data, error } = await query
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// PUT /api/posts-sociales/:id — editar titulo, contenido, hashtags, fecha_programada
+app.put('/api/posts-sociales/:id', requireAuth, async (req, res) => {
+  const { titulo, contenido, hashtags, fecha_programada, hora_publicacion, plataforma } = req.body
+  const updates = {}
+  if (titulo !== undefined) updates.titulo = titulo
+  if (contenido !== undefined) updates.contenido = contenido
+  if (hashtags !== undefined) updates.hashtags = hashtags
+  if (fecha_programada !== undefined) updates.fecha_programada = fecha_programada
+  if (hora_publicacion !== undefined) updates.hora_publicacion = hora_publicacion
+  if (plataforma !== undefined) updates.plataforma = plataforma
+  const { data, error } = await supabase.from('posts_sociales').update(updates)
+    .eq('id', req.params.id).select().single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json(data)
+})
+
+// POST /api/posts-sociales/:id/aprobar — cambia estado a 'aprobado'
+app.post('/api/posts-sociales/:id/aprobar', requireAuth, async (req, res) => {
+  const { data, error } = await supabase.from('posts_sociales')
+    .update({ estado: 'aprobado' }).eq('id', req.params.id).select().single()
+  if (error) return res.status(400).json({ error: error.message })
+  res.json(data)
+})
+
+// DELETE /api/posts-sociales/:id
+app.delete('/api/posts-sociales/:id', requireAuth, async (req, res) => {
+  const { error } = await supabase.from('posts_sociales').delete().eq('id', req.params.id)
+  if (error) return res.status(400).json({ error: error.message })
+  res.json({ ok: true })
+})
+
+// POST /api/posts-sociales/:id/publicar — publica inmediatamente vía Make.com
+app.post('/api/posts-sociales/:id/publicar', requireAuth, async (req, res) => {
+  if (!MAKE_WEBHOOK_URL) return res.status(400).json({ error: 'MAKE_WEBHOOK_URL no configurado' })
+  const { data: post, error } = await supabase.from('posts_sociales')
+    .select('*').eq('id', req.params.id).single()
+  if (error || !post) return res.status(404).json({ error: 'Post no encontrado' })
+  try {
+    const resp = await fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo: 'post_contenido', post_tipo: post.tipo, cliente: post.cliente,
+        titulo: post.titulo, contenido: post.contenido, hashtags: post.hashtags,
+        imagen_url: post.imagen_url || '', plataforma: post.plataforma
+      })
+    })
+    const makeResp = { status: resp.status, ok: resp.ok, ts: new Date().toISOString() }
+    if (resp.ok) {
+      await supabase.from('posts_sociales')
+        .update({ estado: 'publicado', publicado_at: new Date().toISOString(), make_response: makeResp })
+        .eq('id', post.id)
+      res.json({ ok: true })
+    } else {
+      await supabase.from('posts_sociales')
+        .update({ estado: 'fallido', make_response: makeResp }).eq('id', post.id)
+      res.status(500).json({ error: 'Make.com respondio ' + resp.status })
+    }
+  } catch (err) {
+    await supabase.from('posts_sociales')
+      .update({ estado: 'fallido', make_response: { error: err.message } }).eq('id', post.id)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/posts-sociales/:id/regenerar-imagen — regenera la imagen con DALL-E usando el prompt guardado
+app.post('/api/posts-sociales/:id/regenerar-imagen', requireAuth, async (req, res) => {
+  if (!OPENAI_API_KEY) return res.status(400).json({ error: 'OPENAI_API_KEY no configurado' })
+  const { data: post, error } = await supabase.from('posts_sociales')
+    .select('id, imagen_prompt').eq('id', req.params.id).single()
+  if (error || !post) return res.status(404).json({ error: 'Post no encontrado' })
+  if (!post.imagen_prompt) return res.status(400).json({ error: 'Este post no tiene prompt de imagen guardado' })
+  try {
+    const imagenUrl = await generarImagenDalle(post.imagen_prompt, post.id)
+    const { data: updated } = await supabase.from('posts_sociales')
+      .update({ imagen_url: imagenUrl }).eq('id', post.id).select().single()
+    res.json(updated)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/generar-contenido-mes — genera un mes de posts con Claude + DALL-E en background
+app.post('/api/generar-contenido-mes', requireAuth, requireAdmin, async (req, res) => {
+  const { cliente, mes, cantidad } = req.body
+  if (!cliente || !mes || !cantidad) return res.status(400).json({ error: 'Faltan campos: cliente, mes, cantidad' })
+  if (!['nova', 'broker'].includes(cliente)) return res.status(400).json({ error: 'cliente debe ser nova o broker' })
+  if (!/^\d{4}-\d{2}$/.test(mes)) return res.status(400).json({ error: 'mes debe ser YYYY-MM' })
+
+  // Responder inmediatamente, procesar en background
+  res.json({ ok: true, mensaje: 'Generando contenido en background. Los posts apareceran en los proximos minutos.' })
+
+  setImmediate(async () => {
+    try {
+      // Obtener propiedades disponibles para el contexto
+      const { data: propiedades } = await supabase.from('propiedades')
+        .select('id, tipo, operacion, direccion, comuna, precio, moneda, dormitorios, metros')
+        .eq('disponible', true).limit(5)
+
+      const listaPropiedades = propiedades && propiedades.length
+        ? propiedades.map(p => `ID:${p.id} | ${p.tipo} en ${p.operacion} | ${p.direccion}, ${p.comuna} | ${p.precio} ${p.moneda} | ${p.dormitorios || '-'} dorm | ${p.metros || '-'}m²`).join('\n')
+        : 'Sin propiedades cargadas actualmente'
+
+      const nombreCliente = cliente === 'nova' ? 'Prolig Propiedades (Nova)' : 'Broker Inmobiliario'
+      const cant = Number(cantidad)
+      const cantPropiedades = Math.round(cant * 0.35)
+      const cantTips = Math.round(cant * 0.25)
+      const cantMercado = Math.round(cant * 0.20)
+      const cantCta = cant - cantPropiedades - cantTips - cantMercado
+      const fechas = generarCalendarioMes(mes, cant)
+
+      const promptUsuario = `Genera exactamente ${cant} posts de redes sociales para ${nombreCliente}, una empresa inmobiliaria en Chile.
+Mes a publicar: ${mes}.
+Propiedades disponibles en el inventario:
+${listaPropiedades}
+
+Distribucion requerida:
+- ${cantPropiedades} posts tipo "propiedad" (destaca una propiedad del inventario, si no hay suficientes repite con angulos distintos)
+- ${cantTips} posts tipo "tip" (consejos para compradores, arrendatarios o inversores en Chile)
+- ${cantMercado} posts tipo "mercado" (estadisticas, tendencias, zonas en auge del mercado inmobiliario chileno 2025-2026)
+- ${cantCta} posts tipo "cta" (llamadas a la accion: contacto, agenda tu visita, subsidios disponibles)
+
+Para cada post devuelve exactamente este objeto JSON:
+{
+  "tipo": "propiedad|tip|mercado|cta",
+  "titulo": "Titulo corto y llamativo (max 60 chars)",
+  "contenido": "Caption completo listo para publicar en Instagram/Facebook (max 300 chars, usa emojis con moderacion, tono profesional y cercano, en espanol chileno natural)",
+  "hashtags": "#tag1 #tag2 #tag3 (8 a 12 hashtags relevantes para Chile, mezcla general e inmobiliaria)",
+  "imagen_prompt": "Prompt detallado en ingles para DALL-E 3. Imagen fotorrealista y profesional. Para propiedades: describe visualmente la propiedad segun los datos. Para tips y mercado: infografia limpia con fondo moderno. Para cta: imagen aspiracional de hogar o familia. Siempre terminar con: professional real estate photography, Santiago Chile, modern, cinematic lighting, high quality, 4K",
+  "propiedad_id": null
+}
+Para posts tipo propiedad, pon el ID numerico de la propiedad en el campo propiedad_id si usas una del inventario.
+Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adicional.`
+
+      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': (process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '').trim(),
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8000,
+          system: 'Eres un experto en marketing inmobiliario para redes sociales en Chile. Generas contenido autentico y profesional para Instagram y Facebook. SIEMPRE devuelves SOLO un array JSON valido, sin explicaciones ni markdown.',
+          messages: [{ role: 'user', content: promptUsuario }]
+        })
+      })
+
+      const claudeData = await claudeRes.json()
+      if (claudeData.error) throw new Error('Claude error: ' + claudeData.error.message)
+
+      let postsGenerados
+      const textoRespuesta = claudeData.content[0].text.trim()
+      // Limpiar posible markdown
+      const jsonLimpio = textoRespuesta.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
+      postsGenerados = JSON.parse(jsonLimpio)
+
+      console.log(`Generacion contenido: ${postsGenerados.length} posts para ${cliente} ${mes}. Generando imagenes...`)
+
+      for (let i = 0; i < postsGenerados.length; i++) {
+        const post = postsGenerados[i]
+        const postId = require('crypto').randomUUID()
+        let imagenUrl = null
+
+        if (OPENAI_API_KEY && post.imagen_prompt) {
+          try {
+            // Rate limit: max 5 img/min → esperar 13s entre imágenes (excepto la primera)
+            if (i > 0) await new Promise(r => setTimeout(r, 13000))
+            imagenUrl = await generarImagenDalle(post.imagen_prompt, postId)
+            console.log(`Imagen ${i + 1}/${postsGenerados.length} generada para post ${postId}`)
+          } catch (imgErr) {
+            console.error(`Error imagen post ${i + 1}:`, imgErr.message)
+          }
+        }
+
+        await supabase.from('posts_sociales').insert({
+          id: postId,
+          cliente,
+          tipo: post.tipo,
+          titulo: post.titulo,
+          contenido: post.contenido,
+          hashtags: post.hashtags,
+          imagen_url: imagenUrl,
+          imagen_prompt: post.imagen_prompt,
+          plataforma: 'ambas',
+          fecha_programada: fechas[i] || fechas[fechas.length - 1],
+          estado: 'borrador',
+          propiedad_id: post.propiedad_id || null
+        })
+      }
+
+      console.log(`Generacion contenido completada: ${postsGenerados.length} posts insertados para ${cliente} ${mes}`)
+    } catch (err) {
+      console.error('Error generacion contenido:', err.message)
+    }
+  })
+})
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Brecha 1: Matching propiedad nueva → leads interesados ──────────────────
 app.post('/api/notificar-nueva-propiedad', requireAuth, async (req, res) => {
   const { tipo, operacion, comuna, precio, moneda, id } = req.body
@@ -1558,6 +1831,49 @@ cron.schedule('0 9 * * *', async () => {
     }
   } catch (err) { console.error('Error cron degradacion score:', err.message) }
 }, { timezone: 'America/Santiago' })
+
+// ─── Cron: publicacion automatica contenido social — 9:05am Santiago ─────────
+cron.schedule('5 9 * * *', async () => {
+  if (!MAKE_WEBHOOK_URL) return
+  try {
+    const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' })
+    const { data: posts, error } = await supabase.from('posts_sociales')
+      .select('*').eq('estado', 'aprobado').eq('fecha_programada', hoy)
+    if (error) { console.error('Cron contenido: error consultando posts:', error.message); return }
+    if (!posts || !posts.length) { console.log('Cron contenido: sin posts aprobados para hoy'); return }
+    console.log(`Cron contenido: publicando ${posts.length} post(s) para ${hoy}`)
+    for (const post of posts) {
+      try {
+        const resp = await fetch(MAKE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tipo: 'post_contenido', post_tipo: post.tipo, cliente: post.cliente,
+            titulo: post.titulo, contenido: post.contenido, hashtags: post.hashtags,
+            imagen_url: post.imagen_url || '', plataforma: post.plataforma
+          })
+        })
+        const makeResp = { status: resp.status, ok: resp.ok, ts: new Date().toISOString() }
+        if (resp.ok) {
+          await supabase.from('posts_sociales')
+            .update({ estado: 'publicado', publicado_at: new Date().toISOString(), make_response: makeResp })
+            .eq('id', post.id)
+          console.log(`Cron contenido: publicado post ${post.id} — ${post.titulo}`)
+        } else {
+          await supabase.from('posts_sociales')
+            .update({ estado: 'fallido', make_response: makeResp }).eq('id', post.id)
+          console.error(`Cron contenido: fallo post ${post.id} — HTTP ${resp.status}`)
+        }
+      } catch (postErr) {
+        await supabase.from('posts_sociales')
+          .update({ estado: 'fallido', make_response: { error: postErr.message, ts: new Date().toISOString() } })
+          .eq('id', post.id).catch(() => {})
+        console.error(`Cron contenido: error post ${post.id}:`, postErr.message)
+      }
+    }
+  } catch (err) { console.error('Error cron contenido social:', err.message) }
+}, { timezone: 'America/Santiago' })
+console.log('Cron publicacion contenido social activo — 9:05am Santiago')
 
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => {
