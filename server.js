@@ -1172,21 +1172,24 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
       console.log(`Fase 1 completada: ${idsInsertados.length} posts insertados para ${cliente} ${mes}`)
 
       // FASE 2: generar imagenes y actualizar cada post (independiente, no bloquea)
+      console.log(`Fase 2 inicio — OPENAI_API_KEY: ${OPENAI_API_KEY ? OPENAI_API_KEY.substring(0,8) + '...' : 'NO CONFIGURADA'} — posts con prompt: ${idsInsertados.filter(p => p.prompt).length}/${idsInsertados.length}`)
       if (OPENAI_API_KEY && idsInsertados.length) {
         for (let i = 0; i < idsInsertados.length; i++) {
           const { id: postId, prompt } = idsInsertados[i]
-          if (!prompt) continue
+          if (!prompt) { console.log(`Post ${i + 1}: sin imagen_prompt, omitiendo`); continue }
           try {
             if (i > 0) await new Promise(r => setTimeout(r, 13000))
+            console.log(`Generando imagen ${i + 1}/${idsInsertados.length}...`)
             const imagenUrl = await generarImagenDalle(prompt, postId)
             await supabase.from('posts_sociales').update({ imagen_url: imagenUrl }).eq('id', postId)
             console.log(`Imagen ${i + 1}/${idsInsertados.length} generada — post ${postId}`)
           } catch (imgErr) {
             console.error(`Error imagen post ${i + 1} (${postId}):`, imgErr.message)
-            // Continua con el siguiente — el post ya esta en DB sin imagen
           }
         }
         console.log(`Fase 2 completada: imagenes generadas para ${cliente} ${mes}`)
+      } else {
+        console.log(`Fase 2 omitida — KEY: ${!!OPENAI_API_KEY} — posts: ${idsInsertados.length}`)
       }
     } catch (err) {
       console.error('Error generacion contenido:', err.message)
