@@ -1146,6 +1146,7 @@ const generacionEnCurso = new Set()
 
 // POST /api/generar-contenido-mes — genera un mes de posts con Claude + DALL-E en background
 app.post('/api/generar-contenido-mes', requireAuth, requireAdmin, async (req, res) => {
+  console.log('generar-contenido-mes recibido:', JSON.stringify(req.body))
   const { cliente, mes, cantidad } = req.body
   if (!cliente || !mes || !cantidad) return res.status(400).json({ error: 'Faltan campos: cliente, mes, cantidad' })
   if (!['nova', 'broker'].includes(cliente)) return res.status(400).json({ error: 'cliente debe ser nova o broker' })
