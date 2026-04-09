@@ -5,6 +5,14 @@ const { createClient } = require('@supabase/supabase-js')
 const { google } = require('googleapis')
 const path = require('path')
 const cron = require('node-cron')
+const multer = require('multer')
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype))
+  }
+})
 
 const app = express()
 app.use(cors())
@@ -903,7 +911,7 @@ app.post('/api/publicar-propiedad', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Sistema de contenido editorial para redes sociales ──────────────────────
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim()
 
 // Distribuye N posts en lun/mie/vie del mes (agrega mar/jue si necesita más)
 function generarCalendarioMes(mesAno, cantidad) {
@@ -974,7 +982,7 @@ app.get('/api/posts-sociales', requireAuth, async (req, res) => {
 
 // PUT /api/posts-sociales/:id — editar titulo, contenido, hashtags, fecha_programada
 app.put('/api/posts-sociales/:id', requireAuth, async (req, res) => {
-  const { titulo, contenido, hashtags, fecha_programada, hora_publicacion, plataforma } = req.body
+  const { titulo, contenido, hashtags, fecha_programada, hora_publicacion, plataforma, formato } = req.body
   const updates = {}
   if (titulo !== undefined) updates.titulo = titulo
   if (contenido !== undefined) updates.contenido = contenido
@@ -982,6 +990,7 @@ app.put('/api/posts-sociales/:id', requireAuth, async (req, res) => {
   if (fecha_programada !== undefined) updates.fecha_programada = fecha_programada
   if (hora_publicacion !== undefined) updates.hora_publicacion = hora_publicacion
   if (plataforma !== undefined) updates.plataforma = plataforma
+  if (formato !== undefined) updates.formato = formato
   const { data, error } = await supabase.from('posts_sociales').update(updates)
     .eq('id', req.params.id).select().single()
   if (error) return res.status(400).json({ error: error.message })
@@ -1016,7 +1025,9 @@ app.post('/api/posts-sociales/:id/publicar', requireAuth, async (req, res) => {
       body: JSON.stringify({
         tipo: 'post_contenido', post_tipo: post.tipo, cliente: post.cliente,
         titulo: post.titulo, contenido: post.contenido, hashtags: post.hashtags,
-        imagen_url: post.imagen_url || '', plataforma: post.plataforma
+        imagen_url: post.imagen_url || '', plataforma: post.plataforma,
+        formato: post.formato || 'imagen',
+        imagenes: post.formato === 'carrusel' ? (post.imagenes || []) : []
       })
     })
     const makeResp = { status: resp.status, ok: resp.ok, ts: new Date().toISOString() }
@@ -1048,6 +1059,82 @@ app.post('/api/posts-sociales/:id/regenerar-imagen', requireAuth, async (req, re
     const imagenUrl = await generarImagenDalle(post.imagen_prompt, post.id)
     const { data: updated } = await supabase.from('posts_sociales')
       .update({ imagen_url: imagenUrl }).eq('id', post.id).select().single()
+    res.json(updated)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/posts-sociales/:id/subir-imagen — sube imagen propia o descarga desde URL externa
+app.post('/api/posts-sociales/:id/subir-imagen', requireAuth, upload.single('imagen'), async (req, res) => {
+  const { id } = req.params
+  try {
+    const { data: post, error: postErr } = await supabase.from('posts_sociales')
+      .select('id').eq('id', id).single()
+    if (postErr || !post) return res.status(404).json({ error: 'Post no encontrado' })
+
+    let buffer, contentType
+    if (req.file) {
+      buffer = req.file.buffer
+      contentType = req.file.mimetype
+    } else if (req.body && req.body.url) {
+      const imgRes = await fetch(req.body.url.trim())
+      if (!imgRes.ok) return res.status(400).json({ error: 'No se pudo descargar la imagen desde la URL' })
+      const ct = imgRes.headers.get('content-type') || 'image/jpeg'
+      if (!ct.startsWith('image/')) return res.status(400).json({ error: 'La URL no apunta a una imagen' })
+      buffer = Buffer.from(await imgRes.arrayBuffer())
+      contentType = ct.split(';')[0].trim()
+    } else {
+      return res.status(400).json({ error: 'Envia un archivo (campo imagen) o un campo url en el body' })
+    }
+
+    const storagePath = `posts/${id}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from('post-images').upload(storagePath, buffer, { contentType, upsert: true })
+    if (uploadError) return res.status(500).json({ error: 'Error al subir: ' + uploadError.message })
+
+    const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(storagePath)
+    const { data: updated } = await supabase.from('posts_sociales')
+      .update({ imagen_url: urlData.publicUrl }).eq('id', id).select().single()
+    res.json(updated)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/posts-sociales/:id/agregar-imagen-carrusel — agrega URL al array imagenes
+app.post('/api/posts-sociales/:id/agregar-imagen-carrusel', requireAuth, upload.single('imagen'), async (req, res) => {
+  const { id } = req.params
+  try {
+    const { data: post, error: postErr } = await supabase.from('posts_sociales')
+      .select('id, formato, imagenes').eq('id', id).single()
+    if (postErr || !post) return res.status(404).json({ error: 'Post no encontrado' })
+    if (post.formato !== 'carrusel') return res.status(400).json({ error: 'Este post no es un carrusel' })
+
+    let buffer, contentType
+    if (req.file) {
+      buffer = req.file.buffer
+      contentType = req.file.mimetype
+    } else if (req.body && req.body.url) {
+      const imgRes = await fetch(req.body.url.trim())
+      if (!imgRes.ok) return res.status(400).json({ error: 'No se pudo descargar la imagen' })
+      buffer = Buffer.from(await imgRes.arrayBuffer())
+      contentType = (imgRes.headers.get('content-type') || 'image/jpeg').split(';')[0].trim()
+    } else {
+      return res.status(400).json({ error: 'Envia un archivo o un campo url' })
+    }
+
+    const imagenesActuales = Array.isArray(post.imagenes) ? post.imagenes : []
+    const idx = imagenesActuales.length + 1
+    const storagePath = `posts/${id}_carrusel_${idx}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from('post-images').upload(storagePath, buffer, { contentType, upsert: true })
+    if (uploadError) return res.status(500).json({ error: 'Error Supabase: ' + uploadError.message })
+
+    const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(storagePath)
+    const nuevasImagenes = [...imagenesActuales, urlData.publicUrl]
+    const { data: updated } = await supabase.from('posts_sociales')
+      .update({ imagenes: nuevasImagenes }).eq('id', id).select().single()
     res.json(updated)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -1101,8 +1188,10 @@ Para cada post devuelve exactamente este objeto JSON:
   "contenido": "Caption completo listo para publicar en Instagram/Facebook (max 300 chars, usa emojis con moderacion, tono profesional y cercano, en espanol chileno natural)",
   "hashtags": "#tag1 #tag2 #tag3 (8 a 12 hashtags relevantes para Chile, mezcla general e inmobiliaria)",
   "imagen_prompt": "Prompt corto en ingles para DALL-E 3, max 20 palabras. Ejemplo: 'Modern apartment living room Santiago Chile, natural light, professional real estate photography'",
+  "formato": "imagen",
   "propiedad_id": null
 }
+Reglas para el campo formato: usa "imagen" para la mayoria de posts. Usa "carrusel" solo en posts tipo "propiedad" que muestren multiples angulos. Usa "reel" en posts tipo "cta" con contenido dinamico o llamada a la accion energica. Usa "video" solo si el contenido lo requiere explicitamente.
 Para posts tipo propiedad, pon el ID numerico de la propiedad en el campo propiedad_id si usas una del inventario.
 Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adicional.`
 
@@ -1168,6 +1257,7 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
           imagen_url: null,
           imagen_prompt: post.imagen_prompt,
           plataforma: 'ambas',
+          formato: post.formato || 'imagen',
           fecha_programada: fechas[i] || fechas[fechas.length - 1],
           estado: 'borrador',
           propiedad_id: post.propiedad_id || null
@@ -1882,7 +1972,9 @@ cron.schedule('5 9 * * *', async () => {
           body: JSON.stringify({
             tipo: 'post_contenido', post_tipo: post.tipo, cliente: post.cliente,
             titulo: post.titulo, contenido: post.contenido, hashtags: post.hashtags,
-            imagen_url: post.imagen_url || '', plataforma: post.plataforma
+            imagen_url: post.imagen_url || '', plataforma: post.plataforma,
+            formato: post.formato || 'imagen',
+            imagenes: post.formato === 'carrusel' ? (post.imagenes || []) : []
           })
         })
         const makeResp = { status: resp.status, ok: resp.ok, ts: new Date().toISOString() }
