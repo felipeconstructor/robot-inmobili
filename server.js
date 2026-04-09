@@ -1145,6 +1145,11 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
       if (!Array.isArray(postsGenerados) || !postsGenerados.length) {
         throw new Error('Claude devolvio un array vacio o invalido')
       }
+      // Truncar si Claude devuelve mas posts de los solicitados
+      if (postsGenerados.length > cant) {
+        console.log(`Claude devolvio ${postsGenerados.length} posts, truncando a ${cant}`)
+        postsGenerados = postsGenerados.slice(0, cant)
+      }
 
       console.log(`Generacion contenido: ${postsGenerados.length} posts para ${cliente} ${mes}. Insertando textos...`)
 
