@@ -311,6 +311,17 @@ select:focus,input:focus,textarea:focus{border-color:#1A3A5C}
 let todosLosPosts = []
 let primeraVez = true
 
+// Wrapper fetch que detecta sesion expirada y redirige a login
+async function fetchAuth(url, opts = {}) {
+  const res = await fetch(url, opts)
+  if (res.status === 401 || res.status === 403) {
+    mostrarToast('Sesion expirada. Redirigiendo al login...', 'error')
+    setTimeout(() => { location.href = '/login.html' }, 1500)
+    return null
+  }
+  return res
+}
+
 // Detectar cliente por defecto segun el hostname
 const clientePorDefecto = location.hostname.includes('broker') ? 'broker' : 'nova'
 
@@ -347,7 +358,8 @@ async function cargarPosts(silencioso = false) {
   if (primeraVez) mostrarSkeletons()
 
   try {
-    const res = await fetch('/api/posts-sociales?' + params.toString())
+    const res = await fetchAuth('/api/posts-sociales?' + params.toString())
+    if (!res) return
     if (!res.ok) throw new Error('Error ' + res.status)
     todosLosPosts = await res.json()
     renderizarPosts(todosLosPosts)
@@ -432,7 +444,8 @@ function mostrarSkeletons(n = 6) {
 
 async function aprobarPost(id) {
   try {
-    const res = await fetch(`/api/posts-sociales/${id}/aprobar`, { method: 'POST' })
+    const res = await fetchAuth(`/api/posts-sociales/${id}/aprobar`, { method: 'POST' })
+    if (!res) return
     if (!res.ok) throw new Error('Error ' + res.status)
     mostrarToast('Post aprobado', 'success')
     cargarPosts()
@@ -444,7 +457,8 @@ async function aprobarPost(id) {
 async function publicarAhora(id) {
   if (!confirm('Publicar este post ahora via Make.com?')) return
   try {
-    const res = await fetch(`/api/posts-sociales/${id}/publicar`, { method: 'POST' })
+    const res = await fetchAuth(`/api/posts-sociales/${id}/publicar`, { method: 'POST' })
+    if (!res) return
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error')
     mostrarToast('Post enviado a Make.com', 'success')
@@ -458,7 +472,8 @@ async function eliminarPost(id, btn) {
   if (!confirm('Eliminar este post? Esta accion no se puede deshacer.')) return
   btn.disabled = true
   try {
-    const res = await fetch(`/api/posts-sociales/${id}`, { method: 'DELETE' })
+    const res = await fetchAuth(`/api/posts-sociales/${id}`, { method: 'DELETE' })
+    if (!res) return
     if (!res.ok) throw new Error('Error ' + res.status)
     mostrarToast('Post eliminado')
     const card = document.getElementById('card-' + id)
@@ -476,7 +491,8 @@ async function regenerarImagen(id, btn) {
   btn.disabled = true
   btn.textContent = '...'
   try {
-    const res = await fetch(`/api/posts-sociales/${id}/regenerar-imagen`, { method: 'POST' })
+    const res = await fetchAuth(`/api/posts-sociales/${id}/regenerar-imagen`, { method: 'POST' })
+    if (!res) return
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error')
     mostrarToast('Imagen regenerada', 'success')
@@ -514,11 +530,12 @@ async function guardarEdicion() {
     plataforma: document.getElementById('edit-plataforma').value
   }
   try {
-    const res = await fetch(`/api/posts-sociales/${id}`, {
+    const res = await fetchAuth(`/api/posts-sociales/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     })
+    if (!res) return
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error')
     mostrarToast('Cambios guardados', 'success')
@@ -572,11 +589,12 @@ async function generarContenido() {
   }, intervalo)
 
   try {
-    const res = await fetch('/api/generar-contenido-mes', {
+    const res = await fetchAuth('/api/generar-contenido-mes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cliente, mes, cantidad })
     })
+    if (!res) { clearInterval(timer); btnGen.disabled = false; btnCanc.disabled = false; btnGen.innerHTML = 'Reintentar'; return }
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error del servidor')
 

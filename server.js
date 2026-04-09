@@ -34,14 +34,15 @@ function parseCookies(req) {
 function requireAuth(req, res, next) {
   const cookies = parseCookies(req)
   if (sesionesActivas.has(cookies.nova_session)) return next()
-  const destino = encodeURIComponent(req.path)
-  res.redirect('/login.html?next=' + destino)
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Sesion expirada', login: true })
+  res.redirect('/login.html?next=' + encodeURIComponent(req.path))
 }
 
 function requireAdmin(req, res, next) {
   const cookies = parseCookies(req)
   const sesion = sesionesActivas.get(cookies.nova_session)
   if (sesion && sesion.rol === 'admin') return next()
+  if (req.path.startsWith('/api/')) return res.status(403).json({ error: 'Se requiere rol admin', login: true })
   res.redirect('/crm.html')
 }
 
