@@ -756,11 +756,20 @@ function previsualizarFoto(event) {
 
 async function subirFoto(file, progressElId = 'upload-progress') {
   const progress = document.getElementById(progressElId)
-  if (progress) progress.style.display = 'block'
+  if (progress) { progress.style.display = 'block'; progress.textContent = 'Subiendo...' }
   try {
-    const fd = new FormData()
-    fd.append('foto', file)
-    const res = await fetch('/api/fotos/subir', { method: 'POST', body: fd, credentials: 'include' })
+    // Leer como base64 — funciona en browser, PWA, iOS, Android
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = e => resolve(e.target.result.split(',')[1])
+      reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
+      reader.readAsDataURL(file)
+    })
+    const res = await fetch('/api/fotos/subir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base64, nombre: file.name, tipo: file.type })
+    })
     if (progress) progress.style.display = 'none'
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Error ' + res.status }))

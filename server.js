@@ -7,18 +7,8 @@ const path = require('path')
 const cron = require('node-cron')
 const app = express()
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '20mb' }))
 app.use(express.urlencoded({ extended: false }))
-
-// multer solo para subida de fotos
-const multer = require('multer')
-const uploadFoto = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    cb(null, ['image/jpeg','image/png','image/webp','image/gif'].includes(file.mimetype))
-  }
-})
 
 // ─── Autenticacion paneles ────────────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'nova2026'
@@ -800,18 +790,24 @@ app.post('/api/publicar-propiedad', async (req, res) => {
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
-// POST /api/fotos/subir — sube foto al bucket 'propiedades' y devuelve la URL pública
-app.post('/api/fotos/subir', requireAuth, uploadFoto.single('foto'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' })
-  const { buffer, mimetype, originalname } = req.file
-  const ext = (originalname.split('.').pop() || 'jpg').toLowerCase()
-  const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-  const { error } = await supabase.storage
-    .from('propiedades')
-    .upload(nombre, buffer, { contentType: mimetype, upsert: false })
-  if (error) return res.status(500).json({ error: error.message })
-  const { data: { publicUrl } } = supabase.storage.from('propiedades').getPublicUrl(nombre)
-  res.json({ url: publicUrl })
+// POST /api/fotos/subir — recibe base64, sube al bucket 'propiedades', devuelve URL pública
+app.post('/api/fotos/subir', requireAuth, async (req, res) => {
+  const { base64, nombre: nombreOriginal, tipo } = req.body
+  if (!base64) return res.status(400).json({ error: 'No se recibió imagen' })
+  try {
+    const buffer = Buffer.from(base64, 'base64')
+    const ext = ((nombreOriginal || 'foto').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+    const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext || 'jpg'}`
+    const contentType = tipo || 'image/jpeg'
+    const { error } = await supabase.storage
+      .from('propiedades')
+      .upload(nombre, buffer, { contentType, upsert: false })
+    if (error) return res.status(500).json({ error: error.message })
+    const { data: { publicUrl } } = supabase.storage.from('propiedades').getPublicUrl(nombre)
+    res.json({ url: publicUrl })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
