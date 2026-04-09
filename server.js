@@ -10,6 +10,16 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
+// multer solo para subida de fotos
+const multer = require('multer')
+const uploadFoto = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    cb(null, ['image/jpeg','image/png','image/webp','image/gif'].includes(file.mimetype))
+  }
+})
+
 // ─── Autenticacion paneles ────────────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'nova2026'
 const sesionesActivas = new Map() // token → { email, nombre, rol }
@@ -787,6 +797,21 @@ app.post('/api/publicar-propiedad', async (req, res) => {
     console.error('Error webhook Make:', err.message)
     res.status(500).json({ error: 'Error enviando a Make' })
   }
+})
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /api/fotos/subir — sube foto al bucket 'propiedades' y devuelve la URL pública
+app.post('/api/fotos/subir', requireAuth, uploadFoto.single('foto'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' })
+  const { buffer, mimetype, originalname } = req.file
+  const ext = (originalname.split('.').pop() || 'jpg').toLowerCase()
+  const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+  const { error } = await supabase.storage
+    .from('propiedades')
+    .upload(nombre, buffer, { contentType: mimetype, upsert: false })
+  if (error) return res.status(500).json({ error: error.message })
+  const { data: { publicUrl } } = supabase.storage.from('propiedades').getPublicUrl(nombre)
+  res.json({ url: publicUrl })
 })
 // ─────────────────────────────────────────────────────────────────────────────
 

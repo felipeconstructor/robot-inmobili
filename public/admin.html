@@ -755,15 +755,25 @@ function previsualizarFoto(event) {
 }
 
 async function subirFoto(file, progressElId = 'upload-progress') {
-  const ext = file.name.split('.').pop()
-  const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
   const progress = document.getElementById(progressElId)
   if (progress) progress.style.display = 'block'
-  const { data, error } = await db.storage.from('propiedades').upload(nombre, file, { upsert: false })
-  if (progress) progress.style.display = 'none'
-  if (error) { toast('Error subiendo foto: ' + error.message, true); return null }
-  const { data: { publicUrl } } = db.storage.from('propiedades').getPublicUrl(nombre)
-  return publicUrl
+  try {
+    const fd = new FormData()
+    fd.append('foto', file)
+    const res = await fetch('/api/fotos/subir', { method: 'POST', body: fd, credentials: 'include' })
+    if (progress) progress.style.display = 'none'
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Error ' + res.status }))
+      toast('Error subiendo foto: ' + (err.error || res.status), true)
+      return null
+    }
+    const data = await res.json()
+    return data.url
+  } catch (err) {
+    if (progress) progress.style.display = 'none'
+    toast('Error subiendo foto: ' + err.message, true)
+    return null
+  }
 }
 
 // ─── Galeria ──────────────────────────────────────────────────────────────────
