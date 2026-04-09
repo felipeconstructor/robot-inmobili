@@ -162,18 +162,11 @@ tr:hover td{background:#fafcff}
 .broker-slogan-text{color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px;line-height:1}
 .broker .nav-broker-hide{display:none !important}
 
-/* ── Animaciones profesionales ───────────────────────────────────── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* ── Animaciones ─────────────────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.header{animation:fadeIn .3s ease}
-.stat{animation:fadeUp .4s ease both;transition:box-shadow .2s}
+.stat{transition:box-shadow .2s}
 .stat:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
-.stat:nth-child(1){animation-delay:.02s}
-.stat:nth-child(2){animation-delay:.09s}
-.stat:nth-child(3){animation-delay:.16s}
-.stat:nth-child(4){animation-delay:.23s}
-.panel{animation:fadeUp .4s .18s ease both}
 .overlay.activo .modal{animation:scaleIn .22s cubic-bezier(.34,1.3,.64,1)}
 td{transition:background .15s}
 .btn{transition:all .18s}
@@ -281,7 +274,6 @@ td{transition:background .15s}
     <a href="/documentos.html">Documentos</a>
     <a href="/contenido.html" class="nav-admin-only">Contenido</a>
     <a href="/">Chat</a>
-    <span id="nav-usuario" style="color:#C9A96E;font-size:12px;padding:5px 8px;border:1px solid rgba(201,169,110,.3);border-radius:20px;white-space:nowrap"></span>
     <a href="/api/logout" class="nav-salir">Salir</a>
   </nav>
 </div>
@@ -1045,7 +1037,6 @@ fetch('/api/config')
         }
       } catch(e) { /* no bloquea */ }
       cargarLeads()
-      setInterval(cargarLeads, 30000)
     } catch(e) {
       document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error init: ' + e.message + '</td></tr>'
     }
