@@ -553,16 +553,17 @@ async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
   })
   // Guardar calendar_event_id, fecha_visita y cancel_token en el lead
   const cancelToken = require('crypto').randomBytes(16).toString('hex')
-  await supabase.from('leads')
-    .update({
+  // Buscar el lead más reciente con ese nombre y teléfono
+  const { data: leadData } = await supabase.from('leads')
+    .select('id').eq('nombre', nombre).eq('telefono', telefono)
+    .order('created_at', { ascending: false }).limit(1)
+  if (leadData && leadData[0]) {
+    await supabase.from('leads').update({
       fecha_visita: fin.toISOString(),
       calendar_event_id: evento.data.id,
       cancel_token: cancelToken
-    })
-    .eq('nombre', nombre).eq('telefono', telefono)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .catch(() => {})
+    }).eq('id', leadData[0].id)
+  }
   return { ...evento.data, cancelToken }
 }
 
