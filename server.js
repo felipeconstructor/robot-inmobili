@@ -1141,12 +1141,21 @@ app.post('/api/posts-sociales/:id/agregar-imagen-carrusel', requireAuth, upload.
   }
 })
 
+// Guarda para evitar generaciones duplicadas simultaneas
+const generacionEnCurso = new Set()
+
 // POST /api/generar-contenido-mes — genera un mes de posts con Claude + DALL-E en background
 app.post('/api/generar-contenido-mes', requireAuth, requireAdmin, async (req, res) => {
   const { cliente, mes, cantidad } = req.body
   if (!cliente || !mes || !cantidad) return res.status(400).json({ error: 'Faltan campos: cliente, mes, cantidad' })
   if (!['nova', 'broker'].includes(cliente)) return res.status(400).json({ error: 'cliente debe ser nova o broker' })
   if (!/^\d{4}-\d{2}$/.test(mes)) return res.status(400).json({ error: 'mes debe ser YYYY-MM' })
+
+  const claveGeneracion = `${cliente}_${mes}`
+  if (generacionEnCurso.has(claveGeneracion)) {
+    return res.status(409).json({ error: 'Ya hay una generacion en curso para este cliente y mes. Espera unos minutos.' })
+  }
+  generacionEnCurso.add(claveGeneracion)
 
   // Responder inmediatamente, procesar en background
   res.json({ ok: true, mensaje: 'Generando contenido en background. Los posts apareceran en los proximos minutos.' })
@@ -1204,7 +1213,7 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
         },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 8000,
+          max_tokens: Math.min(8000, cant * 450 + 500),
           system: 'Eres un experto en marketing inmobiliario para redes sociales en Chile. Generas contenido autentico y profesional para Instagram y Facebook. SIEMPRE devuelves SOLO un array JSON valido, sin explicaciones ni markdown.',
           messages: [{ role: 'user', content: promptUsuario }]
         })
@@ -1288,6 +1297,8 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
       }
     } catch (err) {
       console.error('Error generacion contenido:', err.message)
+    } finally {
+      generacionEnCurso.delete(claveGeneracion)
     }
   })
 })

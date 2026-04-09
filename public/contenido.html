@@ -694,14 +694,23 @@ async function generarContenido() {
 
     // Polling cada 15s para detectar cuando aparecen los posts (silencioso — sin skeletons)
     let intentos = 0
+    let postsAnteriores = todosLosPosts.filter(p => p.cliente === cliente && p.fecha_programada && p.fecha_programada.startsWith(mes)).length
     const poll = setInterval(async () => {
       intentos++
       await cargarPosts(true)
       const postsNuevos = todosLosPosts.filter(p => p.cliente === cliente && p.fecha_programada && p.fecha_programada.startsWith(mes))
-      if (postsNuevos.length >= Math.floor(cantidad * 0.5) || intentos >= 30) {
+      // Cerrar si llegaron al menos la mitad de posts pedidos, o si llevan 3 min sin novedades, o agotaron intentos
+      const llegaron = postsNuevos.length >= Math.floor(cantidad * 0.5)
+      const sinNovedad = intentos >= 12 && postsNuevos.length === postsAnteriores
+      const agotado = intentos >= 30
+      if (llegaron || sinNovedad || agotado) {
         clearInterval(poll)
         cerrarModalGenerar()
-        if (postsNuevos.length > 0) mostrarToast(`${postsNuevos.length} posts generados listos para revisar`, 'success')
+        if (postsNuevos.length > postsAnteriores) {
+          mostrarToast(`${postsNuevos.length - postsAnteriores} posts generados listos para revisar`, 'success')
+        } else if (sinNovedad || agotado) {
+          mostrarToast('La generacion tardo mas de lo esperado. Revisa si aparecieron posts.', 'error')
+        }
       }
     }, 15000)
 
