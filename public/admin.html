@@ -426,6 +426,7 @@ let db
 let todasProps = []
 let editandoId = null
 let imagenUrlActual = null
+let archivoFotoSeleccionado = null
 let galeriaFotos = []
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
@@ -678,6 +679,7 @@ async function eliminarPropiedad(id) {
 function abrirModal() {
   editandoId = null
   imagenUrlActual = null
+  archivoFotoSeleccionado = null
   galeriaFotos = []
   document.getElementById('modal-titulo').textContent = 'Nueva propiedad'
   document.getElementById('btn-guardar').textContent = 'Guardar propiedad'
@@ -716,6 +718,7 @@ function cerrarModal() {
   document.getElementById('overlay').classList.remove('activo')
   editandoId = null
   imagenUrlActual = null
+  archivoFotoSeleccionado = null
   galeriaFotos = []
 }
 
@@ -741,6 +744,7 @@ function limpiarFormulario() {
 function previsualizarFoto(event) {
   const file = event.target.files[0]
   if (!file) return
+  archivoFotoSeleccionado = file
   const reader = new FileReader()
   reader.onload = e => {
     const preview = document.getElementById('foto-preview')
@@ -832,7 +836,7 @@ async function guardarPropiedad() {
 
   // Subir foto principal si se selecciono una
   let imagenUrl = imagenUrlActual
-  const archivoFoto = document.getElementById('f-mfoto').files[0]
+  const archivoFoto = archivoFotoSeleccionado || document.getElementById('f-mfoto').files[0]
   if (archivoFoto) {
     const urlSubida = await subirFoto(archivoFoto)
     if (urlSubida) imagenUrl = urlSubida
