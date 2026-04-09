@@ -1099,7 +1099,7 @@ Para cada post devuelve exactamente este objeto JSON:
   "titulo": "Titulo corto y llamativo (max 60 chars)",
   "contenido": "Caption completo listo para publicar en Instagram/Facebook (max 300 chars, usa emojis con moderacion, tono profesional y cercano, en espanol chileno natural)",
   "hashtags": "#tag1 #tag2 #tag3 (8 a 12 hashtags relevantes para Chile, mezcla general e inmobiliaria)",
-  "imagen_prompt": "Prompt detallado en ingles para DALL-E 3. Imagen fotorrealista y profesional. Para propiedades: describe visualmente la propiedad segun los datos. Para tips y mercado: infografia limpia con fondo moderno. Para cta: imagen aspiracional de hogar o familia. Siempre terminar con: professional real estate photography, Santiago Chile, modern, cinematic lighting, high quality, 4K",
+  "imagen_prompt": "Prompt corto en ingles para DALL-E 3, max 20 palabras. Ejemplo: 'Modern apartment living room Santiago Chile, natural light, professional real estate photography'",
   "propiedad_id": null
 }
 Para posts tipo propiedad, pon el ID numerico de la propiedad en el campo propiedad_id si usas una del inventario.
