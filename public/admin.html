@@ -773,15 +773,15 @@ async function subirFoto(file, progressElId = 'upload-progress') {
     })
     if (progress) progress.style.display = 'none'
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Error ' + res.status }))
-      toast('Error subiendo foto: ' + (err.error || res.status), true)
+      const err = await res.json().catch(() => ({ error: 'Error HTTP ' + res.status }))
+      alert('ERROR FOTO: ' + (err.error || res.status))
       return null
     }
     const data = await res.json()
     return data.url
   } catch (err) {
     if (progress) progress.style.display = 'none'
-    toast('Error subiendo foto: ' + err.message, true)
+    alert('ERROR FOTO: ' + err.message)
     return null
   }
 }

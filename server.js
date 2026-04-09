@@ -793,19 +793,26 @@ app.post('/api/publicar-propiedad', async (req, res) => {
 // POST /api/fotos/subir — recibe base64, sube al bucket 'propiedades', devuelve URL pública
 app.post('/api/fotos/subir', requireAuth, async (req, res) => {
   const { base64, nombre: nombreOriginal, tipo } = req.body
+  console.log('[fotos/subir] recibido — nombre:', nombreOriginal, '— tipo:', tipo, '— base64 len:', base64 ? base64.length : 0)
   if (!base64) return res.status(400).json({ error: 'No se recibió imagen' })
   try {
     const buffer = Buffer.from(base64, 'base64')
     const ext = ((nombreOriginal || 'foto').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
     const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext || 'jpg'}`
     const contentType = tipo || 'image/jpeg'
+    console.log('[fotos/subir] subiendo a Supabase — archivo:', nombre, '— bytes:', buffer.length)
     const { error } = await supabase.storage
       .from('propiedades')
       .upload(nombre, buffer, { contentType, upsert: false })
-    if (error) return res.status(500).json({ error: error.message })
+    if (error) {
+      console.error('[fotos/subir] error Supabase:', error.message)
+      return res.status(500).json({ error: error.message })
+    }
     const { data: { publicUrl } } = supabase.storage.from('propiedades').getPublicUrl(nombre)
+    console.log('[fotos/subir] OK —', publicUrl)
     res.json({ url: publicUrl })
   } catch (err) {
+    console.error('[fotos/subir] catch:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
