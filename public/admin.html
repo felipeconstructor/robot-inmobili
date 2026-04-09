@@ -767,6 +767,7 @@ async function subirFoto(file, progressElId = 'upload-progress') {
     })
     const res = await fetch('/api/fotos/subir', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ base64, nombre: file.name, tipo: file.type })
     })
