@@ -426,7 +426,8 @@ let db
 let todasProps = []
 let editandoId = null
 let imagenUrlActual = null
-let archivoFotoSeleccionado = null
+let archivoFotoSeleccionado = null  // { base64, nombre, tipo }
+let base64FotoSeleccionada = null
 let galeriaFotos = []
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
@@ -680,6 +681,7 @@ function abrirModal() {
   editandoId = null
   imagenUrlActual = null
   archivoFotoSeleccionado = null
+  base64FotoSeleccionada = null
   galeriaFotos = []
   document.getElementById('modal-titulo').textContent = 'Nueva propiedad'
   document.getElementById('btn-guardar').textContent = 'Guardar propiedad'
@@ -719,6 +721,7 @@ function cerrarModal() {
   editandoId = null
   imagenUrlActual = null
   archivoFotoSeleccionado = null
+  base64FotoSeleccionada = null
   galeriaFotos = []
 }
 
@@ -747,41 +750,53 @@ function previsualizarFoto(event) {
   archivoFotoSeleccionado = file
   const reader = new FileReader()
   reader.onload = e => {
+    const dataUrl = e.target.result
+    // Guardar base64 inmediatamente — la PWA puede perder el objeto File pero no el string
+    base64FotoSeleccionada = { base64: dataUrl.split(',')[1], nombre: file.name, tipo: file.type }
     const preview = document.getElementById('foto-preview')
-    preview.src = e.target.result
+    preview.src = dataUrl
     preview.style.display = 'block'
   }
   reader.readAsDataURL(file)
 }
 
-async function subirFoto(file, progressElId = 'upload-progress') {
+// Sube una foto al servidor. Acepta File o { base64, nombre, tipo }
+async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
   const progress = document.getElementById(progressElId)
   if (progress) { progress.style.display = 'block'; progress.textContent = 'Subiendo...' }
   try {
-    // Leer como base64 — funciona en browser, PWA, iOS, Android
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = e => resolve(e.target.result.split(',')[1])
-      reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
-      reader.readAsDataURL(file)
-    })
+    let payload
+    if (fileOrBase64 && fileOrBase64.base64) {
+      // Ya tenemos base64 guardado
+      payload = fileOrBase64
+    } else {
+      // Es un File — convertir ahora
+      const file = fileOrBase64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = e => resolve(e.target.result.split(',')[1])
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
+        reader.readAsDataURL(file)
+      })
+      payload = { base64, nombre: file.name, tipo: file.type }
+    }
     const res = await fetch('/api/fotos/subir', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64, nombre: file.name, tipo: file.type })
+      body: JSON.stringify(payload)
     })
     if (progress) progress.style.display = 'none'
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Error HTTP ' + res.status }))
-      alert('ERROR FOTO: ' + (err.error || res.status))
+      toast('Error subiendo foto: ' + (err.error || res.status), true)
       return null
     }
     const data = await res.json()
     return data.url
   } catch (err) {
     if (progress) progress.style.display = 'none'
-    alert('ERROR FOTO: ' + err.message)
+    toast('Error subiendo foto: ' + err.message, true)
     return null
   }
 }
@@ -856,9 +871,9 @@ async function guardarPropiedad() {
 
   // Subir foto principal si se selecciono una
   let imagenUrl = imagenUrlActual
-  const archivoFoto = archivoFotoSeleccionado || document.getElementById('f-mfoto').files[0]
-  if (archivoFoto) {
-    const urlSubida = await subirFoto(archivoFoto)
+  const fotoParaSubir = base64FotoSeleccionada || archivoFotoSeleccionado || document.getElementById('f-mfoto').files[0]
+  if (fotoParaSubir) {
+    const urlSubida = await subirFoto(fotoParaSubir)
     if (urlSubida) imagenUrl = urlSubida
   }
 
