@@ -80,9 +80,10 @@ td:has(.acciones){white-space:nowrap}
 .form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fff;outline:none;font-family:inherit}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
 .form-group textarea{resize:vertical;min-height:72px}
-.upload-area{border:2px dashed #ddd;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.upload-area{border:2px dashed #ddd;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s}
 .upload-area:hover{border-color:#1A3A5C}
-.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-area label{display:block;cursor:pointer;width:100%}
+.upload-area input[type=file]{display:none}
 .upload-area p{font-size:12px;color:#999;margin-top:4px}
 .upload-label{font-size:13px;color:#1A3A5C;font-weight:500}
 .upload-progress{font-size:11px;color:#888;margin-top:4px;display:none}
@@ -322,9 +323,11 @@ tr:hover .thumb{transform:scale(1.08)}
       <div class="form-group form-full">
         <div class="section-title">Foto principal</div>
         <div class="upload-area">
-          <input type="file" id="f-mfoto" accept="image/*" onchange="previsualizarFoto(event)">
-          <div class="upload-label">Seleccionar foto principal</div>
-          <p>JPG, PNG o WEBP. Se muestra en el listado y WhatsApp.</p>
+          <label for="f-mfoto">
+            <input type="file" id="f-mfoto" accept="image/*" onchange="previsualizarFoto(event)">
+            <div class="upload-label">Seleccionar foto principal</div>
+            <p>JPG, PNG o WEBP. Se muestra en el listado y WhatsApp.</p>
+          </label>
         </div>
         <div id="upload-progress" class="upload-progress">Subiendo foto...</div>
         <img id="foto-preview" class="upload-preview">
@@ -334,9 +337,11 @@ tr:hover .thumb{transform:scale(1.08)}
       <div class="form-group form-full" id="galeria-seccion" style="display:none">
         <div class="section-title">Fotos adicionales para la ficha</div>
         <div class="upload-area">
-          <input type="file" id="f-galeria-foto" accept="image/*" multiple onchange="subirFotosGaleria(event)">
-          <div class="upload-label">Agregar fotos a la galeria</div>
-          <p>Puedes seleccionar varias a la vez.</p>
+          <label for="f-galeria-foto">
+            <input type="file" id="f-galeria-foto" accept="image/*" multiple onchange="subirFotosGaleria(event)">
+            <div class="upload-label">Agregar fotos a la galeria</div>
+            <p>Puedes seleccionar varias a la vez.</p>
+          </label>
         </div>
         <div id="galeria-progress" class="upload-progress">Subiendo fotos...</div>
         <div id="galeria-grid" class="galeria-grid"></div>
