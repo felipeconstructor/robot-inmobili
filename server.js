@@ -1113,7 +1113,7 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 8000,
           system: 'Eres un experto en marketing inmobiliario para redes sociales en Chile. Generas contenido autentico y profesional para Instagram y Facebook. SIEMPRE devuelves SOLO un array JSON valido, sin explicaciones ni markdown.',
           messages: [{ role: 'user', content: promptUsuario }]
