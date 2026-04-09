@@ -1125,9 +1125,25 @@ Devuelve SOLO el array JSON, sin explicaciones, sin markdown, sin texto adiciona
 
       let postsGenerados
       const textoRespuesta = claudeData.content[0].text.trim()
-      // Limpiar posible markdown
-      const jsonLimpio = textoRespuesta.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
-      postsGenerados = JSON.parse(jsonLimpio)
+      // Extraer el array JSON de la respuesta — Claude a veces agrega texto antes/despues
+      let jsonLimpio = textoRespuesta
+      // Quitar bloques markdown
+      jsonLimpio = jsonLimpio.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
+      // Si aun no empieza con '[', buscar el primer '[' y el ultimo ']'
+      if (!jsonLimpio.startsWith('[')) {
+        const inicio = jsonLimpio.indexOf('[')
+        const fin = jsonLimpio.lastIndexOf(']')
+        if (inicio !== -1 && fin !== -1) jsonLimpio = jsonLimpio.slice(inicio, fin + 1)
+      }
+      try {
+        postsGenerados = JSON.parse(jsonLimpio)
+      } catch (parseErr) {
+        console.error('Error parseando JSON de Claude. Respuesta recibida:', textoRespuesta.slice(0, 300))
+        throw new Error('Claude no devolvio JSON valido: ' + parseErr.message)
+      }
+      if (!Array.isArray(postsGenerados) || !postsGenerados.length) {
+        throw new Error('Claude devolvio un array vacio o invalido')
+      }
 
       console.log(`Generacion contenido: ${postsGenerados.length} posts para ${cliente} ${mes}. Insertando textos...`)
 
