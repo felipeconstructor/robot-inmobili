@@ -667,7 +667,7 @@ async function procesarRespuesta(texto, sesionId, canal) {
         respuestaFinal = await obtenerRespuestaNova('', sesionId)
       }
     } catch (err) {
-      console.error('Error agenda:', err)
+      console.error('Error agenda completo:', err.message, err.stack)
       respuestaFinal = 'Tuve un problema agendando. Por favor contacta directamente a nuestro equipo.'
     }
   } else if (respuestaFinal.includes('LEAD_DATOS|')) {
