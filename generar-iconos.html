@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Generar íconos Nova CRM</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #0A0E1A; color: #E0E8FF; padding: 2rem; }
+  h1 { color: #00D9FF; margin-bottom: .5rem; }
+  p { color: #8892AA; margin-bottom: 1.5rem; }
+  canvas { border: 1px solid #1C2540; border-radius: 8px; margin: 8px; }
+  button { background: #1A3A5C; color: #E0E8FF; border: 1px solid rgba(0,217,255,.3);
+           padding: 12px 24px; border-radius: 8px; font-size: 14px; cursor: pointer;
+           margin: 8px; transition: all .2s; }
+  button:hover { background: #1E4570; border-color: #00D9FF; }
+  .status { color: #00FF9F; margin-top: 1rem; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Generador de íconos PWA — Nova CRM</h1>
+<p>Hace click en "Generar y Descargar" — se bajan 4 archivos PNG automáticamente.</p>
+
+<div>
+  <canvas id="c192" width="192" height="192"></canvas>
+  <canvas id="c512" width="512" height="512"></canvas>
+</div>
+<div>
+  <button onclick="generar('nova')">⬇ Generar Nova (azul oscuro)</button>
+  <button onclick="generar('broker')" style="background:#3B52D4">⬇ Generar Broker (azul)</button>
+</div>
+<div class="status" id="status"></div>
+
+<script>
+function dibujarIcono(canvas, color1, color2, tipo) {
+  const size = canvas.width
+  const ctx = canvas.getContext('2d')
+
+  // Fondo con gradiente
+  const grad = ctx.createLinearGradient(0, 0, size, size)
+  grad.addColorStop(0, color1)
+  grad.addColorStop(1, color2)
+
+  // Rounded rect
+  const r = size * 0.16
+  ctx.beginPath()
+  ctx.moveTo(r, 0)
+  ctx.lineTo(size - r, 0)
+  ctx.quadraticCurveTo(size, 0, size, r)
+  ctx.lineTo(size, size - r)
+  ctx.quadraticCurveTo(size, size, size - r, size)
+  ctx.lineTo(r, size)
+  ctx.quadraticCurveTo(0, size, 0, size - r)
+  ctx.lineTo(0, r)
+  ctx.quadraticCurveTo(0, 0, r, 0)
+  ctx.closePath()
+  ctx.fillStyle = grad
+  ctx.fill()
+
+  // Línea cyan superior
+  const cyanGrad = ctx.createLinearGradient(0, 0, size, 0)
+  cyanGrad.addColorStop(0, 'rgba(0,217,255,0)')
+  cyanGrad.addColorStop(0.5, 'rgba(0,217,255,0.8)')
+  cyanGrad.addColorStop(1, 'rgba(0,217,255,0)')
+  ctx.fillStyle = cyanGrad
+  ctx.fillRect(size * 0.1, size * 0.12, size * 0.8, size * 0.008)
+
+  // Letra N
+  ctx.fillStyle = '#E0E8FF'
+  ctx.font = `900 ${size * 0.54}px "Arial Black", Arial, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const letra = tipo === 'broker' ? 'B' : 'N'
+  ctx.fillText(letra, size / 2, size * 0.52)
+
+  // Línea cyan inferior
+  ctx.fillStyle = '#00D9FF'
+  ctx.globalAlpha = 0.85
+  ctx.beginPath()
+  ctx.roundRect(size * 0.32, size * 0.76, size * 0.36, size * 0.012, size * 0.006)
+  ctx.fill()
+  ctx.globalAlpha = 1
+
+  // Línea bottom
+  ctx.fillStyle = cyanGrad
+  ctx.fillRect(size * 0.1, size * 0.88, size * 0.8, size * 0.006)
+}
+
+function descargar(canvas, nombre) {
+  const a = document.createElement('a')
+  a.download = nombre
+  a.href = canvas.toDataURL('image/png')
+  a.click()
+}
+
+function generar(tipo) {
+  const c1 = tipo === 'broker' ? '#3B52D4' : '#1A3A5C'
+  const c2 = tipo === 'broker' ? '#2D40B8' : '#0F2540'
+  const prefix = tipo === 'broker' ? 'broker-' : ''
+
+  const c192 = document.getElementById('c192')
+  const c512 = document.getElementById('c512')
+
+  dibujarIcono(c192, c1, c2, tipo)
+  dibujarIcono(c512, c1, c2, tipo)
+
+  setTimeout(() => descargar(c192, `${prefix}icon-192.png`), 100)
+  setTimeout(() => descargar(c512, `${prefix}icon-512.png`), 400)
+
+  document.getElementById('status').textContent =
+    `✓ Descargando ${prefix}icon-192.png y ${prefix}icon-512.png...`
+}
+
+// Preview al cargar
+window.onload = () => {
+  dibujarIcono(document.getElementById('c192'), '#1A3A5C', '#0F2540', 'nova')
+  dibujarIcono(document.getElementById('c512'), '#1A3A5C', '#0F2540', 'nova')
+}
+</script>
+</body>
+</html>
