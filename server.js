@@ -64,6 +64,7 @@ function parseCookies(req) {
 function requireAuth(req, res, next) {
   const cookies = parseCookies(req)
   if (sesionesActivas.has(cookies.nova_session)) return next()
+  console.log(`[auth] sesion no encontrada — ${req.method} ${req.path} — cookie: ${cookies.nova_session ? cookies.nova_session.slice(0,8) + '...' : 'ninguna'}`)
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Sesion expirada', login: true })
   res.redirect('/login.html?next=' + encodeURIComponent(req.path))
 }

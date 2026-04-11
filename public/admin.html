@@ -788,6 +788,11 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
     if (progress) progress.style.display = 'none'
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Error HTTP ' + res.status }))
+      if (res.status === 401) {
+        toast('Sesion expirada — vuelve a ingresar', true)
+        setTimeout(() => location.href = '/login.html?next=' + encodeURIComponent(location.pathname), 1500)
+        return null
+      }
       toast('Error subiendo foto: ' + (err.error || res.status), true)
       return null
     }
@@ -825,7 +830,12 @@ function renderGaleria() {
 
 async function subirFotosGaleria(event) {
   const files = Array.from(event.target.files)
-  if (!files.length || !editandoId) return
+  if (!files.length) return
+  if (!editandoId) {
+    toast('Guarda primero la propiedad para poder agregar fotos a la galeria', true)
+    document.getElementById('f-galeria-foto').value = ''
+    return
+  }
   const progress = document.getElementById('galeria-progress')
   progress.style.display = 'block'
   let subidas = 0
