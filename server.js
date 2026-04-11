@@ -1078,17 +1078,33 @@ app.post('/api/publicar-propiedad', async (req, res) => {
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
-// POST /api/fotos/subir — recibe base64, sube al bucket 'propiedades', devuelve URL pública
-app.post('/api/fotos/subir', requireAuth, async (req, res) => {
-  const { base64, nombre: nombreOriginal, tipo } = req.body
-  console.log('[fotos/subir] recibido — nombre:', nombreOriginal, '— tipo:', tipo, '— base64 len:', base64 ? base64.length : 0)
-  if (!base64) return res.status(400).json({ error: 'No se recibió imagen' })
+// POST /api/fotos/subir — acepta multipart/form-data (campo 'foto') o JSON base64
+const multer = require('multer')
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } })
+
+app.post('/api/fotos/subir', requireAuth, upload.single('foto'), async (req, res) => {
+  let buffer, nombreOriginal, contentType
+
+  if (req.file) {
+    // FormData upload — navegador envia el archivo directamente sin base64
+    buffer = req.file.buffer
+    nombreOriginal = req.file.originalname
+    contentType = req.file.mimetype || 'image/jpeg'
+    console.log('[fotos/subir] FormData — nombre:', nombreOriginal, '— bytes:', buffer.length)
+  } else if (req.body && req.body.base64) {
+    // JSON base64 — compatibilidad con clientes web
+    const { base64, nombre, tipo } = req.body
+    buffer = Buffer.from(base64, 'base64')
+    nombreOriginal = nombre || 'foto'
+    contentType = tipo || 'image/jpeg'
+    console.log('[fotos/subir] base64 — nombre:', nombreOriginal, '— bytes:', buffer.length)
+  } else {
+    return res.status(400).json({ error: 'No se recibió imagen' })
+  }
+
   try {
-    const buffer = Buffer.from(base64, 'base64')
-    const ext = ((nombreOriginal || 'foto').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+    const ext = (nombreOriginal.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
     const nombre = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext || 'jpg'}`
-    const contentType = tipo || 'image/jpeg'
-    console.log('[fotos/subir] subiendo a Supabase — archivo:', nombre, '— bytes:', buffer.length)
     const { error } = await supabase.storage
       .from('propiedades')
       .upload(nombre, buffer, { contentType, upsert: false })
