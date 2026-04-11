@@ -743,22 +743,32 @@ function limpiarFormulario() {
 
 // ─── Fotos ────────────────────────────────────────────────────────────────────
 
-function previsualizarFoto(event) {
+async function previsualizarFoto(event) {
   const file = event.target.files[0]
-  if (!file) { toast('DEBUG: onchange disparo pero files[0] es undefined', true); return }
-  toast('DEBUG: archivo seleccionado: ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)')
+  if (!file) return
   archivoFotoSeleccionado = file
-  const reader = new FileReader()
-  reader.onload = e => {
-    const dataUrl = e.target.result
-    base64FotoSeleccionada = { base64: dataUrl.split(',')[1], nombre: file.name, tipo: file.type }
-    toast('DEBUG: base64 listo (' + base64FotoSeleccionada.base64.length + ' chars)')
+  try {
+    // Usar arrayBuffer en vez de FileReader — FileReader falla en PWA standalone
+    const base64 = await archivoABase64(file)
+    base64FotoSeleccionada = { base64, nombre: file.name, tipo: file.type }
     const preview = document.getElementById('foto-preview')
-    preview.src = dataUrl
+    preview.src = 'data:' + file.type + ';base64,' + base64
     preview.style.display = 'block'
+  } catch (err) {
+    toast('Error al leer la imagen: ' + err.message, true)
   }
-  reader.onerror = () => toast('DEBUG: FileReader error al leer el archivo', true)
-  reader.readAsDataURL(file)
+}
+
+// Convierte un File a base64 usando arrayBuffer — compatible con PWA standalone
+async function archivoABase64(file) {
+  const buffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunk = 8192
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  }
+  return btoa(binary)
 }
 
 // Sube una foto al servidor. Acepta File o { base64, nombre, tipo }
@@ -769,23 +779,15 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
     let payload
     if (fileOrBase64 && fileOrBase64.base64) {
       payload = fileOrBase64
-      toast('Leyendo imagen (base64 listo, ' + fileOrBase64.base64.length + ' chars)...')
     } else if (fileOrBase64) {
       const file = fileOrBase64
-      toast('Leyendo archivo: ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)...')
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = e => resolve(e.target.result.split(',')[1])
-        reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
-        reader.readAsDataURL(file)
-      })
+      const base64 = await archivoABase64(file)
       payload = { base64, nombre: file.name, tipo: file.type }
     } else {
       toast('ERROR: no hay archivo seleccionado (fileOrBase64 es null)', true)
       if (progress) progress.style.display = 'none'
       return null
     }
-    toast('Enviando al servidor (' + Math.round(payload.base64.length * 0.75 / 1024) + ' KB)...')
     const res = await fetch('/api/fotos/subir', {
       method: 'POST',
       credentials: 'include',
@@ -799,15 +801,14 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
         toast('Sesion expirada — vuelve a ingresar al panel', true)
         return null
       }
-      toast('Error HTTP ' + res.status + ': ' + (err.error || 'sin detalle'), true)
+        toast('Error subiendo foto: ' + (err.error || res.status), true)
       return null
     }
     const data = await res.json()
-    toast('Foto subida OK: ' + (data.url ? data.url.slice(-30) : 'sin url'))
     return data.url
   } catch (err) {
     if (progress) progress.style.display = 'none'
-    toast('Excepcion: ' + err.message, true)
+    toast('Error subiendo foto: ' + err.message, true)
     return null
   }
 }
@@ -893,7 +894,6 @@ async function guardarPropiedad() {
   // Subir foto principal si se selecciono una
   let imagenUrl = imagenUrlActual
   const fotoParaSubir = base64FotoSeleccionada || archivoFotoSeleccionado || document.getElementById('f-mfoto').files[0]
-  toast('DEBUG guardar: base64=' + (base64FotoSeleccionada?'SI':'NO') + ' archivo=' + (archivoFotoSeleccionado?'SI':'NO') + ' input=' + (document.getElementById('f-mfoto').files[0]?'SI':'NO'))
   if (fotoParaSubir) {
     const urlSubida = await subirFoto(fotoParaSubir)
     if (urlSubida) imagenUrl = urlSubida
