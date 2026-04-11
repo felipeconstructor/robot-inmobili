@@ -435,7 +435,8 @@ function toast(msg, esError = false) {
   const t = document.getElementById('toast')
   t.textContent = msg
   t.className = 'toast activo' + (esError ? ' error' : '')
-  setTimeout(() => t.className = 'toast', 3500)
+  clearTimeout(t._timer)
+  t._timer = setTimeout(() => t.className = 'toast', esError ? 8000 : 3500)
 }
 
 function formatPrecio(precio, moneda) {
@@ -830,16 +831,16 @@ async function subirFotosGaleria(event) {
   const progress = document.getElementById('galeria-progress')
   progress.style.display = 'block'
   let subidas = 0
+  let ultimoError = null
   for (let i = 0; i < files.length; i++) {
     progress.textContent = `Subiendo foto ${i + 1} de ${files.length}...`
     const url = await subirFoto(files[i], 'galeria-progress')
-    if (!url) continue
+    if (!url) { ultimoError = ultimoError || 'subirFoto devolvio null'; continue }
     const { data, error } = await db.from('fotos_propiedades').insert({
       propiedad_id: Number(editandoId), url, orden: galeriaFotos.length
     }).select().single()
     if (error) {
-      console.error('[galeria] error Supabase insert:', error.message, error.code, error.details)
-      toast('Error guardando foto en DB: ' + error.message, true)
+      ultimoError = 'DB: ' + error.message + ' (code ' + error.code + ')'
       continue
     }
     if (data) { galeriaFotos.push(data); subidas++ }
@@ -848,7 +849,7 @@ async function subirFotosGaleria(event) {
   document.getElementById('f-galeria-foto').value = ''
   renderGaleria()
   if (subidas > 0) toast(`${subidas} foto(s) agregadas a la galeria`)
-  else toast('No se pudo guardar ninguna foto — revisa la consola para ver el error', true)
+  else toast('Error galeria: ' + (ultimoError || 'desconocido'), true)
 }
 
 async function eliminarFotoGaleria(fotoId) {
@@ -879,7 +880,7 @@ async function guardarPropiedad() {
   const fotoParaSubir = base64FotoSeleccionada || archivoFotoSeleccionado || document.getElementById('f-mfoto').files[0]
   if (fotoParaSubir) {
     const urlSubida = await subirFoto(fotoParaSubir)
-    if (urlSubida) imagenUrl = urlSubida
+    if (urlSubida) { imagenUrl = urlSubida; toast('Foto de portada subida') }
   }
 
   const datos = {
