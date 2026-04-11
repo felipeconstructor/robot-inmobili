@@ -14,11 +14,11 @@ fetch('/api/config').then(r=>r.json()).then(cfg=>{
     const h=document.getElementById('chat-title')
     if(h)h.textContent=cfg.siteName
     const sub=document.getElementById('chat-subtitle')
-    if(sub)sub.textContent=esBroker?'Asistente Inmobiliaria':'Asistente Inmobiliaria con IA'
+    if(sub)sub.textContent=esBroker?'Asistente Inmobiliaria':'Asistente de Prolig Propiedades'
     const m=document.getElementById('msg-bienvenida')
     if(m)m.innerHTML=esBroker
-      ?'Hola, soy el asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades en Chile.<br><br>¿En qué te puedo ayudar hoy?'
-      :'Hola, soy el asistente de <strong>'+cfg.siteName+'</strong> con IA. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?'
+      ?'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades en Chile.<br><br>¿En qué te puedo ayudar hoy?'
+      :'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?'
   }
 }).catch(()=>{})
 </script>
@@ -75,7 +75,7 @@ textarea::placeholder{color:#bbb}
     <div class="logo">N</div>
     <div class="header-info">
       <h1 id="chat-title">Nova</h1>
-      <p id="chat-subtitle">Asistente Inmobiliaria con IA</p>
+      <p id="chat-subtitle">Asistente de Prolig Propiedades</p>
     </div>
     <div class="online"></div>
   </div>
@@ -97,7 +97,7 @@ textarea::placeholder{color:#bbb}
   <div class="msgs" id="msgs">
     <div class="row">
       <div class="av nova">N</div>
-      <div class="burbuja nova" id="msg-bienvenida">Hola, soy <strong>Nova</strong>, tu asistente inmobiliaria. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades en Chile.<br><br>¿En qué te puedo ayudar hoy?</div>
+      <div class="burbuja nova" id="msg-bienvenida"></div>
     </div>
   </div>
   <div class="footer">
