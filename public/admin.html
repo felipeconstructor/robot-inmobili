@@ -846,13 +846,18 @@ async function subirFotosGaleria(event) {
     const { data, error } = await db.from('fotos_propiedades').insert({
       propiedad_id: Number(editandoId), url, orden: galeriaFotos.length
     }).select().single()
-    if (!error && data) { galeriaFotos.push(data); subidas++ }
+    if (error) {
+      console.error('[galeria] error Supabase insert:', error.message, error.code, error.details)
+      toast('Error guardando foto en DB: ' + error.message, true)
+      continue
+    }
+    if (data) { galeriaFotos.push(data); subidas++ }
   }
   progress.style.display = 'none'
   document.getElementById('f-galeria-foto').value = ''
   renderGaleria()
   if (subidas > 0) toast(`${subidas} foto(s) agregadas a la galeria`)
-  else toast('No se pudo guardar ninguna foto', true)
+  else toast('No se pudo guardar ninguna foto — revisa la consola para ver el error', true)
 }
 
 async function eliminarFotoGaleria(fotoId) {
