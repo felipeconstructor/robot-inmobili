@@ -766,11 +766,11 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
   try {
     let payload
     if (fileOrBase64 && fileOrBase64.base64) {
-      // Ya tenemos base64 guardado
       payload = fileOrBase64
-    } else {
-      // Es un File — convertir ahora
+      toast('Leyendo imagen (base64 listo, ' + fileOrBase64.base64.length + ' chars)...')
+    } else if (fileOrBase64) {
       const file = fileOrBase64
+      toast('Leyendo archivo: ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)...')
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = e => resolve(e.target.result.split(',')[1])
@@ -778,7 +778,12 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
         reader.readAsDataURL(file)
       })
       payload = { base64, nombre: file.name, tipo: file.type }
+    } else {
+      toast('ERROR: no hay archivo seleccionado (fileOrBase64 es null)', true)
+      if (progress) progress.style.display = 'none'
+      return null
     }
+    toast('Enviando al servidor (' + Math.round(payload.base64.length * 0.75 / 1024) + ' KB)...')
     const res = await fetch('/api/fotos/subir', {
       method: 'POST',
       credentials: 'include',
@@ -789,18 +794,18 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Error HTTP ' + res.status }))
       if (res.status === 401) {
-        toast('Sesion expirada — vuelve a ingresar', true)
-        setTimeout(() => location.href = '/login.html?next=' + encodeURIComponent(location.pathname), 1500)
+        toast('Sesion expirada — vuelve a ingresar al panel', true)
         return null
       }
-      toast('Error subiendo foto: ' + (err.error || res.status), true)
+      toast('Error HTTP ' + res.status + ': ' + (err.error || 'sin detalle'), true)
       return null
     }
     const data = await res.json()
+    toast('Foto subida OK: ' + (data.url ? data.url.slice(-30) : 'sin url'))
     return data.url
   } catch (err) {
     if (progress) progress.style.display = 'none'
-    toast('Error subiendo foto: ' + err.message, true)
+    toast('Excepcion: ' + err.message, true)
     return null
   }
 }
