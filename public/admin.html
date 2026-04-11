@@ -507,6 +507,9 @@ function filtrar() {
   renderTabla(filtrados)
 }
 
+// VERSION: v-canvas-fix — eliminar tras confirmar
+setTimeout(() => toast('v-canvas-fix cargada'), 800)
+
 async function cargarPropiedades() {
   document.getElementById('ultimo-update').textContent = 'Actualizando...'
   const { data, error } = await db.from('propiedades').select('*').order('id', { ascending: false })
