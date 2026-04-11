@@ -745,17 +745,19 @@ function limpiarFormulario() {
 
 function previsualizarFoto(event) {
   const file = event.target.files[0]
-  if (!file) return
+  if (!file) { toast('DEBUG: onchange disparo pero files[0] es undefined', true); return }
+  toast('DEBUG: archivo seleccionado: ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)')
   archivoFotoSeleccionado = file
   const reader = new FileReader()
   reader.onload = e => {
     const dataUrl = e.target.result
-    // Guardar base64 inmediatamente — la PWA puede perder el objeto File pero no el string
     base64FotoSeleccionada = { base64: dataUrl.split(',')[1], nombre: file.name, tipo: file.type }
+    toast('DEBUG: base64 listo (' + base64FotoSeleccionada.base64.length + ' chars)')
     const preview = document.getElementById('foto-preview')
     preview.src = dataUrl
     preview.style.display = 'block'
   }
+  reader.onerror = () => toast('DEBUG: FileReader error al leer el archivo', true)
   reader.readAsDataURL(file)
 }
 
@@ -891,6 +893,7 @@ async function guardarPropiedad() {
   // Subir foto principal si se selecciono una
   let imagenUrl = imagenUrlActual
   const fotoParaSubir = base64FotoSeleccionada || archivoFotoSeleccionado || document.getElementById('f-mfoto').files[0]
+  toast('DEBUG guardar: base64=' + (base64FotoSeleccionada?'SI':'NO') + ' archivo=' + (archivoFotoSeleccionado?'SI':'NO') + ' input=' + (document.getElementById('f-mfoto').files[0]?'SI':'NO'))
   if (fotoParaSubir) {
     const urlSubida = await subirFoto(fotoParaSubir)
     if (urlSubida) imagenUrl = urlSubida
