@@ -747,21 +747,32 @@ async function previsualizarFoto(event) {
   const file = event.target.files[0]
   if (!file) return
   archivoFotoSeleccionado = file
+
+  // Crear object URL de forma sincrona — antes de cualquier await
+  // Esto captura el acceso al archivo ANTES de que el PWA lo revoque
+  const objectUrl = URL.createObjectURL(file)
+
+  // Mostrar preview inmediatamente con la object URL
+  const preview = document.getElementById('foto-preview')
+  preview.src = objectUrl
+  preview.style.display = 'block'
+
+  // Leer el contenido desde la object URL (en memoria, sin acceder al sistema de archivos)
   try {
-    // Usar arrayBuffer en vez de FileReader — FileReader falla en PWA standalone
-    const base64 = await archivoABase64(file)
+    const base64 = await objectUrlABase64(objectUrl, file.type)
     base64FotoSeleccionada = { base64, nombre: file.name, tipo: file.type }
-    const preview = document.getElementById('foto-preview')
-    preview.src = 'data:' + file.type + ';base64,' + base64
-    preview.style.display = 'block'
+    URL.revokeObjectURL(objectUrl)
   } catch (err) {
     toast('Error al leer la imagen: ' + err.message, true)
+    URL.revokeObjectURL(objectUrl)
   }
 }
 
-// Convierte un File a base64 usando arrayBuffer — compatible con PWA standalone
-async function archivoABase64(file) {
-  const buffer = await file.arrayBuffer()
+// Convierte una object URL a base64 leyendo desde memoria (compatible con PWA)
+async function objectUrlABase64(objectUrl) {
+  const response = await fetch(objectUrl)
+  const blob = await response.blob()
+  const buffer = await blob.arrayBuffer()
   const bytes = new Uint8Array(buffer)
   let binary = ''
   const chunk = 8192
@@ -769,6 +780,19 @@ async function archivoABase64(file) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
   }
   return btoa(binary)
+}
+
+// Convierte un File a base64 — usado como fallback en subirFoto
+async function archivoABase64(file) {
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const base64 = await objectUrlABase64(objectUrl)
+    URL.revokeObjectURL(objectUrl)
+    return base64
+  } catch (err) {
+    URL.revokeObjectURL(objectUrl)
+    throw err
+  }
 }
 
 // Sube una foto al servidor. Acepta File o { base64, nombre, tipo }
