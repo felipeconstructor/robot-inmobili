@@ -760,8 +760,9 @@ async function previsualizarFoto(event) {
   try {
     const base64 = await archivoABase64(file)
     base64FotoSeleccionada = { base64, nombre: file.name, tipo: file.type }
+    toast('Imagen lista: ' + file.name)
   } catch (err) {
-    toast('Error al leer la imagen: ' + err.message, true)
+    toast('[previsualizarFoto] ' + err.message, true)
   }
 }
 
@@ -785,9 +786,9 @@ async function archivoABase64(file) {
         reject(e)
       }
     }
-    img.onerror = () => {
+    img.onerror = (e) => {
       URL.revokeObjectURL(objectUrl)
-      reject(new Error('No se pudo cargar la imagen'))
+      reject(new Error('[canvas img.onerror] no cargo la imagen'))
     }
     img.src = objectUrl
   })
@@ -830,7 +831,7 @@ async function subirFoto(fileOrBase64, progressElId = 'upload-progress') {
     return data.url
   } catch (err) {
     if (progress) progress.style.display = 'none'
-    toast('Error subiendo foto: ' + err.message, true)
+    toast('[subirFoto] ' + err.message, true)
     return null
   }
 }
