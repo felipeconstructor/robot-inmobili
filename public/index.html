@@ -21,6 +21,9 @@ fetch('/api/config').then(r=>r.json()).then(cfg=>{
       :'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?'
   }
 }).catch(()=>{})
+fetch('/api/me').then(r=>r.ok?r.json():null).then(me=>{
+  if(me&&me.rol==='admin'){const lf=document.getElementById('link-finanzas');if(lf)lf.style.display=''}
+}).catch(()=>{})
 </script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -84,6 +87,7 @@ textarea::placeholder{color:#bbb}
     <a href="/crm.html">CRM</a>
     <a href="/administraciones.html" id="link-administraciones">Administraciones</a>
     <a href="/documentos.html">Documentos</a>
+    <a href="/finanzas.html" id="link-finanzas" style="display:none">Finanzas</a>
   </div>
   <div class="chips">
     <div class="chip" onclick="sugerir('¿Qué documentos necesito para vender mi propiedad?')">Vender propiedad</div>

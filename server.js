@@ -7,12 +7,43 @@ const path = require('path')
 const cron = require('node-cron')
 const app = express()
 app.use(cors())
+app.set('trust proxy', 1) // Railway corre detrás de un reverse proxy
 app.use(express.json({ limit: '20mb' }))
 app.use(express.urlencoded({ extended: false }))
 
 // ─── Autenticacion paneles ────────────────────────────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'nova2026'
 const sesionesActivas = new Map() // token → { email, nombre, rol }
+const tokenesReset = new Map()    // token → { email, expiry }
+
+// ─── Rate limiting login ──────────────────────────────────────────────────────
+const intentosFallidos = new Map() // ip → { count, bloqueadoHasta }
+
+function getClientIP(req) {
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown'
+}
+function verificarRateLimit(ip) {
+  const ahora = Date.now()
+  const e = intentosFallidos.get(ip)
+  if (!e) return { bloqueado: false }
+  if (e.bloqueadoHasta && ahora < e.bloqueadoHasta)
+    return { bloqueado: true, segsRestantes: Math.ceil((e.bloqueadoHasta - ahora) / 1000) }
+  if (e.bloqueadoHasta && ahora >= e.bloqueadoHasta) intentosFallidos.delete(ip)
+  return { bloqueado: false }
+}
+function registrarFalloLogin(ip) {
+  if (intentosFallidos.size > 1000) {
+    const ahora = Date.now()
+    for (const [k, v] of intentosFallidos) {
+      if (!v.bloqueadoHasta || ahora >= v.bloqueadoHasta) intentosFallidos.delete(k)
+    }
+  }
+  const e = intentosFallidos.get(ip) || { count: 0, bloqueadoHasta: null }
+  e.count += 1
+  if (e.count >= 5) e.bloqueadoHasta = Date.now() + 15 * 60 * 1000
+  intentosFallidos.set(ip, e)
+}
+function limpiarRateLimit(ip) { intentosFallidos.delete(ip) }
 
 function hashPassword(pw) {
   return require('crypto').createHash('sha256').update(pw + 'nova_salt_2026').digest('hex')
@@ -69,6 +100,15 @@ app.post('/api/login', async (req, res) => {
   const { email, password } = req.body
   if (!password) return res.status(401).json({ error: 'Contrasena requerida' })
 
+  // Rate limiting — bloquear tras 5 intentos fallidos por IP
+  const ip = getClientIP(req)
+  const rl = verificarRateLimit(ip)
+  if (rl.bloqueado) {
+    return res.status(429).json({
+      error: `Demasiados intentos fallidos. Intenta en ${Math.ceil(rl.segsRestantes / 60)} minutos.`
+    })
+  }
+
   let sesionData = null
 
   // Login con email + password — busca en tabla usuarios
@@ -94,14 +134,51 @@ app.post('/api/login', async (req, res) => {
   }
 
   if (!sesionData) {
+    registrarFalloLogin(ip)
     return res.status(401).json({ error: 'Credenciales incorrectas' })
   }
 
+  limpiarRateLimit(ip)
   const token = require('crypto').randomBytes(32).toString('hex')
   sesionesActivas.set(token, sesionData)
   const maxAge = 7 * 24 * 3600
-  res.setHeader('Set-Cookie', `nova_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`)
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https'
+  const secureFlag = isSecure ? '; Secure' : ''
+  res.setHeader('Set-Cookie', `nova_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secureFlag}`)
   res.json({ ok: true, rol: sesionData.rol, nombre: sesionData.nombre })
+
+  // Notificacion de acceso — fire-and-forget, no bloquea la respuesta
+  if (sesionData.email !== 'admin') {
+    ;(async () => {
+      try {
+        const ahora = new Date().toLocaleString('es-CL', {
+          timeZone: 'America/Santiago',
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        })
+        await enviarEmail(
+          `Nuevo acceso — ${sesionData.nombre} (${sesionData.rol})`,
+          `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#f7f8fa;border-radius:12px;overflow:hidden">
+            <div style="background:#1A3A5C;padding:20px 28px">
+              <h2 style="color:#C9A96E;margin:0;font-size:18px">Nuevo acceso — ${EMPRESA}</h2>
+            </div>
+            <div style="padding:24px 28px;background:#fff">
+              <table style="width:100%;border-collapse:collapse">
+                <tr><td style="padding:6px 0;color:#888;font-size:13px;width:90px">Usuario</td><td style="font-size:14px;font-weight:600;color:#1A3A5C">${sesionData.nombre}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;font-size:13px">Email</td><td style="font-size:14px">${sesionData.email}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;font-size:13px">Rol</td><td style="font-size:14px">${sesionData.rol}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;font-size:13px">Fecha/hora</td><td style="font-size:14px">${ahora}</td></tr>
+                <tr><td style="padding:6px 0;color:#888;font-size:13px">IP</td><td style="font-size:14px">${ip}</td></tr>
+              </table>
+            </div>
+            <div style="padding:12px 28px;background:#f7f8fa;font-size:11px;color:#aaa">${EMPRESA} — acceso automático</div>
+          </div>`
+        )
+      } catch (err) {
+        console.error('Error notificacion acceso:', err.message)
+      }
+    })()
+  }
 })
 
 app.get('/api/logout', (req, res) => {
@@ -116,6 +193,71 @@ app.get('/api/me', requireAuth, (req, res) => {
   const sesion = sesionesActivas.get(cookies.nova_session)
   res.json(sesion)
 })
+
+// ─── Recuperacion de contrasena ───────────────────────────────────────────────
+app.post('/api/forgot-password', async (req, res) => {
+  res.json({ ok: true }) // siempre 200, no revelar si el email existe
+  const { email } = req.body
+  if (!email) return
+  try {
+    const { data: usuario } = await supabase
+      .from('usuarios')
+      .select('id, nombre, email')
+      .eq('email', email.toLowerCase().trim())
+      .eq('activo', true)
+      .single()
+    if (!usuario) return
+    const token = require('crypto').randomBytes(32).toString('hex')
+    tokenesReset.set(token, { email: usuario.email, expiry: Date.now() + 30 * 60 * 1000 })
+    const resetUrl = `${APP_URL}/reset-password.html?token=${token}`
+    await enviarEmail(
+      'Recuperar contrasena — Nova CRM',
+      `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#f7f8fa;border-radius:12px;overflow:hidden">
+        <div style="background:#1A3A5C;padding:20px 28px">
+          <h2 style="color:#C9A96E;margin:0;font-size:18px">Recuperar contrasena</h2>
+        </div>
+        <div style="padding:24px 28px;background:#fff">
+          <p style="margin:0 0 12px;font-size:15px;color:#333">Hola ${usuario.nombre},</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#555">Recibimos una solicitud para restablecer tu contrasena. El enlace expira en 30 minutos.</p>
+          <a href="${resetUrl}" style="display:inline-block;background:#1A3A5C;color:#C9A96E;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Restablecer contrasena</a>
+          <p style="margin:20px 0 0;font-size:12px;color:#aaa">Si no lo solicitaste, ignora este mensaje.</p>
+        </div>
+        <div style="padding:12px 28px;background:#f7f8fa;font-size:11px;color:#aaa">${EMPRESA}</div>
+      </div>`
+    )
+    console.log('Email reset enviado a:', usuario.email)
+  } catch (err) {
+    console.error('Error forgot-password:', err.message)
+  }
+})
+
+app.post('/api/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body
+  if (!token || !newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Token o contrasena invalidos (minimo 8 caracteres)' })
+  }
+  const entrada = tokenesReset.get(token)
+  if (!entrada) return res.status(400).json({ error: 'Token invalido o ya utilizado' })
+  if (Date.now() > entrada.expiry) {
+    tokenesReset.delete(token)
+    return res.status(400).json({ error: 'Token expirado. Solicita un nuevo enlace.' })
+  }
+  try {
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ password_hash: hashPassword(newPassword) })
+      .eq('email', entrada.email)
+      .eq('activo', true)
+    if (error) return res.status(500).json({ error: 'Error actualizando contrasena' })
+    tokenesReset.delete(token)
+    res.json({ ok: true })
+    console.log('Contrasena restablecida para:', entrada.email)
+  } catch (err) {
+    console.error('Error reset-password:', err.message)
+    res.status(500).json({ error: 'Error interno' })
+  }
+})
+
 
 // ─── CRUD usuarios (solo admin) ───────────────────────────────────────────────
 app.get('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
@@ -1130,7 +1272,7 @@ app.post('/api/campana', requireAuth, async (req, res) => {
 // ─── Notificacion lead caliente ───────────────────────────────────────────────
 const NOTIFY_PHONE = process.env.NOTIFY_PHONE // numero personal de Felipe ej: whatsapp:+56912345678
 
-app.post('/api/notificar-lead-caliente', async (req, res) => {
+app.post('/api/notificar-lead-caliente', requireAuth, async (req, res) => {
   const { nombre, telefono, propiedad_interes, canal, created_at } = req.body
   if (!nombre) return res.status(400).json({ error: 'Datos incompletos' })
 
@@ -1228,7 +1370,7 @@ app.post('/api/limpiar', (req, res) => {
 })
 
 // ─── Reporte finanzas por email ───────────────────────────────────────────────
-app.post('/api/enviar-reporte-finanzas', async (req, res) => {
+app.post('/api/enviar-reporte-finanzas', requireAuth, requireAdmin, async (req, res) => {
   const { html, mes, ventas, arriendos, totalComision } = req.body
   try {
     await enviarEmail(
@@ -1433,17 +1575,9 @@ app.get('/cancelar-visita/:token', async (req, res) => {
   }
 })
 
-// Ruta debug para verificar variables de entorno
-app.get('/api/debug-env', (req, res) => {
-  res.json({
-    meta_configurado: META_PAGE_TOKEN.length > 20,
-    meta_primeros_10: META_PAGE_TOKEN.substring(0, 10),
-    meta_largo: META_PAGE_TOKEN.length
-  })
-})
 
 // Ruta para enviar informe manualmente (para probar)
-app.post('/api/informe-test', async (req, res) => {
+app.post('/api/informe-test', requireAuth, requireAdmin, async (req, res) => {
   try {
     await enviarInformeSemanal()
     res.json({ ok: true, mensaje: 'Informe enviado a ' + GMAIL_USER })
