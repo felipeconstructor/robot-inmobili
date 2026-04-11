@@ -3,7 +3,7 @@
    HTML: siempre red | CSS/íconos: cache
    ═══════════════════════════════════════════════════════════════════ */
 
-const CACHE = 'nova-crm-v2'
+const CACHE = 'nova-crm-v3'
 
 // Solo cachear assets estáticos puros — NUNCA HTML
 const STATIC = [
@@ -34,6 +34,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   // Solo interceptar peticiones GET del mismo origen
   if (e.request.method !== 'GET') return
+
+  // Blob URLs (object URLs de archivos locales) → dejar pasar sin tocar
+  if (e.request.url.startsWith('blob:')) return
 
   const url = new URL(e.request.url)
 
