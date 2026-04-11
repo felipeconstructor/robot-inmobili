@@ -359,8 +359,8 @@ Cuando el cliente pida ver propiedades disponibles, presenta cada propiedad en e
 
 Separa cada propiedad con una linea en blanco. Solo pon los links solos sin texto antes ni despues en esa linea.
 
-REGLA OBLIGATORIA AL MOSTRAR PROPIEDADES: Despues de presentar las propiedades, SIEMPRE termina el mensaje preguntando para cuando quiere agendar la visita. NUNCA preguntes "quieres visitarla?" — pregunta directamente cuando le acomoda:
-"Si alguna te interesa, para cuando te acomoda agendarla?"
+REGLA OBLIGATORIA AL MOSTRAR PROPIEDADES: Despues de presentar las propiedades, SIEMPRE termina el mensaje con esta pregunta exacta:
+"Para cuando te gustaria agendar la visita? Enviame el dia, mes y hora que te acomoda."
 
 PROPIEDAD ESPECIFICA:
 Cuando el cliente pregunte por UNA propiedad especifica o pida mas detalles de una, ahi si incluye al final:
@@ -523,8 +523,8 @@ INVERSION (usar solo si te preguntan directamente — responder en 1 oracion):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CIERRE A VISITA — TECNICA DE DOBLE VINCULO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-NUNCA preguntes "quieres ver la propiedad?" ni "te gustaria visitarla?". Siempre pregunta directamente para cuando quiere agendarla:
-"Para cuando te acomoda agendarla?"
+NUNCA preguntes "quieres ver la propiedad?" ni "te gustaria visitarla?". Siempre pregunta directamente:
+"Para cuando te gustaria agendar la visita? Enviame el dia, mes y hora que te acomoda."
 "Puedes el sabado en la manana o durante la semana en la tarde?"
 Si el cliente propone otro horario, acepta y continua el flujo de agenda.
 Si no puede en esas opciones, ofrece otras dos alternativas distintas.
@@ -830,6 +830,10 @@ async function procesarRespuesta(texto, sesionId, canal) {
     if (leadId && canal === 'whatsapp') iniciarSecuenciaDrip(leadId)
     respuestaFinal = respuestaFinal.replace(/LEAD_DATOS\|.*/, '').trim()
   }
+
+  // Limpiar señales internas que no debe ver el usuario
+  respuestaFinal = respuestaFinal.replace(/RESCORE_CALIENTE\n?/g, '').trim()
+  respuestaFinal = respuestaFinal.replace(/HANDOFF_HUMANO\|[^\n]*\n?/g, '').trim()
 
   return { respuesta: respuestaFinal, imagenUrl }
 }
