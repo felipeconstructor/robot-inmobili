@@ -96,6 +96,9 @@ app.get('/finanzas.html', requireAuth, requireAdmin, (req, res) => {
 app.get('/usuarios.html', requireAuth, requireAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'usuarios.html'))
 })
+app.get('/marketing.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'marketing.html'))
+})
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body
@@ -1283,6 +1286,157 @@ app.post('/api/campana', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Error campaña:', err.message)
     res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── Marketing — generador de captions IA ────────────────────────────────────
+app.post('/api/marketing/generar-caption', requireAuth, async (req, res) => {
+  const { plataforma, tipo, detalles, tono } = req.body
+  if (!plataforma || !tipo) return res.status(400).json({ error: 'Plataforma y tipo son requeridos' })
+
+  const tonoMap = {
+    profesional: 'profesional y confiable, lenguaje formal pero accesible',
+    cercano:     'cercano y amigable, como hablarle a un conocido de confianza',
+    urgente:     'con sentido de urgencia y oportunidad única irrepetible',
+    inspiracional: 'inspiracional y aspiracional, evocando el sueño de tener una propiedad propia'
+  }
+  const tipoMap = {
+    nueva_propiedad: 'anuncio de propiedad en venta o arriendo',
+    tip_comprador:   'consejo útil para personas que quieren comprar propiedad',
+    tip_vendedor:    'consejo útil para personas que quieren vender su propiedad',
+    tendencia_mercado: 'tendencia o dato interesante del mercado inmobiliario chileno',
+    testimonio:      'testimonio o historia de éxito de un cliente satisfecho'
+  }
+  const limiteChars = { instagram: 2200, facebook: 500, tiktok: 150, whatsapp: 200 }
+
+  const prompt = `Eres un experto en marketing inmobiliario digital en Chile. Creas contenido viral y efectivo para redes sociales de corredoras de propiedades.
+
+Genera un caption para ${plataforma.toUpperCase()} de tipo: "${tipoMap[tipo] || tipo}".
+${detalles ? `Detalles: ${detalles}` : ''}
+Tono: ${tonoMap[tono] || 'profesional y cercano'}
+Máximo ${limiteChars[plataforma] || 500} caracteres.
+
+REGLAS:
+- Sin asteriscos ni markdown
+- Llamada a la acción clara al final
+- Para Instagram/TikTok: incluir 6-8 hashtags relevantes al final separados
+- Para Facebook/WhatsApp: sin hashtags, mensaje más conversacional
+- Lenguaje chileno natural (no usar "el/la" cuando cae mejor sin artículo)
+- Si es propiedad: mencionar atributos clave y crear urgencia sin presionar
+Responde SOLO con el caption listo para copiar.`
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': (process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '').trim(),
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
+    })
+    const data = await r.json()
+    if (!r.ok) return res.status(500).json({ error: data.error?.message || 'Error generando caption' })
+    res.json({ caption: data.content?.[0]?.text || '' })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// ─── Marketing — estadísticas de leads ───────────────────────────────────────
+app.get('/api/marketing/estadisticas', requireAuth, async (req, res) => {
+  try {
+    const ahora = new Date()
+    const inicioMes      = new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString()
+    const inicioMesAnt   = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1).toISOString()
+    const finMesAnt      = new Date(ahora.getFullYear(), ahora.getMonth(), 0, 23, 59, 59).toISOString()
+
+    const [{ data: leadsEste }, { data: leadsAnt }, { data: leadsRecientes }] = await Promise.all([
+      supabase.from('leads').select('canal, estado, created_at').gte('created_at', inicioMes),
+      supabase.from('leads').select('id').gte('created_at', inicioMesAnt).lte('created_at', finMesAnt),
+      supabase.from('leads').select('canal, estado, created_at').order('created_at', { ascending: false }).limit(300)
+    ])
+
+    const porCanal = {}
+    const porEstado = {}
+    ;(leadsEste || []).forEach(l => {
+      const c = l.canal || 'web'
+      porCanal[c] = (porCanal[c] || 0) + 1
+      const e = l.estado || 'nuevo'
+      porEstado[e] = (porEstado[e] || 0) + 1
+    })
+
+    const totalMes   = (leadsEste || []).length
+    const visitas    = (leadsEste || []).filter(l => ['visita','post_visita','cerrado'].includes(l.estado)).length
+    const tasa       = totalMes > 0 ? Math.round((visitas / totalMes) * 100) : 0
+
+    // Leads por semana — últimas 8 semanas
+    const porSemana = {}
+    ;(leadsRecientes || []).forEach(l => {
+      const d = new Date(l.created_at)
+      const lunes = new Date(d); lunes.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+      const key = lunes.toISOString().split('T')[0]
+      porSemana[key] = (porSemana[key] || 0) + 1
+    })
+
+    res.json({
+      totalMes,
+      mesAnterior:    (leadsAnt || []).length,
+      porCanal,
+      porEstado,
+      tasaConversion: tasa,
+      visitas,
+      porSemana:      Object.entries(porSemana).sort().slice(-8)
+    })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// ─── Meta Lead Ads — recibir leads desde campañas Facebook/Instagram ──────────
+// El GET /webhook/meta ya existe más abajo para verificación
+// Este POST extiende el mismo webhook para capturar leadgen events
+app.post('/webhook/meta', async (req, res) => {
+  res.sendStatus(200) // responder rápido antes de procesar
+  try {
+    const body = req.body
+    if (body.object !== 'page') return
+    for (const entry of (body.entry || [])) {
+      for (const change of (entry.changes || [])) {
+        if (change.field !== 'leadgen') continue
+        const leadgenId = change.value?.leadgen_id
+        if (!leadgenId || !META_PAGE_TOKEN) {
+          console.log('[Meta Lead Ads] Falta leadgen_id o META_PAGE_TOKEN')
+          continue
+        }
+        // Obtener datos del lead desde la API de Meta
+        const r = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${META_PAGE_TOKEN}`)
+        const leadData = await r.json()
+        if (!leadData.field_data) { console.log('[Meta Lead Ads] Sin field_data:', JSON.stringify(leadData)); continue }
+
+        const campos = {}
+        for (const f of leadData.field_data) {
+          campos[f.name.toLowerCase()] = (f.values || [])[0] || ''
+        }
+        const nombre   = campos['full_name'] || campos['nombre'] || campos['name'] || 'Lead Facebook'
+        const telefono = campos['phone_number'] || campos['telefono'] || campos['phone'] || ''
+        const email    = campos['email'] || ''
+        const interes  = campos['que_buscas'] || campos['propiedad_interes'] || campos['interest'] || 'Meta Lead Ad'
+
+        const { error } = await supabase.from('leads').insert({
+          nombre, telefono, email,
+          propiedad_interes: interes,
+          mensaje_inicial: `Lead de Meta Ads. Email: ${email || 'no informado'}`,
+          estado: 'nuevo',
+          canal: 'facebook',
+          created_at: new Date().toISOString()
+        })
+        if (error) console.error('[Meta Lead Ads] Error guardando lead:', error.message)
+        else console.log(`[Meta Lead Ads] Lead guardado: ${nombre} | ${telefono}`)
+      }
+    }
+  } catch (e) {
+    console.error('[Meta Lead Ads] Error procesando webhook:', e.message)
   }
 })
 

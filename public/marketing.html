@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="/nova-premium.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1A3A5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Nova — Marketing</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.header h1{color:#fff;font-size:18px;font-weight:500}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
+.nav a:hover,.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.nav-salir{color:#888!important;border-color:rgba(136,136,136,.3)!important}
+.nav-salir:hover{background:#888!important;color:#fff!important;border-color:#888!important}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.container{width:100%;max-width:1100px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
+
+/* ── KPIs ────────────────────────────────────────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.kpis{grid-template-columns:1fr 1fr}}
+.kpi{background:#fff;border-radius:12px;padding:1.1rem 1.25rem;border:.5px solid #e8e8e8}
+.kpi-label{font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.kpi-value{font-size:26px;font-weight:700;color:#1A3A5C;line-height:1}
+.kpi-sub{font-size:11px;color:#bbb;margin-top:3px}
+.kpi-delta{font-size:11px;margin-top:3px}
+.kpi-delta.up{color:#0F6E56}
+.kpi-delta.down{color:#C0392B}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.panel{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;overflow:hidden;margin-bottom:1.5rem}
+.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tabs-nav{display:flex;gap:0;border-bottom:1px solid #f0f0f0;background:#fafafa;overflow-x:auto;scrollbar-width:none}
+.tabs-nav::-webkit-scrollbar{display:none}
+.tab-btn{padding:.7rem 1.25rem;font-size:13px;font-weight:500;color:#888;cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.tab-btn:hover{color:#1A3A5C}
+.tab-btn.activo{color:#1A3A5C;border-bottom-color:#C9A96E;background:#fff}
+.tab-pane{display:none;padding:1.5rem}
+.tab-pane.activo{display:block}
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:500;color:#555}
+.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C;background:#fff;box-shadow:0 0 0 3px rgba(26,58,92,.08)}
+.form-group textarea{resize:vertical;min-height:70px}
+
+/* ── Botones ─────────────────────────────────────────────────────────────── */
+.btn{padding:8px 18px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;color:#333;transition:all .18s;white-space:nowrap}
+.btn:hover{background:#f0f0f0}
+.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
+.btn-primary:hover{background:#0f2540}
+.btn-gold{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
+.btn-gold:hover{background:#b8934a}
+.btn-success{background:#0F6E56;color:#fff;border-color:#0F6E56}
+.btn-danger{color:#c0392b;border-color:#e0a0a0}
+.btn-danger:hover{background:#fcebeb}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:5px 12px;font-size:12px}
+
+/* ── Resultado caption ───────────────────────────────────────────────────── */
+.caption-resultado{background:#f8fafb;border:1px solid #e0e0e0;border-radius:10px;padding:1rem;margin-top:1rem;min-height:80px;font-size:14px;line-height:1.7;color:#333;white-space:pre-wrap;display:none}
+.caption-resultado.visible{display:block}
+.caption-acciones{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
+
+/* ── Plataformas chips ───────────────────────────────────────────────────── */
+.plataformas{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.25rem}
+.plat-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid #ddd;color:#666;transition:all .2s;user-select:none}
+.plat-chip.sel-instagram{background:#E1306C;color:#fff;border-color:#E1306C}
+.plat-chip.sel-facebook{background:#1877F2;color:#fff;border-color:#1877F2}
+.plat-chip.sel-tiktok{background:#000;color:#fff;border-color:#000}
+.plat-chip.sel-whatsapp{background:#25D366;color:#fff;border-color:#25D366}
+.plat-chip:not([class*="sel-"]):hover{border-color:#1A3A5C;color:#1A3A5C}
+
+/* ── Métricas ────────────────────────────────────────────────────────────── */
+.metricas-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:700px){.metricas-grid{grid-template-columns:1fr}}
+.metrica-card{background:#fafafa;border-radius:10px;padding:1.1rem;border:.5px solid #e8e8e8}
+.metrica-card h3{font-size:13px;font-weight:600;color:#555;margin-bottom:.875rem}
+.canal-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem}
+.canal-nombre{font-size:12px;font-weight:500;color:#333;min-width:90px}
+.canal-barra-wrap{flex:1;background:#f0f0f0;border-radius:4px;height:8px;overflow:hidden}
+.canal-barra{height:100%;border-radius:4px;transition:width .6s}
+.canal-count{font-size:12px;font-weight:600;color:#1A3A5C;min-width:30px;text-align:right}
+.estado-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;margin:3px 3px 3px 0}
+.badge-nuevo{background:#EFF6FF;color:#1A3A5C}
+.badge-caliente{background:#FEE2E2;color:#991B1B}
+.badge-tibio{background:#FEF3C7;color:#92400E}
+.badge-frio{background:#F3F4F6;color:#6B7280}
+.badge-visita{background:#DCFCE7;color:#166534}
+.badge-facebook{background:#EBF5FF;color:#1877F2}
+.badge-whatsapp{background:#F0FFF4;color:#22863A}
+.badge-web{background:#F5F3FF;color:#5B21B6}
+
+/* ── Semana chart ────────────────────────────────────────────────────────── */
+.semana-chart{display:flex;align-items:flex-end;gap:4px;height:80px;padding-top:.5rem}
+.semana-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.semana-bar{width:100%;background:#1A3A5C;border-radius:3px 3px 0 0;min-height:4px;transition:height .4s}
+.semana-label{font-size:9px;color:#bbb;text-align:center}
+
+/* ── Meta Ads ────────────────────────────────────────────────────────────── */
+.estado-conexion{display:flex;align-items:center;gap:.75rem;padding:1rem;border-radius:10px;background:#fafafa;border:.5px solid #e8e8e8;margin-bottom:1.25rem}
+.dot-status{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-verde{background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
+.dot-gris{background:#9CA3AF;box-shadow:0 0 0 3px rgba(156,163,175,.2)}
+.dot-rojo{background:#EF4444;box-shadow:0 0 0 3px rgba(239,68,68,.2)}
+.steps-lista{counter-reset:steps;display:flex;flex-direction:column;gap:.75rem}
+.step{display:flex;gap:1rem;align-items:flex-start}
+.step-num{width:26px;height:26px;border-radius:50%;background:#1A3A5C;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-body h4{font-size:13px;font-weight:600;color:#333;margin-bottom:3px}
+.step-body p{font-size:12px;color:#666;line-height:1.5}
+.code-inline{background:#f0f2f5;border:1px solid #e0e0e0;border-radius:5px;padding:2px 8px;font-family:monospace;font-size:12px;color:#1A3A5C;cursor:pointer;user-select:all}
+.code-inline:hover{background:#e8ecf0}
+.code-block{background:#1a1a2e;color:#e8e8f0;padding:.875rem 1rem;border-radius:8px;font-family:monospace;font-size:12px;line-height:1.7;overflow-x:auto;margin-top:.5rem;cursor:pointer}
+.code-block:hover{background:#16162a}
+.code-block .cm{color:#6A8A6A}
+.code-block .ky{color:#C9A96E}
+.code-block .vl{color:#7DD3FC}
+
+/* ── Campañas ────────────────────────────────────────────────────────────── */
+.filtros-camp{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.filtro-sel{padding:6px 12px;border-radius:8px;border:1px solid #ddd;font-size:12px;background:#fff;color:#333;cursor:pointer;outline:none}
+.filtro-sel:focus{border-color:#1A3A5C}
+.preview-msg{background:#f0f8f0;border:1px solid #c3e6c3;border-radius:8px;padding:.875rem;font-size:13px;color:#333;margin:.75rem 0;min-height:60px;white-space:pre-wrap;display:none}
+.preview-msg.visible{display:block}
+.camp-resultado{margin-top:1rem;padding:.875rem;border-radius:8px;font-size:13px;display:none}
+.camp-resultado.ok{background:#f0fff4;border:1px solid #a7f3d0;color:#065F46;display:block}
+.camp-resultado.err{background:#fef2f2;border:1px solid #fecaca;color:#991B1B;display:block}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a1a;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none;max-width:320px}
+.toast.activo{opacity:1}
+
+/* ── Broker theme ────────────────────────────────────────────────────────── */
+.broker .header{background:#3B52D4}
+.broker .nav a{color:#a5b4fc}
+.broker .nav a:hover,.broker .nav a.activo{background:#a5b4fc;color:#1e1b4b}
+.broker .kpi-value{color:#3B52D4}
+.broker .panel-header h2{color:#3B52D4}
+.broker .tab-btn.activo{color:#3B52D4;border-bottom-color:#a5b4fc}
+.broker .btn-primary{background:#3B52D4;border-color:#3B52D4}
+.broker .btn-primary:hover{background:#2D40B8}
+.broker .btn-gold{background:#a5b4fc;color:#1e1b4b;border-color:#a5b4fc}
+.broker .form-group input:focus,.broker .form-group select:focus,.broker .form-group textarea:focus{border-color:#3B52D4}
+.broker .canal-barra{background:#3B52D4}
+.broker .step-num{background:#3B52D4}
+.broker .code-inline{color:#3B52D4}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.panel{animation:fadeUp .3s ease both}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="page-title">Marketing</h1>
+  <nav class="nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/administraciones.html" class="nav-admin-only nav-broker-hide">Administraciones</a>
+    <a href="/finanzas.html" class="nav-admin-only">Finanzas</a>
+    <a href="/documentos.html">Documentos</a>
+    <a href="/marketing.html" class="activo">Marketing</a>
+    <a href="/">Chat</a>
+    <a href="/api/logout" class="nav-salir">Salir</a>
+  </nav>
+</div>
+
+<div class="container">
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Leads este mes</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-delta" id="kpi-delta-total"></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Leads Facebook Ads</div>
+      <div class="kpi-value" id="kpi-facebook">—</div>
+      <div class="kpi-sub">canal facebook</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Tasa conversión</div>
+      <div class="kpi-value" id="kpi-tasa">—%</div>
+      <div class="kpi-sub">leads → visita</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">WhatsApp / Web</div>
+      <div class="kpi-value" id="kpi-otros">—</div>
+      <div class="kpi-sub">canales orgánicos</div>
+    </div>
+  </div>
+
+  <!-- Panel principal -->
+  <div class="panel">
+    <div class="tabs-nav">
+      <button class="tab-btn activo" onclick="tab('generador',this)">Generador IA</button>
+      <button class="tab-btn" onclick="tab('metricas',this)">Métricas</button>
+      <button class="tab-btn" onclick="tab('meta',this)">Meta Ads</button>
+      <button class="tab-btn" onclick="tab('campanas',this)">Campañas WhatsApp</button>
+    </div>
+
+    <!-- ── TAB 1: Generador IA ── -->
+    <div class="tab-pane activo" id="pane-generador">
+      <div style="max-width:680px">
+        <p style="font-size:13px;color:#666;margin-bottom:1.25rem">Genera captions listos para publicar en redes sociales usando IA. Copia y pega directo en Instagram, Facebook, TikTok o WhatsApp.</p>
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Plataforma</label>
+            <div class="plataformas" id="plataformas-wrap">
+              <div class="plat-chip" data-plat="instagram" onclick="selPlat(this)">Instagram</div>
+              <div class="plat-chip" data-plat="facebook"  onclick="selPlat(this)">Facebook</div>
+              <div class="plat-chip" data-plat="tiktok"    onclick="selPlat(this)">TikTok</div>
+              <div class="plat-chip" data-plat="whatsapp"  onclick="selPlat(this)">WhatsApp</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tipo de contenido</label>
+            <select id="gen-tipo">
+              <option value="nueva_propiedad">Nueva propiedad</option>
+              <option value="tip_comprador">Tip para compradores</option>
+              <option value="tip_vendedor">Tip para vendedores</option>
+              <option value="tendencia_mercado">Tendencia de mercado</option>
+              <option value="testimonio">Testimonio de cliente</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tono</label>
+            <select id="gen-tono">
+              <option value="profesional">Profesional</option>
+              <option value="cercano">Cercano y amigable</option>
+              <option value="urgente">Urgente / oportunidad</option>
+              <option value="inspiracional">Inspiracional</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Detalles de la propiedad o tema <span style="color:#bbb;font-weight:400">(opcional)</span></label>
+            <textarea id="gen-detalles" placeholder="Ej: Departamento 2D 2B en Providencia, 65m², piso 8, vista a la ciudad, precio $3.200 UF"></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:.75rem;margin-top:1rem;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-gold" id="btn-generar" onclick="generarCaption()">Generar caption</button>
+          <span id="gen-status" style="font-size:12px;color:#888"></span>
+        </div>
+
+        <div class="caption-resultado" id="caption-texto"></div>
+        <div class="caption-acciones" id="caption-acciones" style="display:none">
+          <button class="btn btn-primary btn-sm" onclick="copiarCaption()">Copiar caption</button>
+          <button class="btn btn-sm" onclick="generarCaption()">Regenerar</button>
+          <a id="btn-abrir-red" class="btn btn-sm" href="#" target="_blank" style="display:none">Abrir app</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 2: Métricas ── -->
+    <div class="tab-pane" id="pane-metricas">
+      <div class="metricas-grid">
+        <div class="metrica-card">
+          <h3>Leads por canal — este mes</h3>
+          <div id="canales-chart"><div style="color:#bbb;font-size:13px">Cargando…</div></div>
+        </div>
+        <div class="metrica-card">
+          <h3>Leads por estado — este mes</h3>
+          <div id="estados-chart"><div style="color:#bbb;font-size:13px">Cargando…</div></div>
+        </div>
+        <div class="metrica-card">
+          <h3>Tendencia semanal — últimas 8 semanas</h3>
+          <div class="semana-chart" id="semana-chart"></div>
+        </div>
+        <div class="metrica-card">
+          <h3>Resumen de conversión</h3>
+          <div id="resumen-conversion" style="font-size:13px;color:#555;line-height:1.9">Cargando…</div>
+        </div>
+      </div>
+      <div style="margin-top:.75rem;text-align:right">
+        <button class="btn btn-sm" onclick="cargarEstadisticas()">Actualizar</button>
+      </div>
+    </div>
+
+    <!-- ── TAB 3: Meta Ads ── -->
+    <div class="tab-pane" id="pane-meta">
+      <div style="max-width:720px">
+
+        <div class="estado-conexion" id="meta-estado">
+          <div class="dot-status dot-gris" id="meta-dot"></div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#333" id="meta-estado-texto">Estado desconocido</div>
+            <div style="font-size:12px;color:#888" id="meta-estado-sub">Configura las variables de entorno para activar</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;font-weight:600;color:#1A3A5C;margin-bottom:1rem">Paso a paso para conectar Facebook Lead Ads</h3>
+        <div class="steps-lista">
+
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>Crea una App en Meta for Developers</h4>
+              <p>Ve a <strong>developers.facebook.com</strong> → "Crear app" → tipo <strong>Business</strong>. Nómbrala "Nova CRM" o similar.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>Agrega el producto "Webhooks" y "Lead Ads Retrieval"</h4>
+              <p>En el panel de la app → "Agregar producto" → agrega <strong>Webhooks</strong> y <strong>Lead Ads Testing</strong>.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>Configura el webhook con la URL de Nova</h4>
+              <p>En Webhooks → "Configurar" → tipo <strong>Page</strong>:</p>
+              <div class="code-block" onclick="copiarTexto(this.dataset.val,this)" data-val="" id="url-webhook">
+                <span class="cm"># URL del webhook:</span><br>
+                <span class="ky">URL:</span> <span class="vl" id="url-webhook-val">https://tu-dominio.up.railway.app/webhook/meta</span><br>
+                <span class="cm"># Verify Token (el que pongas en Railway):</span><br>
+                <span class="ky">Token:</span> <span class="vl">el valor de META_VERIFY_TOKEN que configures</span>
+              </div>
+              <p style="margin-top:.5rem">Suscríbete al campo: <span class="code-inline">leadgen</span></p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h4>Obtén el Page Access Token permanente</h4>
+              <p>Ve a <strong>Graph API Explorer</strong> (developers.facebook.com/tools/explorer) → selecciona tu App y tu Página → genera un token con permisos:</p>
+              <p style="margin-top:.4rem">
+                <span class="code-inline">pages_manage_ads</span>
+                <span class="code-inline">pages_read_engagement</span>
+                <span class="code-inline">leads_retrieval</span>
+              </p>
+              <p style="margin-top:.4rem">Convierte el token a <strong>permanente</strong> (nunca expira) usando la herramienta "Access Token Debugger" → "Extend".</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <h4>Agrega las variables en Railway</h4>
+              <p>En tu proyecto Railway → Variables → agregar:</p>
+              <div class="code-block">
+                <span class="ky">META_VERIFY_TOKEN</span> = <span class="vl">nova_meta_2026</span> <span class="cm">(o cualquier texto secreto)</span><br>
+                <span class="ky">META_PAGE_TOKEN</span>   = <span class="vl">tu-page-access-token-permanente</span>
+              </div>
+              <p style="margin-top:.4rem">Railway redespliega automáticamente al guardar.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">
+              <h4>Crea tu campaña Lead Ad en Meta Ads Manager</h4>
+              <p>En <strong>business.facebook.com</strong> → Ads Manager → Nueva campaña → objetivo <strong>"Clientes potenciales"</strong> → tipo <strong>Formulario instantáneo</strong>.</p>
+              <p style="margin-top:.4rem">Campos recomendados en el formulario: <span class="code-inline">full_name</span> <span class="code-inline">phone_number</span> <span class="code-inline">email</span> + campo personalizado <span class="code-inline">que_buscas</span>.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">7</div>
+            <div class="step-body">
+              <h4>Listo — los leads llegan automáticamente al CRM</h4>
+              <p>Cada vez que alguien llene el formulario del anuncio, Nova lo guarda automáticamente en el CRM con <strong>canal: facebook</strong>, estado <strong>nuevo</strong>. Verás la notificación en tiempo real.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;padding:1rem;background:#FFFBEB;border-radius:10px;border:.5px solid #FCD34D">
+          <div style="font-size:12px;font-weight:600;color:#92400E;margin-bottom:.4rem">Presupuesto recomendado para empezar</div>
+          <div style="font-size:12px;color:#78350F;line-height:1.7">
+            • Compradores (Busco propiedad): <strong>$10-15 USD/día</strong> — segmentación por edad 28-50, intereses en "Bienes raíces", radio 15km de tus comunas<br>
+            • Vendedores (Quiero vender): <strong>$8-12 USD/día</strong> — audiencia personalizada de propietarios, segmento ABC1-C2<br>
+            • Retargeting (visitas al chat): <strong>$5 USD/día</strong> — audiencia personalizada por visitas web
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 4: Campañas WhatsApp ── -->
+    <div class="tab-pane" id="pane-campanas">
+      <div style="max-width:620px">
+        <p style="font-size:13px;color:#666;margin-bottom:1.25rem">Envía mensajes masivos a tus leads por WhatsApp. Usa <span class="code-inline">{nombre}</span> para personalizar.</p>
+
+        <div class="filtros-camp">
+          <select class="filtro-sel" id="camp-estado">
+            <option value="">Todos los estados</option>
+            <option value="nuevo">Nuevos</option>
+            <option value="caliente">Calientes</option>
+            <option value="tibio">Tibios</option>
+            <option value="frio">Fríos</option>
+            <option value="visita">Con visita</option>
+          </select>
+          <select class="filtro-sel" id="camp-tipo">
+            <option value="">Todos los tipos</option>
+            <option value="comprador">Compradores</option>
+            <option value="vendedor">Vendedores</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Mensaje <span style="color:#bbb;font-weight:400">(usa {nombre} para personalizar)</span></label>
+          <textarea id="camp-mensaje" rows="4" placeholder="Hola {nombre}, te escribimos desde Prolig Propiedades. ¿Sigues buscando propiedad? Tenemos novedades que pueden interesarte." oninput="previewMensaje()"></textarea>
+        </div>
+
+        <div class="preview-msg" id="camp-preview"></div>
+
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-enviar-camp" onclick="enviarCampana()">Enviar campaña</button>
+          <button class="btn btn-sm" onclick="generarMensajeIA()">Generar mensaje con IA</button>
+          <span id="camp-status" style="font-size:12px;color:#888"></span>
+        </div>
+
+        <div class="camp-resultado" id="camp-resultado"></div>
+
+        <div style="margin-top:1.5rem;padding:1rem;background:#EFF6FF;border-radius:10px;border:.5px solid #BFDBFE">
+          <div style="font-size:12px;font-weight:600;color:#1E429F;margin-bottom:.4rem">Buenas prácticas para no ser bloqueado</div>
+          <div style="font-size:12px;color:#1E3A8A;line-height:1.7">
+            • Máximo 50-80 mensajes por hora para no saturar Twilio<br>
+            • Personaliza siempre con {nombre}<br>
+            • Incluye opción de darse de baja: "Responde STOP para no recibir más mensajes"<br>
+            • Mejor horario: Lunes a Viernes 10am-12pm o 6pm-8pm
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel -->
+</div><!-- /container -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Broker theme ──────────────────────────────────────────────────────────────
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  if (cfg.siteName) {
+    if (cfg.siteName.toLowerCase().includes('broker')) {
+      document.documentElement.classList.add('broker')
+    }
+    document.title = cfg.siteName + ' — Marketing'
+    const pt = document.getElementById('page-title')
+    if (pt) pt.textContent = 'Marketing — ' + cfg.siteName
+  }
+}).catch(() => {})
+
+// Ocultar tabs de admin si no es admin
+fetch('/api/me').then(r => r.ok ? r.json() : null).then(me => {
+  if (!me || me.rol !== 'admin') {
+    document.querySelectorAll('.nav-admin-only').forEach(el => el.style.display = 'none')
+  }
+}).catch(() => {})
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function tab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('activo'))
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('activo'))
+  document.getElementById('pane-' + id).classList.add('activo')
+  btn.classList.add('activo')
+  if (id === 'metricas') cargarEstadisticas()
+  if (id === 'meta') iniciarMeta()
+}
+
+// ── Plataforma chip ───────────────────────────────────────────────────────────
+let plataformaSeleccionada = 'instagram'
+function selPlat(el) {
+  document.querySelectorAll('.plat-chip').forEach(c => {
+    c.className = 'plat-chip'
+  })
+  plataformaSeleccionada = el.dataset.plat
+  el.classList.add('sel-' + el.dataset.plat)
+
+  // Actualizar enlace de apertura
+  const links = { instagram: 'https://www.instagram.com', facebook: 'https://www.facebook.com', tiktok: 'https://www.tiktok.com', whatsapp: null }
+  const btn = document.getElementById('btn-abrir-red')
+  if (links[plataformaSeleccionada]) {
+    btn.href = links[plataformaSeleccionada]
+    btn.textContent = 'Abrir ' + el.textContent
+    btn.style.display = ''
+  } else {
+    btn.style.display = 'none'
+  }
+}
+// Seleccionar Instagram por defecto
+document.querySelector('.plat-chip[data-plat="instagram"]').click()
+
+// ── Generador de captions ─────────────────────────────────────────────────────
+async function generarCaption() {
+  const tipo     = document.getElementById('gen-tipo').value
+  const tono     = document.getElementById('gen-tono').value
+  const detalles = document.getElementById('gen-detalles').value.trim()
+  const btn      = document.getElementById('btn-generar')
+  const status   = document.getElementById('gen-status')
+  const resultado = document.getElementById('caption-texto')
+
+  btn.disabled = true
+  btn.textContent = 'Generando…'
+  status.textContent = 'Consultando IA…'
+  resultado.className = 'caption-resultado'
+
+  try {
+    const res = await fetch('/api/marketing/generar-caption', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plataforma: plataformaSeleccionada, tipo, tono, detalles })
+    })
+    const data = await res.json()
+    if (!res.ok) { toast('Error: ' + (data.error || 'No se pudo generar'), true); return }
+
+    resultado.textContent = data.caption
+    resultado.className = 'caption-resultado visible'
+    document.getElementById('caption-acciones').style.display = 'flex'
+    status.textContent = ''
+  } catch (e) {
+    toast('Error: ' + e.message, true)
+    status.textContent = ''
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'Generar caption'
+  }
+}
+
+function copiarCaption() {
+  const txt = document.getElementById('caption-texto').textContent
+  navigator.clipboard.writeText(txt).then(() => toast('Caption copiado'))
+}
+
+// ── Estadísticas ──────────────────────────────────────────────────────────────
+async function cargarEstadisticas() {
+  try {
+    const res  = await fetch('/api/marketing/estadisticas')
+    const data = await res.json()
+
+    // KPIs
+    document.getElementById('kpi-total').textContent    = data.totalMes
+    document.getElementById('kpi-facebook').textContent = data.porCanal?.facebook || 0
+    document.getElementById('kpi-tasa').textContent     = data.tasaConversion + '%'
+    const otros = (data.porCanal?.whatsapp || 0) + (data.porCanal?.web || 0)
+    document.getElementById('kpi-otros').textContent = otros
+
+    const delta = data.totalMes - (data.mesAnterior || 0)
+    const deltaEl = document.getElementById('kpi-delta-total')
+    if (delta !== 0) {
+      deltaEl.textContent = (delta > 0 ? '▲ +' : '▼ ') + Math.abs(delta) + ' vs mes anterior'
+      deltaEl.className = 'kpi-delta ' + (delta > 0 ? 'up' : 'down')
+    }
+
+    // Canales
+    const canalesMap = { facebook: 'Facebook Ads', whatsapp: 'WhatsApp', web: 'Web / Chat', otro: 'Otro' }
+    const totalCan = Object.values(data.porCanal || {}).reduce((a, b) => a + b, 0) || 1
+    const canalesHtml = Object.entries(data.porCanal || {}).sort((a,b) => b[1]-a[1]).map(([c, n]) => {
+      const pct = Math.round((n / totalCan) * 100)
+      return `<div class="canal-row">
+        <div class="canal-nombre">${canalesMap[c] || c}</div>
+        <div class="canal-barra-wrap"><div class="canal-barra" style="width:${pct}%"></div></div>
+        <div class="canal-count">${n}</div>
+      </div>`
+    }).join('') || '<div style="color:#bbb;font-size:13px">Sin datos este mes</div>'
+    document.getElementById('canales-chart').innerHTML = canalesHtml
+
+    // Estados
+    const estadoColors = { nuevo:'badge-nuevo', caliente:'badge-caliente', tibio:'badge-tibio', frio:'badge-frio', visita:'badge-visita', post_visita:'badge-visita', cerrado:'badge-visita' }
+    const estadoLabels = { nuevo:'Nuevo', caliente:'Caliente', tibio:'Tibio', frio:'Frío', visita:'Visita', post_visita:'Post-visita', cerrado:'Cerrado' }
+    const estadosHtml = Object.entries(data.porEstado || {}).sort((a,b) => b[1]-a[1]).map(([e, n]) =>
+      `<span class="estado-badge ${estadoColors[e] || 'badge-nuevo'}">${estadoLabels[e] || e}: ${n}</span>`
+    ).join('') || '<div style="color:#bbb;font-size:13px">Sin datos</div>'
+    document.getElementById('estados-chart').innerHTML = estadosHtml
+
+    // Tendencia semanal
+    const semanas = data.porSemana || []
+    const maxSem = Math.max(...semanas.map(([,n]) => n), 1)
+    const semHtml = semanas.map(([fecha, n]) => {
+      const pct = Math.round((n / maxSem) * 100)
+      const etiq = new Date(fecha + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'short' })
+      return `<div class="semana-bar-wrap">
+        <div class="semana-bar" style="height:${pct}%"></div>
+        <div class="semana-label">${etiq}</div>
+      </div>`
+    }).join('')
+    document.getElementById('semana-chart').innerHTML = semHtml || '<div style="color:#bbb;font-size:13px">Sin datos</div>'
+
+    // Resumen conversión
+    document.getElementById('resumen-conversion').innerHTML = `
+      <strong>${data.totalMes}</strong> leads captados este mes<br>
+      <strong>${data.visitas}</strong> llegaron a instancia de visita<br>
+      <strong>${data.tasaConversion}%</strong> tasa de conversión lead → visita<br>
+      <strong>${data.mesAnterior}</strong> leads el mes anterior
+    `
+  } catch (e) {
+    console.error('Error estadísticas:', e)
+  }
+}
+
+// ── Meta Ads — estado ─────────────────────────────────────────────────────────
+function iniciarMeta() {
+  // Detecta si el webhook está disponible probando la URL
+  const appUrl = location.origin
+  document.getElementById('url-webhook-val').textContent = appUrl + '/webhook/meta'
+  document.getElementById('url-webhook').dataset.val = appUrl + '/webhook/meta'
+
+  fetch('/api/marketing/estadisticas').then(r => r.json()).then(data => {
+    const fbLeads = data.porCanal?.facebook || 0
+    const dot  = document.getElementById('meta-dot')
+    const txt  = document.getElementById('meta-estado-texto')
+    const sub  = document.getElementById('meta-estado-sub')
+    if (fbLeads > 0) {
+      dot.className = 'dot-status dot-verde'
+      txt.textContent = 'Conectado — ' + fbLeads + ' leads recibidos este mes desde Facebook Ads'
+      sub.textContent = 'El webhook está activo y recibiendo leads correctamente'
+    } else {
+      dot.className = 'dot-status dot-gris'
+      txt.textContent = 'Sin leads de Facebook este mes'
+      sub.textContent = 'Sigue los pasos para conectar Meta Lead Ads y comenzar a recibir leads automáticamente'
+    }
+  }).catch(() => {})
+}
+
+// ── Campañas WhatsApp ─────────────────────────────────────────────────────────
+function previewMensaje() {
+  const msg = document.getElementById('camp-mensaje').value
+  const prev = document.getElementById('camp-preview')
+  if (msg.trim()) {
+    prev.textContent = msg.replace('{nombre}', 'Juan Pérez')
+    prev.className = 'preview-msg visible'
+  } else {
+    prev.className = 'preview-msg'
+  }
+}
+
+async function generarMensajeIA() {
+  const btn = document.querySelector('[onclick="generarMensajeIA()"]')
+  btn.disabled = true; btn.textContent = 'Generando…'
+  try {
+    const res = await fetch('/api/marketing/generar-caption', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        plataforma: 'whatsapp',
+        tipo: 'nueva_propiedad',
+        tono: 'cercano',
+        detalles: 'mensaje de seguimiento a leads que han contactado anteriormente'
+      })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      document.getElementById('camp-mensaje').value = data.caption
+      previewMensaje()
+    }
+  } catch(e) { toast('Error: ' + e.message, true) }
+  finally { btn.disabled = false; btn.textContent = 'Generar mensaje con IA' }
+}
+
+async function enviarCampana() {
+  const mensaje = document.getElementById('camp-mensaje').value.trim()
+  const estado  = document.getElementById('camp-estado').value
+  const tipo    = document.getElementById('camp-tipo').value
+  if (!mensaje) { toast('Escribe un mensaje primero', true); return }
+  if (mensaje.length < 10) { toast('El mensaje es muy corto', true); return }
+  if (!confirm('¿Enviar esta campaña por WhatsApp? El envío no se puede deshacer.')) return
+
+  const btn = document.getElementById('btn-enviar-camp')
+  const status = document.getElementById('camp-status')
+  btn.disabled = true; btn.textContent = 'Enviando…'
+  status.textContent = 'Procesando…'
+
+  try {
+    const res = await fetch('/api/campana', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje, filtro_estado: estado || undefined, filtro_tipo: tipo || undefined })
+    })
+    const data = await res.json()
+    const el = document.getElementById('camp-resultado')
+    if (!res.ok) {
+      el.textContent = 'Error: ' + (data.error || 'No se pudo enviar')
+      el.className = 'camp-resultado err'
+    } else {
+      el.textContent = `Campaña enviada a ${data.enviados} leads. Los mensajes se envían con 500ms de pausa entre cada uno.`
+      el.className = 'camp-resultado ok'
+    }
+    status.textContent = ''
+  } catch(e) {
+    toast('Error: ' + e.message, true)
+    status.textContent = ''
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar campaña'
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function copiarTexto(texto, el) {
+  if (!texto) return
+  navigator.clipboard.writeText(texto).then(() => {
+    const orig = el.style.opacity
+    el.style.opacity = '.6'
+    setTimeout(() => el.style.opacity = orig, 300)
+    toast('Copiado')
+  })
+}
+
+function toast(msg, error) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.style.background = error ? '#991B1B' : '#1a1a1a'
+  t.className = 'toast activo'
+  clearTimeout(t._t)
+  t._t = setTimeout(() => t.className = 'toast', error ? 5000 : 3000)
+}
+
+// ── Carga inicial ─────────────────────────────────────────────────────────────
+cargarEstadisticas()
+</script>
+
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+</body>
+</html>
