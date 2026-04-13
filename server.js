@@ -393,6 +393,29 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
 
+// ─── Health check ─────────────────────────────────────────────────────────────
+app.get('/api/health', async (req, res) => {
+  const urlOk  = !!process.env.SUPABASE_URL
+  const keyOk  = !!process.env.SUPABASE_KEY
+  let supabaseStatus = 'error'
+  let supabaseMsg    = ''
+  if (!urlOk || !keyOk) {
+    supabaseMsg = 'Variables ' + (!urlOk ? 'SUPABASE_URL ' : '') + (!keyOk ? 'SUPABASE_KEY ' : '') + 'no configuradas en Railway'
+  } else {
+    try {
+      const { error } = await supabase.from('leads').select('id').limit(1)
+      if (error) { supabaseMsg = error.message } else { supabaseStatus = 'ok' }
+    } catch(e) { supabaseMsg = e.message }
+  }
+  res.status(supabaseStatus === 'ok' ? 200 : 503).json({
+    ok: supabaseStatus === 'ok',
+    supabase: supabaseStatus,
+    mensaje: supabaseMsg,
+    supabase_url: urlOk ? (process.env.SUPABASE_URL || '').substring(0, 35) + '...' : 'NO CONFIGURADA',
+    supabase_key: keyOk ? 'configurada (' + (process.env.SUPABASE_KEY || '').length + ' chars)' : 'NO CONFIGURADA'
+  })
+})
+
 const CALENDAR_ID = process.env.CALENDAR_ID || 'felipec.constructor@gmail.com'
 const auth = new google.auth.GoogleAuth({
   keyFile: path.join(__dirname, 'google-credentials.json'),

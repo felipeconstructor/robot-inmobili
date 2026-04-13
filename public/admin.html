@@ -194,6 +194,8 @@ tr:hover .thumb{transform:scale(1.08)}
   </nav>
 </div>
 
+<div id="health-banner" style="display:none;padding:.65rem 1.5rem;font-size:12px;font-weight:500;align-items:center;gap:.75rem;flex-wrap:wrap"></div>
+
 <div class="container">
   <div class="stats">
     <div class="stat">
@@ -1069,10 +1071,32 @@ async function confirmarImportar() {
   else toast(`${insertadas} importadas, ${errores} fallaron`, errores > 0 && insertadas === 0)
 }
 
+// ─── Health check ────────────────────────────────────────────────────────────
+async function verificarConexion() {
+  try {
+    const r = await fetch('/api/health')
+    const d = await r.json()
+    const banner = document.getElementById('health-banner')
+    if (!d.ok) {
+      const esPausado = (d.mensaje || '').toLowerCase().includes('fetch') || (d.mensaje || '').toLowerCase().includes('network')
+      const msg = esPausado
+        ? 'Supabase no responde — el proyecto probablemente está pausado. Ve a supabase.com → tu proyecto → Resume project.'
+        : 'Error Supabase: ' + (d.mensaje || 'sin respuesta') + ' — Verifica SUPABASE_URL y SUPABASE_KEY en Railway.'
+      banner.style.cssText = 'display:flex;padding:.65rem 1.5rem;font-size:12px;font-weight:500;align-items:center;gap:.75rem;flex-wrap:wrap;background:#FEF3C7;border-bottom:1.5px solid #F59E0B;color:#92400E'
+      banner.innerHTML = '<span style="font-size:15px">⚠</span><span>' + msg + '</span><a href="https://supabase.com/dashboard" target="_blank" style="color:#92400E;font-weight:700;text-decoration:underline;white-space:nowrap">Ir a Supabase →</a>'
+    }
+  } catch(e) {
+    const banner = document.getElementById('health-banner')
+    banner.style.cssText = 'display:flex;padding:.65rem 1.5rem;font-size:12px;font-weight:500;align-items:center;gap:.75rem;background:#FEE2E2;border-bottom:1.5px solid #F87171;color:#991B1B'
+    banner.innerHTML = '<span style="font-size:15px">✕</span><span>No se puede conectar al servidor Nova. Verifica que el servicio esté activo en Railway.</span>'
+  }
+}
+
 // ─── Inicializacion ───────────────────────────────────────────────────────────
 
 window._esAdmin = false
 
+verificarConexion()
 fetch('/api/config')
   .then(r => r.json())
   .then(async cfg => {
