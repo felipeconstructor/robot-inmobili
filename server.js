@@ -770,68 +770,6 @@ async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, c
   }
 }
 
-// ─── MODELO DUAL HAIKU/OPUS ────────────────────────────────────────────────────
-const ENABLE_DUAL_MODEL = process.env.ENABLE_DUAL_MODEL === 'true'
-
-/**
- * Detecta si el texto del usuario contiene datos críticos para switchear a Opus
- * @param {string} texto - Mensaje del usuario
- * @returns {object} { tieneNombreCompleto, tieneTelefono, expresionInteres }
- */
-function detectarDatosCriticos(texto) {
-  if (!texto) return { tieneNombreCompleto: false, tieneTelefono: false, expresionInteres: false }
-
-  const textoLimpio = texto.toLowerCase().trim()
-
-  // Detectar nombre completo (al menos 2 palabras con letras)
-  const regexNombres = [
-    /(?:me\s+llamo|mi\s+nombre\s+es|soy|yo\s+soy|nombre:?)\s+([A-ZÁÉÍÓÚa-záéíóú]+(?:\s+[A-ZÁÉÍÓÚa-záéíóú]+)+)/i,
-    /^([A-ZÁÉÍÓÚa-záéíóú]+\s+[A-ZÁÉÍÓÚa-záéíóú]+)[,.\s]/
-  ]
-  const tieneNombreCompleto = regexNombres.some(r => r.test(texto))
-
-  // Detectar teléfono (múltiples formatos chilenos)
-  const regexTelefonos = [
-    /\+?56\s?9?\s?\d{4}\s?\d{4}/,
-    /\+?56[\s-]?9[\s-]?\d{4}[\s-]?\d{4}/,
-    /0*9[\s-]?\d{4}[\s-]?\d{4}/,
-    /\b\d{8,9}\b/
-  ]
-  const tieneTelefono = regexTelefonos.some(r => r.test(texto))
-
-  // Detectar palabras clave de intención de compra/arriendo
-  const palabrasClaveInteres = [
-    'quiero comprar', 'quiero arrendar', 'quiero ver', 'quiero visitar',
-    'estoy interesad', 'me interesa', 'cuánto cuesta', 'cuanto cuesta',
-    'valor', 'precio', 'disponible', 'fecha', 'horario', 'agendar',
-    'agendar visita', 'ver la', 'me gustaría', 'necesito', 'busco',
-    'cuando puedo', 'cuando podemos'
-  ]
-  const expresionInteres = palabrasClaveInteres.some(p => textoLimpio.includes(p))
-
-  return { tieneNombreCompleto, tieneTelefono, expresionInteres }
-}
-
-/**
- * Obtiene la configuración de modelo IA para un broker desde Supabase
- * @param {string} siteName - Nombre del sitio/broker
- * @returns {Promise<string>} 'haiku' | 'opus' | 'auto'
- */
-async function obtenerModeloConfiguracion(siteName) {
-  try {
-    const { data } = await supabase
-      .from('configuracion_broker')
-      .select('modelo_ia')
-      .eq('site_name', siteName)
-      .single()
-
-    return data?.modelo_ia || 'auto'
-  } catch (err) {
-    console.log(`Configuración broker no encontrada para ${siteName}, usando AUTO`)
-    return 'auto'
-  }
-}
-
 async function verificarDisponibilidad(fecha, hora) {
   try {
     const inicio = new Date(`${fecha}T${hora.toString().padStart(2,'0')}:00:00-03:00`)
@@ -1148,13 +1086,54 @@ app.post('/api/fotos/subir', requireAuth, upload.single('foto'), async (req, res
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Mensajes entrantes de Messenger e Instagram DM
+// Mensajes entrantes de Messenger, Instagram DM y Meta Lead Ads
 app.post('/webhook/meta', async (req, res) => {
   res.status(200).send('EVENT_RECEIVED')
   const body = req.body
   console.log('Meta webhook recibido:', JSON.stringify(body).substring(0, 500))
 
-  // Instagram DM usa object:'instagram', Messenger usa object:'page'
+  if (!body.object) return
+
+  // ── Meta Lead Ads (object: 'page', field: 'leadgen') ──────────────────────
+  if (body.object === 'page') {
+    for (const entry of (body.entry || [])) {
+      for (const change of (entry.changes || [])) {
+        if (change.field !== 'leadgen') continue
+        const leadgenId = change.value?.leadgen_id
+        if (!leadgenId || !META_PAGE_TOKEN) {
+          console.log('[Meta Lead Ads] Falta leadgen_id o META_PAGE_TOKEN')
+          continue
+        }
+        try {
+          const r = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${META_PAGE_TOKEN}`)
+          const leadData = await r.json()
+          if (!leadData.field_data) { console.log('[Meta Lead Ads] Sin field_data:', JSON.stringify(leadData)); continue }
+          const campos = {}
+          for (const f of leadData.field_data) {
+            campos[f.name.toLowerCase()] = (f.values || [])[0] || ''
+          }
+          const nombre   = campos['full_name'] || campos['nombre'] || campos['name'] || 'Lead Facebook'
+          const telefono = campos['phone_number'] || campos['telefono'] || campos['phone'] || ''
+          const email    = campos['email'] || ''
+          const interes  = campos['que_buscas'] || campos['propiedad_interes'] || campos['interest'] || 'Meta Lead Ad'
+          const { error } = await supabase.from('leads').insert({
+            nombre, telefono, email,
+            propiedad_interes: interes,
+            mensaje_inicial: `Lead de Meta Ads. Email: ${email || 'no informado'}`,
+            estado: 'nuevo',
+            canal: 'facebook',
+            created_at: new Date().toISOString()
+          })
+          if (error) console.error('[Meta Lead Ads] Error guardando lead:', error.message)
+          else console.log(`[Meta Lead Ads] Lead guardado: ${nombre} | ${telefono}`)
+        } catch (e) {
+          console.error('[Meta Lead Ads] Error procesando leadgen:', e.message)
+        }
+      }
+    }
+  }
+
+  // ── Mensajes DM: Messenger (object:'page') e Instagram DM (object:'instagram') ──
   if (body.object !== 'page' && body.object !== 'instagram') return
   const canal = body.object === 'instagram' ? 'instagram' : 'messenger'
 
@@ -1413,53 +1392,6 @@ app.get('/api/marketing/estadisticas', requireAuth, async (req, res) => {
     })
   } catch (e) {
     res.status(500).json({ error: e.message })
-  }
-})
-
-// ─── Meta Lead Ads — recibir leads desde campañas Facebook/Instagram ──────────
-// El GET /webhook/meta ya existe más abajo para verificación
-// Este POST extiende el mismo webhook para capturar leadgen events
-app.post('/webhook/meta', async (req, res) => {
-  res.sendStatus(200) // responder rápido antes de procesar
-  try {
-    const body = req.body
-    if (body.object !== 'page') return
-    for (const entry of (body.entry || [])) {
-      for (const change of (entry.changes || [])) {
-        if (change.field !== 'leadgen') continue
-        const leadgenId = change.value?.leadgen_id
-        if (!leadgenId || !META_PAGE_TOKEN) {
-          console.log('[Meta Lead Ads] Falta leadgen_id o META_PAGE_TOKEN')
-          continue
-        }
-        // Obtener datos del lead desde la API de Meta
-        const r = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${META_PAGE_TOKEN}`)
-        const leadData = await r.json()
-        if (!leadData.field_data) { console.log('[Meta Lead Ads] Sin field_data:', JSON.stringify(leadData)); continue }
-
-        const campos = {}
-        for (const f of leadData.field_data) {
-          campos[f.name.toLowerCase()] = (f.values || [])[0] || ''
-        }
-        const nombre   = campos['full_name'] || campos['nombre'] || campos['name'] || 'Lead Facebook'
-        const telefono = campos['phone_number'] || campos['telefono'] || campos['phone'] || ''
-        const email    = campos['email'] || ''
-        const interes  = campos['que_buscas'] || campos['propiedad_interes'] || campos['interest'] || 'Meta Lead Ad'
-
-        const { error } = await supabase.from('leads').insert({
-          nombre, telefono, email,
-          propiedad_interes: interes,
-          mensaje_inicial: `Lead de Meta Ads. Email: ${email || 'no informado'}`,
-          estado: 'nuevo',
-          canal: 'facebook',
-          created_at: new Date().toISOString()
-        })
-        if (error) console.error('[Meta Lead Ads] Error guardando lead:', error.message)
-        else console.log(`[Meta Lead Ads] Lead guardado: ${nombre} | ${telefono}`)
-      }
-    }
-  } catch (e) {
-    console.error('[Meta Lead Ads] Error procesando webhook:', e.message)
   }
 })
 
