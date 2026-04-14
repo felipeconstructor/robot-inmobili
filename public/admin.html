@@ -14,145 +14,47 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
+/* ── Layout (solo estructural — colores y estilos via nova-premium.css) ── */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
-.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box}
-.header h1{color:#fff;font-size:18px;font-weight:500;min-width:0;flex-shrink:1}
+.header{padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box;position:relative}
 .nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
-.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
-.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
-.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
-.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
-.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
-.container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
+.container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box;position:relative;z-index:1}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
 .stat{min-width:0}
-.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:.5px solid #e0e0e0}
-.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
-.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
-.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
-.panel{background:#fff;border-radius:12px;border:.5px solid #e0e0e0;overflow:hidden;min-width:0;width:100%}
-.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;min-width:0}
-.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C;min-width:0}
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0}
-select,input[type=text],input[type=number]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
-select:focus,input:focus{border-color:#1A3A5C}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0;white-space:nowrap}
-td{padding:10px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8;vertical-align:middle}
-tr:hover td{background:#fafcff}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
-.badge-venta{background:#E6F1FB;color:#0C447C}
-.badge-arriendo{background:#EEEDFE;color:#3C3489}
-.badge-disponible{background:#EAF3DE;color:#0F6E56}
-.badge-nodisponible{background:#FCEBEB;color:#791F1F}
-.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333;transition:background .15s}
-.btn:hover{background:#f0f0f0}
-.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
-.btn-primary:hover{background:#0f2540}
-.btn-gold{background:#C9A96E;color:#fff;border-color:#C9A96E;padding:7px 18px;font-size:13px}
-.btn-gold:hover{background:#b8944f}
-.btn-sm{padding:4px 10px;font-size:11px}
-.btn-danger{background:#fff;color:#c0392b;border-color:#e0a0a0}
-.btn-danger:hover{background:#FCEBEB}
-.btn-outline{background:#fff;color:#1A3A5C;border:1px solid #1A3A5C;padding:7px 18px;font-size:13px;border-radius:8px;cursor:pointer}
-.btn-outline:hover{background:#f0f4f8}
-.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
-.refresh{font-size:11px;color:#aaa;cursor:pointer;margin-left:8px}
-.refresh:hover{color:#1A3A5C}
-.precio{font-weight:600;color:#1A3A5C;white-space:nowrap}
+td{vertical-align:middle}
 .acciones{display:flex;gap:6px;flex-wrap:nowrap;align-items:center}
 td:has(.acciones){white-space:nowrap}
-.thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;border:1px solid #e0e0e0}
-.thumb-empty{width:40px;height:40px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:16px;color:#ccc}
+.thumb{width:40px;height:40px;border-radius:6px;object-fit:cover}
+.thumb-empty{width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.import-info{font-size:12px;margin-top:.75rem;padding:.75rem;border-radius:8px;line-height:1.6;background:var(--surface-3);color:var(--text-2)}
+.import-info strong{color:var(--gold)}
 
 /* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.overlay{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center}
 .overlay.activo{display:flex}
-.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.modal h3{font-size:17px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
+.modal{padding:1.75rem;width:100%;max-width:620px;max-height:90vh;overflow-y:auto}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.875rem}
 .form-full{grid-column:1/-1}
 .form-group{display:flex;flex-direction:column;gap:5px}
-.form-group label{font-size:12px;font-weight:500;color:#555}
-.form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fff;outline:none;font-family:inherit}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
 .form-group textarea{resize:vertical;min-height:72px}
-.upload-area{border:2px dashed #ddd;border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s}
-.upload-area:hover{border-color:#1A3A5C}
+.upload-area{padding:16px;text-align:center;cursor:pointer}
 .upload-area label{display:block;cursor:pointer;width:100%}
 .upload-area input[type=file]{display:none}
-.upload-area p{font-size:12px;color:#999;margin-top:4px}
-.upload-label{font-size:13px;color:#1A3A5C;font-weight:500}
-.upload-progress{font-size:11px;color:#888;margin-top:4px;display:none}
 .upload-preview{width:100%;max-height:160px;object-fit:cover;border-radius:8px;display:none;margin-top:8px}
 .galeria-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0}
-.section-title{font-size:12px;font-weight:600;color:#555;margin:1rem 0 .5rem;border-top:1px solid #f0f0f0;padding-top:1rem}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem}
 
-/* Modal importar */
-.import-preview{max-height:280px;overflow-y:auto;margin-top:1rem;border:1px solid #e0e0e0;border-radius:8px}
-.import-preview table{width:100%;border-collapse:collapse;font-size:11px}
-.import-preview th{background:#f5f5f5;padding:6px 8px;text-align:left;font-weight:500;color:#555;position:sticky;top:0}
-.import-preview td{padding:5px 8px;border-top:1px solid #f0f0f0;color:#333}
-.import-preview tr.fila-error td{background:#FFF3F3;color:#c0392b}
-.import-info{font-size:12px;color:#666;margin-top:.75rem;padding:.75rem;background:#f9f9f9;border-radius:8px;line-height:1.6}
-.import-info strong{color:#1A3A5C}
-
-/* Toast */
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none;max-width:320px}
-.toast.activo{opacity:1}
-.toast.error{background:#c0392b}
-
-/* ── Broker Inmobiliaria theme ───────────────────────────────────── */
-.broker-brand{display:none;align-items:center;gap:10px;flex-shrink:0}
-.broker .header{background:#3B52D4}
-.broker .broker-brand{display:flex !important}
-.broker #page-title{display:none}
-.broker select:focus,.broker input:focus,.broker textarea:focus{border-color:#3B52D4}
-.broker .stat-val{color:#3B52D4}
-.broker .panel-header h2{color:#3B52D4}
-.broker .btn-primary{background:#3B52D4;border-color:#3B52D4}
-.broker .btn-primary:hover{background:#2D40B8}
-.broker .btn-gold:hover{background:#b8944f}
-.broker .btn-outline{color:#3B52D4;border-color:#3B52D4}
-.broker .btn-outline:hover{background:#EEF1FB}
-.broker .modal h3{color:#3B52D4}
-.broker .toast{background:#3B52D4}
-.broker tr:hover td{background:#EEF1FB}
-.broker .precio{color:#3B52D4}
-.broker .refresh:hover{color:#3B52D4}
-.broker-name-text{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px;line-height:1.3}
-.broker-slogan-text{color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px;line-height:1}
-.broker .nav-broker-hide{display:none !important}
-
-/* ── Animaciones ─────────────────────────────────────────────────── */
-@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.stat{transition:box-shadow .2s}
-.stat:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
-.overlay.activo .modal{animation:scaleIn .22s cubic-bezier(.34,1.3,.64,1)}
-td{transition:background .15s}
-.btn{transition:all .18s}
 .thumb{transition:transform .2s}
 tr:hover .thumb{transform:scale(1.08)}
 
-/* Fab Usuarios */
-.fab-usuarios{position:fixed;bottom:1.5rem;left:1.5rem;background:#1A3A5C;color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:50;text-decoration:none;display:none;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
-.fab-usuarios:hover{background:#0f2540;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
-.broker .fab-usuarios{background:#3B52D4}
-.broker .fab-usuarios:hover{background:#2D40B8}
-
-@media(max-width:1024px){
-  .stats{grid-template-columns:repeat(4,1fr)}
-  .panel-header>div{flex-wrap:wrap}
-}
 @media(max-width:768px){
   .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
   .container{padding:1rem .75rem}
   .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
-  .stat-val{font-size:22px}
   .panel-header{flex-direction:column;align-items:flex-start}
   .filters{width:100%;flex-wrap:wrap}
   .filters input[type=text]{width:100%}
@@ -169,8 +71,7 @@ tr:hover .thumb{transform:scale(1.08)}
   .stats{grid-template-columns:1fr 1fr}
   .nav{gap:4px}
   .nav a{padding:4px 8px;font-size:11px}
-  .panel-header>div{flex-direction:column;width:100%}
-  .btn-outline,.btn-gold{width:100%;text-align:center}
+  .btn-gold{width:100%;text-align:center}
 }
 </style>
 </head>
@@ -1125,6 +1026,9 @@ fetch('/api/config')
       }
     } catch(e) { window._esAdmin = true /* fallback seguro */ }
     db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
+    // Mostrar FABs según rol
+    const fabProp = document.getElementById('fab-nueva-prop')
+    if (window._esAdmin && fabProp) fabProp.style.display = 'flex'
     cargarPropiedades()
   })
   .catch(err => {
@@ -1132,9 +1036,16 @@ fetch('/api/config')
       '<tr><td colspan="9" class="empty">Error conectando al servidor: ' + err.message + '</td></tr>'
   })
 </script>
+<!-- FAB Principal — Nueva Propiedad -->
+<button id="fab-nueva-prop" class="fab-primary admin-only" onclick="abrirModal()" style="display:none">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Nueva Propiedad
+</button>
+
+<!-- FAB Secundario — Usuarios (solo admin) -->
 <a href="/usuarios.html" id="fab-usuarios" class="fab-usuarios">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-  Usuarios
+  Equipo
 </a>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
 </body>

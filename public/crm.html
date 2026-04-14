@@ -13,229 +13,87 @@
 <title>Nova CRM — Prolig Propiedades</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+/* ── Layout estructural — colores via nova-premium.css ── */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
-.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box}
-.header h1{color:#fff;font-size:18px;font-weight:500;min-width:0;flex-shrink:1}
-.header span{color:#C9A96E;font-size:13px}
+.header{padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;width:100%;box-sizing:border-box;position:relative}
 .nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
-.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
-.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
-.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
-.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
-.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
-.container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
+.container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box;position:relative;z-index:1}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
-.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0;min-width:0}
-.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
-.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
-.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
-.panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden;min-width:0;width:100%}
-.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
+.stat{min-width:0}
 .panel-header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .filters{display:flex;gap:8px;flex-wrap:wrap}
-select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
-select:focus,input:focus{border-color:#1A3A5C}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0}
-td{padding:11px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8}
-tr:hover td{background:#fafcff}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
-.badge-nuevo{background:#E6F1FB;color:#0C447C}
-.badge-caliente{background:#EAF3DE;color:#0F6E56}
-.badge-tibio{background:#FAEEDA;color:#633806}
-.badge-frio{background:#FCEBEB;color:#791F1F}
-.badge-visita{background:#EEEDFE;color:#3C3489}
-.badge-web{background:#f0f0f0;color:#666}
-.badge-whatsapp{background:#E1F5EE;color:#085041}
-.badge-messenger{background:#E8F0FE;color:#1a73e8}
-.badge-instagram{background:#FDE8F5;color:#C13584}
-.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333}
-.btn:hover{background:#f0f0f0}
-.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
-.btn-primary:hover{background:#0f2540}
-.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
-.refresh{font-size:11px;color:#aaa;cursor:pointer}
-.refresh:hover{color:#1A3A5C}
-.tel a{color:#1A3A5C;text-decoration:none}
-.tel a:hover{text-decoration:underline}
 
-/* Toggle vista */
-.view-toggle{display:flex;background:#f0f2f5;border-radius:8px;padding:3px;gap:2px}
-.view-btn{padding:4px 12px;border-radius:6px;border:none;background:transparent;font-size:12px;cursor:pointer;color:#888;font-weight:500;transition:all .15s}
-.view-btn.active{background:#fff;color:#1A3A5C;box-shadow:0 1px 3px rgba(0,0,0,.1)}
-
-/* Pipeline Kanban */
+/* Pipeline */
 .pipeline{display:none;padding:1.25rem;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .pipeline.visible{display:flex;gap:14px}
-.pipeline-col{flex:0 0 260px;background:#f4f6f9;border-radius:12px;overflow:hidden}
-.pipeline-col-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.06)}
-.pipeline-col-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
-.pipeline-col-count{font-size:12px;font-weight:700;background:#fff;border-radius:20px;padding:2px 10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.pipeline-col-header{display:flex;align-items:center;justify-content:space-between}
 .pipeline-cards{display:flex;flex-direction:column;gap:10px;min-height:80px;padding:12px 10px}
-
-/* Cards pipeline */
-.card{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #ebebeb;transition:box-shadow .15s;border-left:4px solid #ddd}
-.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
-.card-nombre{font-size:14px;font-weight:600;color:#1A3A5C;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-telefono{font-size:12px;color:#555;margin-bottom:4px}
-.card-telefono a{color:#1A3A5C;text-decoration:none;font-weight:500}
-.card-telefono a:hover{text-decoration:underline}
-.card-propiedad{font-size:11px;color:#999;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f8f8f8;padding:3px 7px;border-radius:5px}
-.card-divider{border:none;border-top:1px solid #f0f0f0;margin:8px 0}
+.card-nombre{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-propiedad{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px}
 .card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px}
-.card-fecha{font-size:10px;color:#bbb;white-space:nowrap}
+.card-fecha{white-space:nowrap}
 .card-actions{display:flex;gap:5px;align-items:center}
 .card-actions a{text-decoration:none}
 .card-btn-wa{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:none;background:#25D366;font-size:11px;font-weight:600;cursor:pointer;color:#fff}
 .card-btn-wa:hover{background:#1dbd5a}
-.card-btn-nota{padding:4px 8px;border-radius:7px;border:1px solid #ddd;background:#fff;font-size:10px;cursor:pointer;color:#888}
-.card-btn-nota:hover{background:#f5f5f5}
-.card-btn-nota.tiene{border-color:#C9A96E;color:#a07840;background:#fffbf5}
 .card-estado-wrap{margin-bottom:8px}
-.card-estado-select{width:100%;padding:5px 8px;border:1px solid #e0e0e0;border-radius:7px;font-size:11px;color:#555;background:#fafafa;cursor:pointer}
-.card-estado-select:focus{outline:none;border-color:#1A3A5C}
+.card-estado-select{width:100%;cursor:pointer}
+.nota-preview{font-size:11px;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle}
+.btn-nota{padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer}
 
-/* Colores columnas */
-.col-nuevo .pipeline-col-header{background:#EBF3FD}
-.col-nuevo .pipeline-col-title{color:#0C447C}
-.col-nuevo .pipeline-col-count{color:#0C447C}
-.col-nuevo .card{border-left-color:#0C447C}
-.col-tibio .pipeline-col-header{background:#FEF3E7}
-.col-tibio .pipeline-col-title{color:#C05C00}
-.col-tibio .pipeline-col-count{color:#C05C00}
-.col-tibio .card{border-left-color:#E67E22}
-.col-caliente .pipeline-col-header{background:#E8F8F0}
-.col-caliente .pipeline-col-title{color:#0F6E56}
-.col-caliente .pipeline-col-count{color:#0F6E56}
-.col-caliente .card{border-left-color:#0F6E56}
-.col-visita .pipeline-col-header{background:#EEEDFE}
-.col-visita .pipeline-col-title{color:#3C3489}
-.col-visita .pipeline-col-count{color:#3C3489}
-.col-visita .card{border-left-color:#534AB7}
-.col-frio .pipeline-col-header{background:#FDECEA}
-.col-frio .pipeline-col-title{color:#791F1F}
-.col-frio .pipeline-col-count{color:#791F1F}
-.col-frio .card{border-left-color:#C0392B}
-
-/* Tabla con scroll horizontal */
-.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-
-/* Modal notas */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center}
+/* Overlay + Modal */
+.overlay{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center}
 .overlay.activo{display:flex}
-.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
-.modal h3{font-size:16px;font-weight:600;color:#1A3A5C;margin-bottom:.25rem}
-.modal-sub{font-size:12px;color:#aaa;margin-bottom:1rem}
-.modal textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;font-family:inherit;resize:vertical;min-height:120px;outline:none}
-.modal textarea:focus{border-color:#1A3A5C}
-.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;padding-top:1rem;border-top:1px solid #f0f0f0}
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
-.toast.activo{opacity:1}
-.nota-preview{font-size:11px;color:#888;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle}
-.btn-nota{padding:3px 10px;border-radius:6px;border:1px solid #ddd;background:#fff;font-size:11px;cursor:pointer;color:#555}
-.btn-nota:hover{background:#f5f5f5}
-.btn-nota.tiene-nota{border-color:#C9A96E;color:#a07840;background:#fffbf5}
+.modal{padding:1.75rem;width:100%;max-width:480px}
 
-/* ── Broker Inmobiliaria theme ───────────────────────────────────── */
-.broker-brand{display:none;align-items:center;gap:10px;flex-shrink:0}
-.broker .header{background:#3B52D4}
-.broker .broker-brand{display:flex !important}
-.broker #page-title{display:none}
-.broker select:focus,.broker input:focus,.broker textarea:focus{border-color:#3B52D4}
-.broker .stat-val{color:#3B52D4}
-.broker .panel-header h2{color:#3B52D4}
-.broker .btn-primary{background:#3B52D4;border-color:#3B52D4}
-.broker .btn-primary:hover{background:#2D40B8}
-.broker .modal h3{color:#3B52D4}
-.broker .modal textarea:focus{border-color:#3B52D4}
-.broker .toast{background:#3B52D4}
-.broker tr:hover td{background:#EEF1FB}
-.broker .refresh:hover{color:#3B52D4}
-.broker .card-nombre{color:#3B52D4}
-.broker .tel a{color:#3B52D4}
-.broker .card-estado-select:focus{border-color:#3B52D4}
-.broker .view-btn.active{color:#3B52D4}
-.broker-name-text{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px;line-height:1.3}
-.broker-slogan-text{color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px;line-height:1}
-.broker .nav-broker-hide{display:none !important}
-
-/* ── Animaciones ─────────────────────────────────────────────────── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.stat{transition:box-shadow .2s}
-.stat:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
-.overlay.activo .modal{animation:scaleIn .22s cubic-bezier(.34,1.3,.64,1)}
-td{transition:background .15s}
-.btn{transition:all .18s}
-.card{transition:box-shadow .18s,transform .15s}
-.card:hover{box-shadow:0 6px 20px rgba(0,0,0,.11);transform:translateY(-1px)}
-
-/* Prioridad */
-.dot-prioridad{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;flex-shrink:0}
-.dot-alta{background:#E74C3C}.dot-media{background:#E67E22}.dot-baja{background:#95A5A6}
-.badge-alta{background:#FDECEA;color:#791F1F}
-.badge-baja{background:#F0F0F0;color:#666}
-
-/* Seguimientos view */
+/* Seguimientos */
 .seg-wrap{padding:1.25rem}
-.seg-empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
-.seg-item{background:#fff;border-radius:10px;padding:12px 16px;border:1px solid #ebebeb;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:box-shadow .15s;border-left:4px solid #ddd}
-.seg-item:hover{box-shadow:0 2px 12px rgba(0,0,0,.07)}
-.seg-item.vencido{border-left-color:#E74C3C}
-.seg-item.hoy{border-left-color:#E67E22}
-.seg-item.futuro{border-left-color:#3498DB}
+.seg-empty{text-align:center;padding:3rem;font-size:14px}
+.seg-item{border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;border-left:4px solid transparent;background:var(--surface-2);border:1px solid var(--border-subtle)}
+.seg-item.vencido{border-left-color:#F87171}
+.seg-item.hoy{border-left-color:#FCD34D}
+.seg-item.futuro{border-left-color:#60A5FA}
 .seg-fecha-lbl{font-size:11px;font-weight:700;text-transform:uppercase;min-width:68px;letter-spacing:.5px}
-.seg-fecha-lbl.vencido{color:#E74C3C}.seg-fecha-lbl.hoy{color:#E67E22}.seg-fecha-lbl.futuro{color:#3498DB}
-.seg-nombre{font-size:14px;font-weight:600;color:#1A3A5C}
-.broker .seg-nombre{color:#3B52D4}
-.seg-accion{font-size:12px;color:#666;margin-top:2px}
-.seg-badge-count{font-size:11px;font-weight:700;background:#E74C3C;color:#fff;border-radius:10px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.seg-fecha-lbl.vencido{color:#F87171}
+.seg-fecha-lbl.hoy{color:#FCD34D}
+.seg-fecha-lbl.futuro{color:#60A5FA}
+.seg-nombre{font-size:14px;font-weight:600;color:var(--text-1);font-family:'Cormorant Garamond',serif}
+.seg-accion{font-size:12px;color:var(--text-2);margin-top:2px}
+.seg-badge-count{font-size:11px;font-weight:700;background:#F87171;color:#fff;border-radius:10px;padding:1px 6px;margin-left:4px;vertical-align:middle}
 
-/* Actividad feed */
+/* Actividad */
 .actividad-feed{max-height:180px;overflow-y:auto}
-.act-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f5f5f5;align-items:flex-start}
+.act-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-subtle);align-items:flex-start}
 .act-item:last-child{border-bottom:none}
-.act-dot{width:8px;height:8px;border-radius:50%;background:#C9A96E;margin-top:4px;flex-shrink:0}
-.act-desc{font-size:12px;color:#333;line-height:1.4}
-.act-time{font-size:10px;color:#aaa;margin-top:2px}
+.act-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:4px;flex-shrink:0}
+.act-desc{font-size:12px;color:var(--text-2);line-height:1.4}
+.act-time{font-size:10px;color:var(--text-3);margin-top:2px}
 
 /* Modal detalle */
-.modal-section{margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid #f0f0f0}
+.modal-section{margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border-subtle)}
 .modal-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
-.modal-section-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:.75rem}
+.modal-section-title{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
 .seg-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-.seg-grid label{font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:4px}
-.seg-grid input,.seg-grid select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
-.seg-grid input:focus,.seg-grid select:focus{border-color:#1A3A5C;background:#fff}
-.broker .seg-grid input:focus,.broker .seg-grid select:focus{border-color:#3B52D4}
-.det-textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none;font-family:inherit;resize:vertical;min-height:72px;transition:border-color .2s}
-.det-textarea:focus{border-color:#1A3A5C;background:#fff}
-.broker .det-textarea:focus{border-color:#3B52D4}
-.det-sub{font-size:12px;color:#aaa;margin-bottom:1.25rem}
+.seg-grid label{font-size:12px;font-weight:500;color:var(--text-2);display:block;margin-bottom:4px}
+.seg-grid input,.seg-grid select{width:100%}
+.det-textarea{width:100%;border-radius:8px;font-family:inherit;resize:vertical;min-height:72px}
+.det-sub{font-size:12px;color:var(--text-3);margin-bottom:1.25rem}
 
-/* Fab Usuarios */
-.fab-usuarios{position:fixed;bottom:1.5rem;left:1.5rem;background:#1A3A5C;color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:50;text-decoration:none;display:none;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
-.fab-usuarios:hover{background:#0f2540;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
-.broker .fab-usuarios{background:#3B52D4}
-.broker .fab-usuarios:hover{background:#2D40B8}
+/* Form modal nuevo lead */
+.form-group{display:flex;flex-direction:column;gap:5px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;padding-top:1rem}
 
-@media(max-width:1024px){
-  .panel-header{flex-wrap:wrap}
-  .panel-header-right{flex-wrap:wrap}
-  .header{flex-wrap:wrap}
-  .nav{flex-wrap:wrap}
-}
-/* Mobile */
-@media (max-width:768px){
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:.75rem 1.25rem;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none;max-width:320px}
+.toast.activo{opacity:1}
+
+@media(max-width:768px){
   .header{flex-wrap:wrap;gap:.5rem;padding:.875rem 1rem}
-  .header h1{font-size:15px}
   .container{padding:1rem .75rem}
   .stats{grid-template-columns:repeat(2,1fr);gap:.75rem}
-  .stat{padding:.875rem 1rem}
-  .stat-val{font-size:22px}
   .panel-header{flex-direction:column;align-items:flex-start;gap:.75rem}
   .panel-header-right{width:100%;flex-direction:column;align-items:flex-start}
   .filters{width:100%;flex-wrap:wrap}
@@ -246,8 +104,6 @@ td{transition:background .15s}
   td{font-size:12px;padding:8px 10px;white-space:nowrap}
   .pipeline{padding:.75rem .5rem}
   .pipeline-col{flex:0 0 82vw}
-  .card-nombre{font-size:15px}
-  .card-telefono{font-size:13px}
   .seg-grid{grid-template-columns:1fr}
   .seg-item{flex-wrap:wrap;gap:8px}
 }
@@ -1069,10 +925,103 @@ fetch('/api/config')
     document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error conectando servidor: ' + e.message + '</td></tr>'
   })
 </script>
+<!-- FAB Principal — Nuevo Lead -->
+<button class="fab-primary" onclick="abrirNuevoLead()" id="fab-nuevo-lead">
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Nuevo Lead
+</button>
+
+<!-- FAB Secundario — Usuarios -->
 <a href="/usuarios.html" id="fab-usuarios" class="fab-usuarios">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-  Usuarios
+  Equipo
 </a>
+
+<!-- Modal Nuevo Lead -->
+<div class="overlay" id="overlay-nuevo-lead" onclick="if(event.target.id==='overlay-nuevo-lead')cerrarNuevoLead()">
+  <div class="modal" style="max-width:480px">
+    <h3>Nuevo Lead</h3>
+    <p class="modal-sub" style="margin-bottom:1.25rem;font-size:12px">Agrega un lead manualmente al CRM</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="nl-nombre" placeholder="Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label>Teléfono *</label>
+        <input type="text" id="nl-telefono" placeholder="+56 9 1234 5678">
+      </div>
+      <div class="form-group">
+        <label>Canal</label>
+        <select id="nl-canal">
+          <option value="web">Web</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="facebook">Facebook</option>
+          <option value="referido">Referido</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="nl-estado">
+          <option value="nuevo">Nuevo</option>
+          <option value="caliente">Caliente</option>
+          <option value="tibio">Tibio</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Propiedad de interés</label>
+        <input type="text" id="nl-propiedad" placeholder="Ej: Depto 2D Providencia, Casa en Las Condes…">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Notas</label>
+        <textarea id="nl-notas" rows="3" placeholder="Información adicional…" style="resize:vertical;min-height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem">
+      <button class="btn" onclick="cerrarNuevoLead()">Cancelar</button>
+      <button class="btn btn-gold" id="btn-guardar-lead" onclick="guardarNuevoLead()">Guardar Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirNuevoLead() {
+  document.getElementById('overlay-nuevo-lead').classList.add('activo')
+  setTimeout(() => document.getElementById('nl-nombre').focus(), 50)
+}
+function cerrarNuevoLead() {
+  document.getElementById('overlay-nuevo-lead').classList.remove('activo')
+  ;['nl-nombre','nl-telefono','nl-propiedad','nl-notas'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = ''
+  })
+}
+async function guardarNuevoLead() {
+  const nombre   = document.getElementById('nl-nombre').value.trim()
+  const telefono = document.getElementById('nl-telefono').value.trim()
+  if (!nombre || !telefono) { toast('Nombre y teléfono son requeridos', true); return }
+  const btn = document.getElementById('btn-guardar-lead')
+  btn.disabled = true; btn.textContent = 'Guardando…'
+  try {
+    const { error } = await db.from('leads').insert({
+      nombre, telefono,
+      canal: document.getElementById('nl-canal').value,
+      estado: document.getElementById('nl-estado').value,
+      propiedad_interes: document.getElementById('nl-propiedad').value.trim() || null,
+      notas: document.getElementById('nl-notas').value.trim() || null,
+      mensaje_inicial: 'Lead manual',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    if (error) { toast('Error: ' + error.message, true); return }
+    toast('Lead agregado correctamente')
+    cerrarNuevoLead()
+    await cargarLeads()
+  } catch(e) { toast('Error: ' + e.message, true) }
+  finally { btn.disabled = false; btn.textContent = 'Guardar Lead' }
+}
+</script>
+
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
 </body>
 </html>
