@@ -138,6 +138,11 @@ tr:hover .thumb{transform:scale(1.08)}
             <option value="true">Disponibles</option>
             <option value="false">No disponibles</option>
           </select>
+          <select id="f-orden-precio" onchange="filtrar()">
+            <option value="">Precio: sin orden</option>
+            <option value="desc">Precio: mayor a menor</option>
+            <option value="asc">Precio: menor a mayor</option>
+          </select>
         </div>
         <button class="btn btn-outline admin-only" onclick="abrirImportar()">Importar Excel</button>
         <button class="btn btn-gold admin-only" onclick="abrirModal()">+ Nueva propiedad</button>
@@ -402,6 +407,7 @@ function filtrar() {
   const op = document.getElementById('f-operacion').value
   const tipo = document.getElementById('f-tipo').value
   const disp = document.getElementById('f-disponible').value
+  const ordenPrecio = document.getElementById('f-orden-precio').value
   const filtrados = todasProps.filter(p => {
     if (buscar && !(p.direccion||'').toLowerCase().includes(buscar) && !(p.comuna||'').toLowerCase().includes(buscar)) return false
     if (op && p.operacion !== op) return false
@@ -409,6 +415,8 @@ function filtrar() {
     if (disp !== '' && String(p.disponible) !== disp) return false
     return true
   })
+  if (ordenPrecio === 'desc') filtrados.sort((a, b) => (b.precio || 0) - (a.precio || 0))
+  else if (ordenPrecio === 'asc') filtrados.sort((a, b) => (a.precio || 0) - (b.precio || 0))
   renderTabla(filtrados)
 }
 

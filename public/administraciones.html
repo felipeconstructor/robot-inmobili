@@ -13,116 +13,24 @@
 <title>Administraciones</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{overflow-x:hidden;max-width:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh}
-.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-.header h1{color:#fff;font-size:18px;font-weight:500}
-.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.nav a{color:#C9A96E;font-size:12px;text-decoration:none;padding:5px 12px;border:1px solid rgba(201,169,110,.5);border-radius:20px;transition:all .2s;white-space:nowrap}
-.nav a:hover{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E}
-.nav a.activo{background:#C9A96E;color:#1A3A5C;border-color:#C9A96E;font-weight:600}
-.nav-salir{color:#888 !important;border-color:rgba(136,136,136,.3) !important}
-.nav-salir:hover{background:#888 !important;color:#fff !important;border-color:#888 !important}
 .container{width:100%;max-width:1300px;margin:0 auto;padding:1.5rem;box-sizing:border-box}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
-.stat{background:#fff;border-radius:12px;padding:1rem 1.25rem;border:0.5px solid #e0e0e0}
-.stat-lbl{font-size:12px;color:#888;margin-bottom:6px}
-.stat-val{font-size:26px;font-weight:600;color:#1A3A5C}
-.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
-.panel{background:#fff;border-radius:12px;border:0.5px solid #e0e0e0;overflow:hidden}
-.panel-header{padding:.875rem 1.25rem;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.panel-header h2{font-size:15px;font-weight:500;color:#1A3A5C}
 .panel-header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-select,input[type=text]{padding:5px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none}
-select:focus,input:focus{border-color:#1A3A5C}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:12px;font-weight:500;color:#888;background:#fafafa;border-bottom:1px solid #f0f0f0;white-space:nowrap}
-td{padding:11px 14px;font-size:13px;color:#333;border-bottom:1px solid #f8f8f8;white-space:nowrap}
-tr:hover td{background:#fafcff}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
-.badge-pagado{background:#EAF3DE;color:#0F6E56}
-.badge-pagado:hover{background:#d4ecc4}
-.badge-pendiente{background:#FAEEDA;color:#633806}
-.badge-pendiente:hover{background:#f5dfc0}
-.btn{padding:5px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:12px;cursor:pointer;color:#333;transition:all .15s}
-.btn:hover{background:#f0f0f0}
-.btn-primary{background:#1A3A5C;color:#fff;border-color:#1A3A5C}
-.btn-primary:hover{background:#0f2540}
-.btn-danger{background:#fff;color:#c0392b;border-color:#e0c0be}
-.btn-danger:hover{background:#fdecea}
-.btn-sm{padding:3px 10px;font-size:11px;border-radius:6px}
-.empty{text-align:center;padding:3rem;color:#aaa;font-size:14px}
-.monto{font-weight:600;color:#1A3A5C}
-.monto-comision{font-weight:600;color:#C9A96E}
-
-/* Modal */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center;padding:1rem}
-.overlay.activo{display:flex}
-.modal{background:#fff;border-radius:16px;padding:1.75rem;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)}
-.modal h3{font-size:16px;font-weight:600;color:#1A3A5C;margin-bottom:1.25rem}
+.monto{font-weight:600;color:var(--gold)!important}
+.monto-comision{font-weight:600;color:var(--gold-light)!important}
+.badge-pagado{background:rgba(16,185,129,.1)!important;color:#6EE7B7!important;border:1px solid rgba(16,185,129,.2)!important;cursor:pointer}
+.badge-pendiente{background:rgba(234,179,8,.08)!important;color:#FDE68A!important;border:1px solid rgba(234,179,8,.18)!important;cursor:pointer}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-full{grid-column:1/-1}
-.form-group label{display:block;font-size:12px;color:#666;margin-bottom:4px;font-weight:500}
-.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;color:#333;background:#fafafa;outline:none;font-family:inherit}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1A3A5C}
 .form-group textarea{resize:vertical;min-height:70px}
-.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f0f0f0}
-.section-label{grid-column:1/-1;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px;padding-top:4px;border-top:1px solid #f0f0f0;margin-top:4px}
-
-/* Toast */
-.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1A3A5C;color:#fff;padding:.75rem 1.25rem;border-radius:10px;font-size:13px;opacity:0;transition:opacity .3s;z-index:200;pointer-events:none}
-.toast.activo{opacity:1}
-
-/* ── Broker Inmobiliaria theme ───────────────────────────────────── */
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1rem}
+.section-label{grid-column:1/-1;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding-top:4px;border-top:1px solid var(--border-subtle);margin-top:4px}
 .broker-brand{display:none;align-items:center;gap:10px;flex-shrink:0}
-.broker .header{background:#3B52D4}
-.broker .broker-brand{display:flex !important}
-.broker #page-title{display:none}
-.broker select:focus,.broker input:focus,.broker textarea:focus{border-color:#3B52D4}
-.broker .stat-val{color:#3B52D4}
-.broker .panel-header h2{color:#3B52D4}
-.broker .btn-primary{background:#3B52D4;border-color:#3B52D4}
-.broker .btn-primary:hover{background:#2D40B8}
-.broker .modal h3{color:#3B52D4}
-.broker .toast{background:#3B52D4}
-.broker tr:hover td{background:#EEF1FB}
-.broker .monto{color:#3B52D4}
+.broker .broker-brand{display:flex!important}.broker #page-title{display:none}
 .broker-name-text{color:#fff;font-size:13px;font-weight:700;letter-spacing:.4px;line-height:1.3}
 .broker-slogan-text{color:rgba(255,255,255,.6);font-size:10px;letter-spacing:1.5px;line-height:1}
-
-/* ── Animaciones profesionales ───────────────────────────────────── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
-.header{animation:fadeIn .3s ease}
-.stat{animation:fadeUp .4s ease both;transition:box-shadow .2s}
-.stat:hover{box-shadow:0 4px 18px rgba(0,0,0,.09)}
-.stat:nth-child(1){animation-delay:.02s}
-.stat:nth-child(2){animation-delay:.09s}
-.stat:nth-child(3){animation-delay:.16s}
-.stat:nth-child(4){animation-delay:.23s}
-.panel{animation:fadeUp .4s .18s ease both}
-.overlay.activo .modal{animation:scaleIn .22s cubic-bezier(.34,1.3,.64,1)}
-td{transition:background .15s}
-.btn{transition:all .18s}
-.badge{transition:all .15s}
-
-/* Fab Usuarios */
-.fab-usuarios{position:fixed;bottom:1.5rem;left:1.5rem;background:#1A3A5C;color:#fff;border:none;border-radius:50px;padding:10px 16px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:50;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
-.fab-usuarios:hover{background:#0f2540;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
-.broker .fab-usuarios{background:#3B52D4}
-.broker .fab-usuarios:hover{background:#2D40B8}
-
-@media(max-width:768px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .form-grid{grid-template-columns:1fr}
-  .header{padding:.875rem 1rem;flex-wrap:wrap}
-  .container{padding:1rem .75rem}
-  .nav{gap:4px}
-  .nav a{padding:4px 8px;font-size:11px}
-}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.form-grid{grid-template-columns:1fr}.container{padding:1rem .75rem}}
 </style>
 </head>
 <body>
@@ -301,6 +209,25 @@ td{transition:background .15s}
         <input type="text" id="f-notas" placeholder="Observaciones...">
       </div>
 
+      <div class="section-label">Datos adicionales</div>
+
+      <div class="form-group">
+        <label>IPC anual (%)</label>
+        <input type="number" id="f-ipc" step="0.01" placeholder="3.5">
+      </div>
+      <div class="form-group">
+        <label>Rol de la propiedad</label>
+        <input type="text" id="f-rol" placeholder="Ej: 1234-56">
+      </div>
+      <div class="form-group">
+        <label>CGE — N° cliente</label>
+        <input type="text" id="f-cge" placeholder="12345678">
+      </div>
+      <div class="form-group">
+        <label>Esval — N° cliente</label>
+        <input type="text" id="f-esval" placeholder="98765432">
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
@@ -382,7 +309,7 @@ function renderTabla(lista) {
     const cuentaInfo = [r.banco, r.tipo_cuenta, r.numero_cuenta].filter(Boolean).join(' · ') || '—'
     return `<tr>
       <td><strong>${r.propietario || '—'}</strong>${r.rut_propietario ? '<br><span style="font-size:11px;color:#aaa">'+r.rut_propietario+'</span>' : ''}</td>
-      <td>${r.direccion || '—'}</td>
+      <td>${r.direccion || '—'}${r.rol_propiedad ? '<br><span style="font-size:11px;color:#aaa">Rol: '+r.rol_propiedad+'</span>' : ''}</td>
       <td>${r.arrendatario || '—'}</td>
       <td>${r.mes || '—'}</td>
       <td class="monto">$${Number(r.valor_arriendo || 0).toLocaleString('es-CL')}</td>
@@ -424,6 +351,10 @@ function abrirModal(id) {
   document.getElementById('f-comision-preview').value = ''
   document.getElementById('f-estado-form').value = 'pendiente'
   document.getElementById('f-notas').value = ''
+  document.getElementById('f-ipc').value = ''
+  document.getElementById('f-rol').value = ''
+  document.getElementById('f-cge').value = ''
+  document.getElementById('f-esval').value = ''
   document.getElementById('overlay').classList.add('activo')
 }
 
@@ -444,6 +375,10 @@ function editarFila(id) {
   document.getElementById('f-porcentaje').value = r.porcentaje_comision || 10
   document.getElementById('f-estado-form').value = r.estado || 'pendiente'
   document.getElementById('f-notas').value = r.notas || ''
+  document.getElementById('f-ipc').value = r.ipc_anual || ''
+  document.getElementById('f-rol').value = r.rol_propiedad || ''
+  document.getElementById('f-cge').value = r.cge_numero_cliente || ''
+  document.getElementById('f-esval').value = r.esval_numero_cliente || ''
   calcularComision()
   document.getElementById('overlay').classList.add('activo')
 }
@@ -484,7 +419,11 @@ async function guardar() {
     valor_arriendo,
     porcentaje_comision: Number(document.getElementById('f-porcentaje').value || 10),
     estado: document.getElementById('f-estado-form').value,
-    notas: document.getElementById('f-notas').value.trim() || null
+    notas: document.getElementById('f-notas').value.trim() || null,
+    ipc_anual: parseFloat(document.getElementById('f-ipc').value) || null,
+    rol_propiedad: document.getElementById('f-rol').value.trim() || null,
+    cge_numero_cliente: document.getElementById('f-cge').value.trim() || null,
+    esval_numero_cliente: document.getElementById('f-esval').value.trim() || null
   }
   let error
   if (editId) {
