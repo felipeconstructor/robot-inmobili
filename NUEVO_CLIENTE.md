@@ -1,8 +1,45 @@
-# Guía: Agregar nuevo cliente Nova
+ANTHROPIC_API_KEY = TU_API_KEY_AQUI Guía: Agregar nuevo cliente Nova
 **Tiempo estimado: 20-30 minutos**
 
 ---
+# Guía: Agregar nuevo cliente Nova
 
+## Variables de entorno
+
+| Variable | Valor |
+|---------|------|
+| ANTHROPIC_API_KEY | (configurar en Railway) |
+| SUPABASE_URL | (desde Supabase) |
+| SUPABASE_KEY | (anon public key) |
+| RESEND_API_KEY | (configurar en Railway) |
+| TWILIO_ACCOUNT_SID | (configurar en Railway) |
+| TWILIO_AUTH_TOKEN | (configurar en Railway) |
+
+---
+
+## PASO 1 — Crear proyecto Supabase
+
+1. Ir a supabase.com → New project  
+2. Nombre: nova-[cliente]  
+3. Región: São Paulo  
+
+---
+
+## PASO 2 — Configurar Railway
+
+1. Crear proyecto  
+2. Conectar repo  
+3. Agregar variables de entorno  
+4. Deploy  
+
+---
+
+## CHECK FINAL
+
+[ ] Supabase listo  
+[ ] Railway deploy OK  
+[ ] Variables configuradas  
+[ ] Bot respondiendo  
 ## PASO 1 — Crear proyecto Supabase
 
 1. Ir a supabase.com → **New project**
@@ -94,7 +131,7 @@ Railway → proyecto → **Variables** → agregar una por una:
 
 | Variable | Valor |
 |---|---|
-| `ANTHROPIC_API_KEY` | `sk-ant-api03-KqK_fF4czqYFCLK-SKrgiK-...` (la de siempre) |
+| `ANTHROPIC_API_KEY` |( configurar en railway) |
 | `SUPABASE_URL` | URL del proyecto Supabase recién creado |
 | `SUPABASE_KEY` | Key anon del proyecto Supabase recién creado |
 | `TWILIO_ACCOUNT_SID` | `AC576ce1fa6e074bc53047a3e7319f6bca` |

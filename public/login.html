@@ -12,48 +12,29 @@
 <script>if(location.hostname.includes('broker'))document.documentElement.classList.add('broker')</script>
 <title>Nova — Acceso</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
-.card{background:#fff;border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,.08);border:0.5px solid #e0e0e0}
+body{display:flex;align-items:center;justify-content:center;padding:1rem;min-height:100vh}
+.card{background:var(--surface);border:1px solid var(--border-subtle);border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:var(--shadow-elevated);animation:luxuryIn .5s var(--ease-spring) both}
 .logo{text-align:center;margin-bottom:2rem}
-.logo-mark{width:52px;height:52px;background:#1A3A5C;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
-.logo-mark svg{width:28px;height:28px;fill:none;stroke:#C9A96E;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.logo h1{font-size:22px;font-weight:600;color:#1A3A5C}
-.logo p{font-size:13px;color:#999;margin-top:4px}
+.logo-mark{width:52px;height:52px;background:var(--nova);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;border:1px solid rgba(201,169,110,.2)}
+.logo h1{font-size:22px;font-weight:600;color:var(--text-1)}
+.logo p{font-size:13px;color:var(--text-3);margin-top:4px}
 .form-group{margin-bottom:1.25rem}
-.form-group label{display:block;font-size:12px;font-weight:500;color:#555;margin-bottom:6px}
-.form-group input{width:100%;padding:11px 14px;border:1px solid #ddd;border-radius:10px;font-size:14px;color:#333;background:#fafafa;outline:none;transition:border-color .2s}
-.form-group input:focus{border-color:#1A3A5C;background:#fff}
-.btn-login{width:100%;padding:12px;background:#1A3A5C;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:background .2s}
-.btn-login:hover{background:#0f2540}
-.btn-login:disabled{opacity:.6;cursor:not-allowed}
-.error{font-size:13px;color:#c0392b;text-align:center;margin-top:.875rem;min-height:20px}
-.footer{text-align:center;margin-top:1.75rem;font-size:12px;color:#bbb}
-.input-wrap{position:relative}
-.input-wrap input{width:100%;padding:11px 40px 11px 14px;border:1px solid #ddd;border-radius:10px;font-size:14px;color:#333;background:#fafafa;outline:none;transition:border-color .2s}
-.input-wrap input:focus{border-color:#1A3A5C;background:#fff}
-.toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:13px;padding:0}
-
-/* ── Broker Inmobiliaria theme ───────────────────────────────────── */
-.broker .logo-mark{background:#3B52D4}
-.broker .logo-mark .icon-default{display:none}
-.broker .logo-mark .icon-broker{display:block !important}
-.broker .logo h1{color:#3B52D4}
-.broker .form-group input:focus{border-color:#3B52D4}
-.broker .input-wrap input:focus{border-color:#3B52D4}
-.broker .btn-login{background:#3B52D4}
-.broker .btn-login:hover{background:#2D40B8}
-.broker .broker-slogan{display:block !important}
-.broker .login-subtitle-default{display:none}
-
-/* ── Animacion entrada card ──────────────────────────────────────── */
-@keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-.card{animation:cardIn .4s cubic-bezier(.34,1.1,.64,1)}
-.btn-login{transition:background .2s,transform .1s,box-shadow .2s}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-2);margin-bottom:6px}
+.btn-login{width:100%;padding:12px;background:var(--nova);color:var(--text-1);border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s var(--ease);letter-spacing:.03em}
+.btn-login:hover{background:var(--nova-light);box-shadow:0 4px 16px rgba(26,58,92,.4);transform:translateY(-1px)}
 .btn-login:active{transform:scale(.98)}
-.form-group input,.input-wrap input{transition:border-color .2s,box-shadow .2s}
-.form-group input:focus,.input-wrap input:focus{box-shadow:0 0 0 3px rgba(26,58,92,.08)}
-.broker .form-group input:focus,.broker .input-wrap input:focus{box-shadow:0 0 0 3px rgba(59,82,212,.12)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.error{font-size:13px;color:#FCA5A5;text-align:center;margin-top:.875rem;min-height:20px}
+.footer{text-align:center;margin-top:1.75rem;font-size:12px;color:var(--text-3)}
+.input-wrap{position:relative}
+.input-wrap input{width:100%;padding:11px 40px 11px 14px}
+.toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-3);font-size:13px;padding:0}
+.toggle-pw:hover{color:var(--gold)}
+.broker .logo-mark{background:var(--nova)}
+.broker .logo-mark .icon-default{display:none}
+.broker .logo-mark .icon-broker{display:block!important}
+.broker .broker-slogan{display:block!important}
+.broker .login-subtitle-default{display:none}
 </style>
 </head>
 <body>
