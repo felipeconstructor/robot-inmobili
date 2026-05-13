@@ -87,7 +87,7 @@ app.get('/crm.html', requireAuth, (req, res) => {
 app.get('/documentos.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'documentos.html'))
 })
-app.get('/administraciones.html', requireAuth, requireAdmin, (req, res) => {
+app.get('/administraciones.html', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'administraciones.html'))
 })
 app.get('/finanzas.html', requireAuth, requireAdmin, (req, res) => {
@@ -276,9 +276,12 @@ app.get('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
 app.post('/api/usuarios', requireAuth, requireAdmin, async (req, res) => {
   const { nombre, email, password, rol } = req.body
   if (!nombre || !email || !password) return res.status(400).json({ error: 'Faltan datos: nombre, email, password' })
+  const tenantId = await obtenerProligTenantId()
+  const payload = { nombre, email: email.toLowerCase().trim(), password_hash: hashPassword(password), rol: rol || 'agente', activo: true }
+  if (tenantId) payload.tenant_id = tenantId
   const { data, error } = await supabase
     .from('usuarios')
-    .insert({ nombre, email: email.toLowerCase().trim(), password_hash: hashPassword(password), rol: rol || 'agente', activo: true })
+    .insert(payload)
     .select('id, nombre, email, rol, activo, created_at')
     .single()
   if (error) return res.status(400).json({ error: error.message })
@@ -303,18 +306,19 @@ app.put('/api/usuarios/:id', requireAuth, requireAdmin, async (req, res) => {
 })
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Endpoint config publica — los HTMLs piden las credenciales Supabase al servidor
-app.get('/api/config', (req, res) => {
+// Endpoint config — entrega credenciales Supabase SOLO a usuarios autenticados
+// SUPABASE_ANON_KEY debe ser la clave anon/public del proyecto (sujeta a RLS)
+// Nunca exponer SUPABASE_SERVICE_KEY aquí — esa clave bypasea RLS y es solo backend
+app.get('/api/config', requireAuth, (req, res) => {
   let siteName = process.env.SITE_NAME
   if (!siteName) {
     const host = req.headers.host || ''
     if (host.includes('broker')) siteName = 'Broker Inmobiliario'
-    else if (host.includes('ligua')) siteName = 'Corredora La Ligua'
-    else siteName = 'Nova — Prolig Propiedades'
+    else siteName = process.env.SITE_NAME || 'Nova CRM'
   }
   res.json({
     supabaseUrl: process.env.SUPABASE_URL,
-    supabaseKey: process.env.SUPABASE_KEY,
+    supabaseKey: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY,
     siteName
   })
 })
@@ -361,7 +365,7 @@ app.get('/icons/icon-:size.png', (_req, res) => {
 
 // ─── PWA Manifest dinámico ───────────────────────────────────────────────────
 app.get('/manifest.json', (req, res) => {
-  const siteName = process.env.SITE_NAME || 'Nova — Prolig Propiedades'
+  const siteName = process.env.SITE_NAME || 'Nova CRM'
   const isBroker = siteName.toLowerCase().includes('broker')
   const themeColor = isBroker ? '#3B52D4' : '#1A3A5C'
   const shortName = isBroker ? 'Broker CRM' : 'Nova CRM'
@@ -389,34 +393,112 @@ app.get('/manifest.json', (req, res) => {
   })
 })
 
+// Ruta pública — catálogo de propiedades
+app.get('/propiedades', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'propiedades.html'));
+});
+
+// Ruta /chat — redirige al inicio donde está el widget de Nova embebido
+app.get('/chat', (_req, res) => {
+  res.redirect('/');
+});
+
+// Endpoint público — formulario de contacto del sitio web
+app.post('/api/leads', async (req, res) => {
+  const { nombre, telefono, necesidad, mensaje } = req.body || {};
+  if (!nombre || !telefono) return res.status(400).json({ error: 'Nombre y teléfono requeridos' });
+  await guardarLead(nombre, telefono, necesidad || 'Consulta web', mensaje || '', 'web');
+  res.json({ ok: true });
+});
+
+// Endpoint público — propiedades disponibles para el sitio web (sin autenticación)
+app.get('/api/propiedades-publicas', async (req, res) => {
+  const { operacion, limite, comuna } = req.query;
+  const lim = Math.min(parseInt(limite) || 6, 50);
+  let query = supabase
+    .from('propiedades')
+    .select('id, tipo, operacion, direccion, comuna, precio, moneda, dormitorios, baños, metros, descripción, imagen_url')
+    .eq('disponible', true)
+    .order('created_at', { ascending: false })
+    .limit(lim);
+  if (operacion) query = query.eq('operacion', operacion);
+  if (comuna) query = query.ilike('comuna', `%${comuna}%`);
+  const { data, error } = await query;
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ propiedades: data || [] });
+});
+
+// Endpoint público — ficha de una propiedad individual (sin autenticación)
+app.get('/api/propiedad/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (!id || isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+  const { data: prop, error } = await supabase
+    .from('propiedades')
+    .select('id, tipo, operacion, direccion, comuna, precio, moneda, dormitorios, baños, metros, descripción, imagen_url, disponible')
+    .eq('id', id)
+    .single();
+  if (error || !prop) return res.status(404).json({ error: 'Propiedad no encontrada' });
+  const { data: fotos } = await supabase
+    .from('fotos_propiedades')
+    .select('url, orden')
+    .eq('propiedad_id', id)
+    .order('orden');
+  res.json({ propiedad: prop, fotos: fotos || [] });
+});
+
 app.use(express.static(path.join(__dirname, 'public')))
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+// Cliente admin — usa service_role key para bypassear RLS (solo backend, nunca al browser)
+// SUPABASE_SERVICE_KEY debe ser la clave service_role del proyecto en Supabase → Settings → API
+// Fallback a SUPABASE_KEY para retrocompatibilidad mientras se agrega la variable en Railway
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY
+)
 
+// ─── Importar propiedades en bulk (usa service key) ───────────────────────────
+app.post('/api/propiedades/importar', requireAuth, async (req, res) => {
+  const { propiedades } = req.body
+  if (!Array.isArray(propiedades) || !propiedades.length) {
+    return res.status(400).json({ error: 'Se requiere un array de propiedades' })
+  }
+  const insertadas = []
+  const errores = []
+  for (let i = 0; i < propiedades.length; i++) {
+    const p = propiedades[i]
+    const { error } = await supabase.from('propiedades').insert(p)
+    if (error) errores.push({ fila: i + 1, error: error.message })
+    else insertadas.push(i + 1)
+  }
+  res.json({ insertadas: insertadas.length, errores })
+})
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
-  const urlOk  = !!process.env.SUPABASE_URL
-  const keyOk  = !!process.env.SUPABASE_KEY
+  const urlOk         = !!process.env.SUPABASE_URL
+  const serviceKeyOk  = !!(process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY)
+  const anonKeyOk     = !!(process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY)
   let supabaseStatus = 'error'
   let supabaseMsg    = ''
-  if (!urlOk || !keyOk) {
-    supabaseMsg = 'Variables ' + (!urlOk ? 'SUPABASE_URL ' : '') + (!keyOk ? 'SUPABASE_KEY ' : '') + 'no configuradas en Railway'
+  if (!urlOk || !serviceKeyOk) {
+    supabaseMsg = 'Variables ' + (!urlOk ? 'SUPABASE_URL ' : '') + (!serviceKeyOk ? 'SUPABASE_SERVICE_KEY ' : '') + 'no configuradas en Railway'
   } else {
     try {
       const { error } = await supabase.from('leads').select('id').limit(1)
       if (error) { supabaseMsg = error.message } else { supabaseStatus = 'ok' }
     } catch(e) { supabaseMsg = e.message }
   }
+  const activeServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || ''
   res.status(supabaseStatus === 'ok' ? 200 : 503).json({
     ok: supabaseStatus === 'ok',
     supabase: supabaseStatus,
     mensaje: supabaseMsg,
     supabase_url: urlOk ? (process.env.SUPABASE_URL || '').substring(0, 35) + '...' : 'NO CONFIGURADA',
-    supabase_key: keyOk ? 'configurada (' + (process.env.SUPABASE_KEY || '').length + ' chars)' : 'NO CONFIGURADA'
+    supabase_service_key: serviceKeyOk ? 'configurada (' + activeServiceKey.length + ' chars)' : 'NO CONFIGURADA',
+    supabase_anon_key: anonKeyOk ? 'configurada' : 'NO CONFIGURADA (usando SUPABASE_KEY como fallback)'
   })
 })
 
-const CALENDAR_ID = process.env.CALENDAR_ID || 'felipec.constructor@gmail.com'
+const CALENDAR_ID = process.env.CALENDAR_ID || ''
 const auth = new google.auth.GoogleAuth({
   keyFile: path.join(__dirname, 'google-credentials.json'),
   scopes: ['https://www.googleapis.com/auth/calendar']
@@ -430,7 +512,7 @@ const CATALOGO_URL = process.env.WHATSAPP_CATALOGO_URL || 'https://wa.me/c/56920
 const APP_URL = process.env.APP_URL || 'https://robot-inmobiliario-production.up.railway.app'
 if (!process.env.APP_URL) console.log('ADVERTENCIA: APP_URL no definida — usando URL de Nova por defecto')
 
-const EMPRESA = process.env.SITE_NAME || 'Prolig Propiedades'
+const EMPRESA = process.env.SITE_NAME || 'Nova CRM'
 
 const SISTEMA_BASE = `
 Eres Nova, asistente virtual de ${EMPRESA}, corredora de propiedades en Chile.
@@ -752,9 +834,21 @@ RESCORE_CALIENTE
 
 const historial = {}
 
+// tenant_id de PROLIG — se resuelve una vez y se cachea en memoria
+let _proligTenantId = null
+async function obtenerProligTenantId() {
+  if (_proligTenantId) return _proligTenantId
+  try {
+    const { data } = await supabase.from('tenants').select('id').eq('slug', 'prolig').single()
+    if (data?.id) _proligTenantId = data.id
+  } catch {}
+  return _proligTenantId
+}
+
 async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, canal, estado = 'nuevo', tipo_lead = 'sin_clasificar') {
   try {
-    const { data } = await supabase.from('leads').insert({
+    const tenantId = await obtenerProligTenantId()
+    const payload = {
       nombre: nombre || 'Sin nombre',
       telefono: telefono || 'Sin telefono',
       propiedad_interes: propiedadInteres || 'Consulta general',
@@ -762,7 +856,9 @@ async function guardarLead(nombre, telefono, propiedadInteres, mensajeInicial, c
       estado,
       canal: canal || 'web',
       tipo_lead
-    }).select('id').single()
+    }
+    if (tenantId) payload.tenant_id = tenantId
+    const { data } = await supabase.from('leads').insert(payload).select('id').single()
     return data?.id || null
   } catch (err) {
     console.error('Error guardando lead:', err.message)
@@ -806,9 +902,13 @@ async function agendarVisita(nombre, telefono, propiedad, fecha, hora) {
     .order('created_at', { ascending: false }).limit(1)
   if (leadData && leadData[0]) {
     await supabase.from('leads').update({
+      estado: 'visita',
       fecha_visita: fin.toISOString(),
       calendar_event_id: evento.data.id,
-      cancel_token: cancelToken
+      cancel_token: cancelToken,
+      recordatorio_24h_enviado: false,
+      recordatorio_1h_enviado: false,
+      updated_at: new Date().toISOString()
     }).eq('id', leadData[0].id)
   }
   return { ...evento.data, cancelToken }
@@ -891,6 +991,7 @@ Ficha completa con fotos: ${APP_URL}/propiedad/${p.id}
 async function procesarRespuesta(texto, sesionId, canal) {
   let respuestaFinal = texto
   let imagenUrl = null
+  let leadGuardado = false
 
   // Extraer imagen antes de procesar otras señales
   const matchImagen = texto.match(/IMAGEN_URL\|([^\n]+)/)
@@ -904,11 +1005,15 @@ async function procesarRespuesta(texto, sesionId, canal) {
     const partes = respuestaFinal.split('AGENDAR_VISITA|')[1].split('|')
     const [nombre, telefono, propiedad, fecha, hora] = partes
     await guardarLead(nombre, telefono, propiedad, 'Visita agendada', canal, 'visita')
+    leadGuardado = true
     try {
       const disponible = await verificarDisponibilidad(fecha, parseInt(hora))
       if (disponible) {
         await agendarVisita(nombre, telefono, propiedad, fecha, parseInt(hora))
         programarRecordatorioVisita(nombre, telefono, propiedad, fecha, parseInt(hora))
+        // Confirmacion inmediata por WA al cliente
+        const msgConfirmacion = `Hola ${nombre}, tu visita quedo confirmada.\n\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe recordaremos 24 horas y 1 hora antes. Si necesitas cambiar el horario escribenos con anticipacion.`
+        setTimeout(() => enviarWhatsAppAuto(telefono, msgConfirmacion, 'confirmacion_visita', null), 2000)
         respuestaFinal = `Listo, agende tu visita correctamente.\n\nResumen:\nNombre: ${nombre}\nPropiedad: ${propiedad}\nFecha: ${fecha}\nHora: ${hora}:00\n\nTe esperamos. Si necesitas cambiar escríbenos con anticipacion.`
       } else {
         historial[sesionId].push({ role: 'user', content: `El horario ${hora}:00 del ${fecha} no esta disponible. Ofrece otro horario.` })
@@ -924,6 +1029,7 @@ async function procesarRespuesta(texto, sesionId, canal) {
     const [nombre, telefono, propiedad, tipo, temperatura] = partes
     const estadoLead = temperatura === 'caliente' ? 'caliente' : temperatura === 'tibio' ? 'tibio' : 'nuevo'
     const leadId = await guardarLead(nombre, telefono, propiedad, '', canal, estadoLead, tipo || 'sin_clasificar')
+    leadGuardado = true
     if (temperatura === 'caliente') {
       notificarAgenteLeadCaliente(nombre, telefono, propiedad, canal)
       // Brecha 2: enviar checklist de documentos automático al cliente
@@ -942,7 +1048,7 @@ async function procesarRespuesta(texto, sesionId, canal) {
   respuestaFinal = respuestaFinal.replace(/RESCORE_CALIENTE\n?/g, '').trim()
   respuestaFinal = respuestaFinal.replace(/HANDOFF_HUMANO\|[^\n]*\n?/g, '').trim()
 
-  return { respuesta: respuestaFinal, imagenUrl }
+  return { respuesta: respuestaFinal, imagenUrl, leadGuardado }
 }
 
 // Ficha individual de propiedad
@@ -985,6 +1091,7 @@ app.get('/propiedad/:id', async (req, res) => {
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || ''
 const META_PAGE_TOKEN = process.env.META_PAGE_TOKEN || ''
 const META_IG_TOKEN = process.env.META_IG_TOKEN || ''
+const META_AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID || ''
 
 // Verificacion del webhook — Meta hace GET para confirmar la URL
 app.get('/webhook/meta', (req, res) => {
@@ -1105,7 +1212,7 @@ app.post('/webhook/meta', async (req, res) => {
           continue
         }
         try {
-          const r = await fetch(`https://graph.facebook.com/v19.0/${leadgenId}?access_token=${META_PAGE_TOKEN}`)
+          const r = await fetch(`https://graph.facebook.com/v21.0/${leadgenId}?fields=field_data,ad_id,adset_id,campaign_id&access_token=${META_PAGE_TOKEN}`)
           const leadData = await r.json()
           if (!leadData.field_data) { console.log('[Meta Lead Ads] Sin field_data:', JSON.stringify(leadData)); continue }
           const campos = {}
@@ -1116,16 +1223,24 @@ app.post('/webhook/meta', async (req, res) => {
           const telefono = campos['phone_number'] || campos['telefono'] || campos['phone'] || ''
           const email    = campos['email'] || ''
           const interes  = campos['que_buscas'] || campos['propiedad_interes'] || campos['interest'] || 'Meta Lead Ad'
-          const { error } = await supabase.from('leads').insert({
-            nombre, telefono, email,
+          const campaignId = leadData.campaign_id || change.value?.campaign_id || null
+          const tenantIdMeta = await obtenerProligTenantId()
+          const payloadMeta = {
+            nombre, telefono,
             propiedad_interes: interes,
             mensaje_inicial: `Lead de Meta Ads. Email: ${email || 'no informado'}`,
             estado: 'nuevo',
             canal: 'facebook',
+            utm_campaign: campaignId,
             created_at: new Date().toISOString()
-          })
+          }
+          if (tenantIdMeta) payloadMeta.tenant_id = tenantIdMeta
+          const { data: leadMeta, error } = await supabase.from('leads').insert(payloadMeta).select('id').single()
           if (error) console.error('[Meta Lead Ads] Error guardando lead:', error.message)
-          else console.log(`[Meta Lead Ads] Lead guardado: ${nombre} | ${telefono}`)
+          else {
+            console.log(`[Meta Lead Ads] Lead guardado: ${nombre} | ${telefono}`)
+            if (leadMeta?.id && telefono) iniciarSecuenciaDrip(leadMeta.id)
+          }
         } catch (e) {
           console.error('[Meta Lead Ads] Error procesando leadgen:', e.message)
         }
@@ -1210,8 +1325,11 @@ app.post('/webhook/whatsapp', async (req, res) => {
   const sesionId = 'wa_' + numeroCliente.replace('whatsapp:+', '')
   console.log('WA de:', numeroCliente, ':', mensaje)
   try {
+    console.log('[WA] llamando obtenerRespuestaNova...')
     const respuestaNova = await obtenerRespuestaNova(mensaje, sesionId)
+    console.log('[WA] respuesta nova OK, procesando...')
     const resultado = await procesarRespuesta(respuestaNova, sesionId, 'whatsapp')
+    console.log('[WA] procesarRespuesta OK, enviando por Twilio...')
     const twilio = require('twilio')
     const tc = new twilio.Twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     // Armar mensaje con imagen si existe
@@ -1227,7 +1345,7 @@ app.post('/webhook/whatsapp', async (req, res) => {
     console.log('Respuesta enviada a:', numeroCliente)
     res.status(200).send('<Response></Response>')
   } catch (err) {
-    console.error('Error WA:', err.message)
+    console.error('Error WA:', err.message, '| code:', err.code, '| status:', err.status, '| from:', process.env.TWILIO_WHATSAPP_NUMBER, '| to:', numeroCliente)
     res.status(500).send('<Response></Response>')
   }
 })
@@ -1395,6 +1513,218 @@ app.get('/api/marketing/estadisticas', requireAuth, async (req, res) => {
   }
 })
 
+// ─── Marketing — campañas Meta Ads Manager ────────────────────────────────────
+app.get('/api/marketing/campanas-meta', requireAuth, async (req, res) => {
+  if (!META_AD_ACCOUNT_ID || !META_PAGE_TOKEN) {
+    return res.status(200).json({ ok: false, configurado: false, mensaje: 'Configura META_AD_ACCOUNT_ID y META_PAGE_TOKEN en Railway' })
+  }
+  const { periodo = '30' } = req.query
+  const diasInt = [7, 30, 90].includes(parseInt(periodo)) ? parseInt(periodo) : 30
+  const fechaDesde = new Date()
+  fechaDesde.setDate(fechaDesde.getDate() - diasInt)
+  const since = fechaDesde.toISOString().split('T')[0]
+  const until = new Date().toISOString().split('T')[0]
+
+  try {
+    const urlCampanas = `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/campaigns` +
+      `?fields=id,name,status,objective&effective_status=["ACTIVE","PAUSED"]&limit=50&access_token=${META_PAGE_TOKEN}`
+    const dataCampanas = await (await fetch(urlCampanas)).json()
+    if (dataCampanas.error) {
+      console.error('[Meta Ads] Error campaigns:', JSON.stringify(dataCampanas.error))
+      return res.json({ ok: false, configurado: true, error: dataCampanas.error.message, errorCode: dataCampanas.error.code })
+    }
+    const campanas = dataCampanas.data || []
+    if (!campanas.length) return res.json({ ok: true, configurado: true, campanas: [], periodo: diasInt })
+
+    const urlInsights = `https://graph.facebook.com/v21.0/${META_AD_ACCOUNT_ID}/insights` +
+      `?fields=campaign_id,campaign_name,spend,impressions,clicks,cpm,ctr,actions` +
+      `&time_range={"since":"${since}","until":"${until}"}` +
+      `&level=campaign` +
+      `&filtering=[{"field":"campaign.id","operator":"IN","value":[${campanas.map(c => `"${c.id}"`).join(',')}]}]` +
+      `&limit=50&access_token=${META_PAGE_TOKEN}`
+    const dataInsights = await (await fetch(urlInsights)).json()
+    if (dataInsights.error) {
+      console.error('[Meta Ads] Error insights:', JSON.stringify(dataInsights.error))
+      return res.json({ ok: false, configurado: true, error: dataInsights.error.message })
+    }
+
+    const insightsPorId = {}
+    for (const ins of (dataInsights.data || [])) {
+      const leadsAction = (ins.actions || []).find(a =>
+        a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead_grouped'
+      )
+      const leadsCount = leadsAction ? parseInt(leadsAction.value) || 0 : 0
+      const gasto = parseFloat(ins.spend) || 0
+      insightsPorId[ins.campaign_id] = {
+        gasto, impresiones: parseInt(ins.impressions) || 0, clicks: parseInt(ins.clicks) || 0,
+        cpm: parseFloat(ins.cpm) || 0, ctr: parseFloat(ins.ctr) || 0,
+        leads: leadsCount, cpl: leadsCount > 0 ? Math.round((gasto / leadsCount) * 100) / 100 : null
+      }
+    }
+
+    const { data: leadsCRM } = await supabase
+      .from('leads').select('utm_campaign, estado').eq('canal', 'facebook').gte('created_at', fechaDesde.toISOString())
+    const leadsCRMPorCampana = {}
+    for (const l of (leadsCRM || [])) {
+      const key = l.utm_campaign || 'sin_atribucion'
+      if (!leadsCRMPorCampana[key]) leadsCRMPorCampana[key] = { total: 0, cerrados: 0 }
+      leadsCRMPorCampana[key].total++
+      if (l.estado === 'cerrado') leadsCRMPorCampana[key].cerrados++
+    }
+
+    const resultado = campanas.map(c => {
+      const ins = insightsPorId[c.id] || { gasto: 0, impresiones: 0, clicks: 0, cpm: 0, ctr: 0, leads: 0, cpl: null }
+      const crmData = leadsCRMPorCampana[c.id] || { total: 0, cerrados: 0 }
+      return { id: c.id, nombre: c.name, estado: c.status, objetivo: c.objective, ...ins, leads_crm: crmData.total, cierres_crm: crmData.cerrados }
+    })
+
+    console.log(`[Meta Ads] ${resultado.length} campañas — periodo ${diasInt}d`)
+    res.json({ ok: true, configurado: true, campanas: resultado, periodo: diasInt })
+  } catch (err) {
+    console.error('[Meta Ads]', err.message)
+    res.status(500).json({ ok: false, error: err.message })
+  }
+})
+
+// ─── Marketing — análisis IA de campañas ──────────────────────────────────────
+app.post('/api/marketing/analizar-ia', requireAuth, async (req, res) => {
+  const { campanas, periodo } = req.body
+  if (!campanas || !campanas.length) return res.status(400).json({ error: 'No hay datos de campañas para analizar' })
+  const apiKey = (process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || '').trim()
+  if (!apiKey) return res.status(500).json({ error: 'API key no configurada' })
+
+  try {
+    const hace90dias = new Date()
+    hace90dias.setDate(hace90dias.getDate() - 90)
+    const inicioRango = new Date()
+    inicioRango.setDate(inicioRango.getDate() - (parseInt(periodo) || 30))
+
+    const [{ data: transacciones }, { data: leadsCRM }] = await Promise.all([
+      supabase.from('transacciones').select('fecha_cierre, tipo, precio, moneda, comision_total, agente, utm_campaign')
+        .gte('fecha_cierre', hace90dias.toISOString().split('T')[0]).order('fecha_cierre', { ascending: false }).limit(50),
+      supabase.from('leads').select('canal, estado, utm_campaign, created_at').gte('created_at', inicioRango.toISOString())
+    ])
+
+    const gastoTotal = campanas.reduce((s, c) => s + c.gasto, 0)
+    const leadsTotal = campanas.reduce((s, c) => s + c.leads, 0)
+    const cierresTotal = campanas.reduce((s, c) => s + c.cierres_crm, 0)
+    const comisionTotal = (transacciones || []).reduce((s, t) => s + (Number(t.comision_total) || 0), 0)
+
+    const leadsporEstado = {}
+    for (const l of (leadsCRM || [])) {
+      const e = l.estado || 'nuevo'
+      leadsporEstado[e] = (leadsporEstado[e] || 0) + 1
+    }
+
+    const resumenCampanas = campanas.map(c => {
+      const conv = c.leads > 0 ? ((c.cierres_crm / c.leads) * 100).toFixed(1) : '0'
+      return `- ${c.nombre} | ${c.estado === 'ACTIVE' ? 'Activa' : 'Pausada'} | Gasto: $${c.gasto.toFixed(2)} USD | Impresiones: ${c.impresiones.toLocaleString()} | Clicks: ${c.clicks} | CTR: ${c.ctr?.toFixed(2) || 0}% | Leads Meta: ${c.leads} | CPL: ${c.cpl !== null ? '$' + c.cpl + ' USD' : 'sin datos'} | Leads CRM: ${c.leads_crm} | Cierres: ${c.cierres_crm} | Tasa cierre: ${conv}%`
+    }).join('\n')
+
+    const resumenTransacciones = (transacciones || []).length
+      ? transacciones.map(t => `- ${t.fecha_cierre} | ${t.tipo} | $${Number(t.precio).toLocaleString('es-CL')} ${t.moneda} | Comisión: $${Number(t.comision_total).toLocaleString('es-CL')}${t.utm_campaign ? ' | Campaña: ' + t.utm_campaign : ''}`).join('\n')
+      : 'Sin cierres registrados en los últimos 90 días.'
+
+    const leadsFB = (leadsCRM || []).filter(l => l.canal === 'facebook').length
+
+    const prompt = `Eres un experto en marketing de performance inmobiliario en Chile. Analiza los datos reales de campañas Meta Ads y CRM. Sé específico, cita métricas exactas, no inventes datos.
+
+## DATOS — últimos ${periodo} días
+
+### Campañas Meta Ads
+${resumenCampanas}
+
+### Resumen general
+- Gasto total: $${gastoTotal.toFixed(2)} USD
+- Leads Meta: ${leadsTotal} | Leads CRM facebook: ${leadsFB} | Cierres atribuidos: ${cierresTotal}
+- Estado leads CRM todos canales: ${Object.entries(leadsporEstado).map(([e, n]) => `${e}: ${n}`).join(', ')}
+
+### Cierres recientes — 90 días
+${resumenTransacciones}
+- Comisión total 90d: $${comisionTotal.toLocaleString('es-CL')} CLP
+
+## INSTRUCCIONES
+Responde SOLO con JSON válido (sin texto antes ni después):
+{
+  "resumen_ejecutivo": "2-3 oraciones sobre situación general. Menciona gasto, rendimiento y ROAS si hay datos.",
+  "recomendaciones": [
+    { "prioridad": "alta|media|baja", "campana": "nombre o 'General'", "accion": "acción concreta", "razon": "30-60 palabras citando métricas reales", "impacto_esperado": "mejora concreta esperada" }
+  ],
+  "campanas_pausar": ["nombre"],
+  "campanas_escalar": ["nombre"],
+  "alerta_presupuesto": null,
+  "nota_atribucion": "comentario sobre calidad de atribución utm_campaign"
+}
+3-5 recomendaciones. CPL alto + pocos leads CRM → pausar. CPL bajo + leads CRM → escalar.`
+
+    const rClaude = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
+    })
+    const dataClaude = await rClaude.json()
+    if (!rClaude.ok || dataClaude.error) return res.status(500).json({ error: dataClaude.error?.message || 'Error Claude API' })
+
+    const texto = dataClaude.content?.[0]?.text || ''
+    let analisis
+    try {
+      const match = texto.match(/\{[\s\S]*\}/)
+      analisis = JSON.parse(match ? match[0] : texto)
+    } catch {
+      return res.json({ ok: true, texto_crudo: texto })
+    }
+
+    console.log('[IA Campañas] Análisis generado — campañas:', campanas.length)
+    res.json({ ok: true, analisis })
+  } catch (err) {
+    console.error('[IA Campañas]', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── Marketing — atribución ROAS por campaña ──────────────────────────────────
+app.get('/api/marketing/atribucion', requireAuth, async (req, res) => {
+  try {
+    const { periodo = '30' } = req.query
+    const diasInt = Math.min(parseInt(periodo) || 30, 365)
+    const inicio = new Date()
+    inicio.setDate(inicio.getDate() - diasInt)
+
+    const [{ data: leads }, { data: transacciones }] = await Promise.all([
+      supabase.from('leads').select('utm_campaign, utm_adset, utm_ad, estado, created_at')
+        .eq('canal', 'facebook').not('utm_campaign', 'is', null).gte('created_at', inicio.toISOString()),
+      supabase.from('transacciones').select('utm_campaign, precio, moneda, comision_total, fecha_cierre, tipo')
+        .not('utm_campaign', 'is', null).gte('fecha_cierre', inicio.toISOString().split('T')[0])
+    ])
+
+    const porCampana = {}
+    for (const l of (leads || [])) {
+      const cid = l.utm_campaign
+      if (!porCampana[cid]) porCampana[cid] = { leads: 0, cerrados: 0, ingresos_comision: 0 }
+      porCampana[cid].leads++
+      if (l.estado === 'cerrado') porCampana[cid].cerrados++
+    }
+    for (const t of (transacciones || [])) {
+      const cid = t.utm_campaign
+      if (!porCampana[cid]) porCampana[cid] = { leads: 0, cerrados: 0, ingresos_comision: 0 }
+      porCampana[cid].ingresos_comision += Number(t.comision_total) || 0
+    }
+
+    const resultado = Object.entries(porCampana).map(([campanaId, datos]) => ({
+      campana_id: campanaId,
+      leads: datos.leads,
+      cerrados: datos.cerrados,
+      tasa_cierre: datos.leads > 0 ? ((datos.cerrados / datos.leads) * 100).toFixed(1) : '0',
+      ingresos_comision_clp: Math.round(datos.ingresos_comision)
+    }))
+
+    res.json({ ok: true, atribucion: resultado, periodo: diasInt })
+  } catch (err) {
+    console.error('[Atribución]', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ─── Notificacion lead caliente ───────────────────────────────────────────────
 const NOTIFY_PHONE = process.env.NOTIFY_PHONE // numero personal de Felipe ej: whatsapp:+56912345678
 
@@ -1512,9 +1842,9 @@ app.post('/api/enviar-reporte-finanzas', requireAuth, requireAdmin, async (req, 
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Email ──────────────────────────────────────────────────────────────────
-const GMAIL_USER = process.env.EMAIL_ADMIN || 'felipec.constructor@gmail.com'
+const GMAIL_USER = process.env.EMAIL_ADMIN || ''
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS'
+const RESEND_API_KEY = process.env.RESEND_API_KEY
 
 // Enviar email via Resend (HTTP, sin SMTP)
 async function enviarEmail(asunto, html) {
@@ -1781,7 +2111,7 @@ cron.schedule('0 11 */4 * *', async () => {
       .in('estado', ['frio', 'nuevo'])
       .lt('created_at', hace4dias)
       .lt('contador_reactivaciones', 2)
-      .eq('canal', 'whatsapp')
+      .not('telefono', 'is', null)
     if (!leads || !leads.length) { console.log('Sin leads frios para reactivar'); return }
     for (const lead of leads) {
       const msg = `Hola ${lead.nombre}, vimos que consultaste por ${lead.propiedad_interes || 'propiedades'}. Seguimos disponibles y tenemos nuevas opciones que podrian interesarte. Hablame cuando quieras.`
@@ -1812,14 +2142,14 @@ cron.schedule('5 * * * *', async () => {
     // Recordatorio 24h
     const { data: leads24 } = await supabase.from('leads').select('*')
       .eq('estado', 'visita').eq('recordatorio_24h_enviado', false)
-      .not('fecha_visita', 'is', null).not('cancel_token', 'is', null)
+      .not('fecha_visita', 'is', null).not('telefono', 'is', null)
       .gte('fecha_visita', new Date(en24h.getTime() - ventana).toISOString())
       .lte('fecha_visita', new Date(en24h.getTime() + ventana).toISOString())
 
     for (const lead of (leads24 || [])) {
       const fechaStr = new Date(lead.fecha_visita).toLocaleString('es-CL', { timeZone: 'America/Santiago', weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' })
-      const cancelUrl = `${APP_URL}/cancelar-visita/${lead.cancel_token}`
-      const msg = `Hola ${lead.nombre}, te recordamos tu visita manana para ${lead.propiedad_interes}.\n\nFecha: ${fechaStr} hrs.\n\nTe esperamos. Si no puedes asistir, puedes cancelar aqui: ${cancelUrl}`
+      const cancelPart = lead.cancel_token ? `\n\nSi no puedes asistir, puedes cancelar aqui: ${APP_URL}/cancelar-visita/${lead.cancel_token}` : ''
+      const msg = `Hola ${lead.nombre}, te recordamos tu visita manana para ${lead.propiedad_interes}.\n\nFecha: ${fechaStr} hrs.\n\nTe esperamos.${cancelPart}`
       await enviarWhatsAppAuto(lead.telefono, msg, 'recordatorio_24h', lead.id)
       await supabase.from('leads').update({ recordatorio_24h_enviado: true }).eq('id', lead.id)
     }
@@ -1827,14 +2157,14 @@ cron.schedule('5 * * * *', async () => {
     // Recordatorio 1h
     const { data: leads1h } = await supabase.from('leads').select('*')
       .eq('estado', 'visita').eq('recordatorio_1h_enviado', false)
-      .not('fecha_visita', 'is', null).not('cancel_token', 'is', null)
+      .not('fecha_visita', 'is', null).not('telefono', 'is', null)
       .gte('fecha_visita', new Date(en1h.getTime() - ventana).toISOString())
       .lte('fecha_visita', new Date(en1h.getTime() + ventana).toISOString())
 
     for (const lead of (leads1h || [])) {
       const fechaStr = new Date(lead.fecha_visita).toLocaleString('es-CL', { timeZone: 'America/Santiago', hour:'2-digit', minute:'2-digit' })
-      const cancelUrl = `${APP_URL}/cancelar-visita/${lead.cancel_token}`
-      const msg = `Hola ${lead.nombre}, tu visita a ${lead.propiedad_interes} es en 1 hora (${fechaStr} hrs). Te esperamos.\n\nSi no puedes asistir, cancela aqui: ${cancelUrl}`
+      const cancelPart = lead.cancel_token ? `\n\nSi no puedes asistir, cancela aqui: ${APP_URL}/cancelar-visita/${lead.cancel_token}` : ''
+      const msg = `Hola ${lead.nombre}, tu visita a ${lead.propiedad_interes} es en 1 hora (${fechaStr} hrs). Te esperamos.${cancelPart}`
       await enviarWhatsAppAuto(lead.telefono, msg, 'recordatorio_1h', lead.id)
       await supabase.from('leads').update({ recordatorio_1h_enviado: true }).eq('id', lead.id)
     }
@@ -1938,7 +2268,7 @@ cron.schedule('0 10 * * *', async () => {
       const fechaCorte = new Date(Date.now() - diasDesde * 24 * 60 * 60 * 1000).toISOString()
       const { data: leads } = await supabase.from('leads').select('*')
         .eq('secuencia_dia', dia)
-        .eq('canal', 'whatsapp')
+        .not('telefono', 'is', null)
         .in('estado', ['nuevo', 'frio', 'tibio'])
         .lt('updated_at', fechaCorte)
 
@@ -1992,10 +2322,118 @@ cron.schedule('0 9 * * *', async () => {
 }, { timezone: 'America/Santiago' })
 
 
+// ─── AI WORKSPACE — Copiloto Multiagente ─────────────────────────────────────
+
+// Ruta protegida para el workspace
+app.get('/workspace', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'workspace.html'))
+})
+app.get('/workspace.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'workspace.html'))
+})
+
+// Historial de conversaciones del workspace (en memoria, por sesión)
+// En Fase 2 se persiste en tabla conversaciones_workspace
+const historialWorkspace = new Map() // sessionToken → [ { role, content } ]
+
+// Obtener tenant_id del corredor autenticado
+// Durante la migración, se usa el tenant PROLIG para todos los usuarios existentes
+async function obtenerTenantIdDeSesion(cookies) {
+  const sesion = sesionesActivas.get(cookies.nova_session)
+  if (!sesion) return null
+
+  // Si la sesión ya tiene tenant_id (usuarios migrados), usarlo directamente
+  if (sesion.tenant_id) return sesion.tenant_id
+
+  // Intentar obtener el tenant PROLIG desde la tabla tenants
+  try {
+    const { data } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('slug', 'prolig')
+      .single()
+    if (data?.id) return data.id
+  } catch {
+    // tabla tenants no existe aún — usar modo single-tenant
+  }
+
+  // Fallback single-tenant: operar sin aislamiento de tenant
+  // Seguro mientras solo existe PROLIG en el sistema
+  return 'single-tenant'
+}
+
+// POST /api/ai-copilot — endpoint principal del AI Workspace con streaming SSE
+app.post('/api/ai-copilot', requireAuth, async (req, res) => {
+  const { procesarMensajeStream } = require('./src/agents/orchestrator')
+  const cookies = parseCookies(req)
+  const sesion = sesionesActivas.get(cookies.nova_session)
+
+  const { mensaje, conversacion_id } = req.body
+  if (!mensaje || typeof mensaje !== 'string' || mensaje.trim().length === 0) {
+    return res.status(400).json({ error: 'Mensaje requerido' })
+  }
+  if (mensaje.trim().length > 2000) {
+    return res.status(400).json({ error: 'Mensaje demasiado largo' })
+  }
+
+  // Obtener tenant_id (puede ser un UUID real o 'single-tenant' como fallback)
+  const tenantId = await obtenerTenantIdDeSesion(cookies)
+  if (!tenantId) {
+    return res.status(403).json({ error: 'Sesión inválida. Vuelve a iniciar sesión.' })
+  }
+
+  // Recuperar historial de la sesión
+  const sessionKey = cookies.nova_session + (conversacion_id || '')
+  const historial = historialWorkspace.get(sessionKey) || []
+
+  // Configurar SSE
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders()
+
+  try {
+    // Llamar al orquestador con streaming
+    const respuestaTexto = await procesarMensajeStream({
+      mensaje: mensaje.trim(),
+      historial,
+      tenantId,
+      res,
+      usuarioNombre: sesion?.nombre || 'corredor'
+    })
+
+    // Guardar AMBOS mensajes en historial para que Claude tenga contexto correcto
+    historial.push({ role: 'user', content: mensaje.trim() })
+    if (respuestaTexto) historial.push({ role: 'assistant', content: respuestaTexto })
+    if (historial.length > 20) historial.splice(0, historial.length - 20)
+    historialWorkspace.set(sessionKey, historial)
+
+    // Limpieza de historiales muy antiguos (máx 500 sesiones)
+    if (historialWorkspace.size > 500) {
+      const primeraKey = historialWorkspace.keys().next().value
+      historialWorkspace.delete(primeraKey)
+    }
+  } catch (err) {
+    console.error('[ai-copilot] Error:', err.message)
+    res.write(`data: ${JSON.stringify({ tipo: 'error', mensaje: 'Error interno del copiloto' })}\n\n`)
+    res.end()
+  }
+})
+
+// POST /api/ai-copilot/reset — limpiar historial de conversación
+app.post('/api/ai-copilot/reset', requireAuth, (req, res) => {
+  const cookies = parseCookies(req)
+  const { conversacion_id } = req.body
+  const sessionKey = cookies.nova_session + (conversacion_id || '')
+  historialWorkspace.delete(sessionKey)
+  res.json({ ok: true })
+})
+
 const PUERTO = process.env.PORT || 3000
 app.listen(PUERTO, '0.0.0.0', () => {
   console.log(`Servidor corriendo en puerto ${PUERTO}`)
-  console.log(`Ambiente: ${process.env.SITE_NAME || 'Nova — Prolig Propiedades'}`)
+  console.log(`Ambiente: ${process.env.SITE_NAME || 'Nova CRM'}`)
   const apiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY || ''
   console.log(`Anthropic key: ${apiKey ? apiKey.substring(0,15) + '...' : 'NO CONFIGURADA'}`)
 })

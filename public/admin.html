@@ -964,20 +964,33 @@ async function confirmarImportar() {
   if (!filasImportar.length) return
   const btn = document.getElementById('btn-import-confirmar')
   btn.disabled = true
-  const LOTE = 20
-  let insertadas = 0, errores = 0
-  for (let i = 0; i < filasImportar.length; i += LOTE) {
-    const lote = filasImportar.slice(i, i + LOTE)
-    const { error } = await db.from('propiedades').insert(lote)
-    if (error) errores += lote.length
-    else insertadas += lote.length
-    btn.textContent = `Importando... ${Math.min(i + LOTE, filasImportar.length)}/${filasImportar.length}`
+  btn.textContent = `Importando ${filasImportar.length} propiedades...`
+  try {
+    const res = await fetch('/api/propiedades/importar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ propiedades: filasImportar })
+    })
+    const result = await res.json()
+    if (!res.ok) {
+      toast('Error: ' + (result.error || 'No se pudo importar'), true)
+      btn.disabled = false
+      btn.textContent = `Importar ${filasImportar.length} propiedades`
+      return
+    }
+    cerrarImportar()
+    await cargarPropiedades()
+    if (result.errores && result.errores.length > 0) {
+      const primerError = result.errores[0]
+      toast(`${result.insertadas} importadas. Fila ${primerError.fila} falló: ${primerError.error}`, result.insertadas === 0)
+    } else {
+      toast(`${result.insertadas} propiedades importadas correctamente`)
+    }
+  } catch(e) {
+    toast('Error de conexión: ' + e.message, true)
+    btn.disabled = false
+    btn.textContent = `Importar ${filasImportar.length} propiedades`
   }
-  btn.disabled = false
-  cerrarImportar()
-  await cargarPropiedades()
-  if (errores === 0) toast(`${insertadas} propiedades importadas correctamente`)
-  else toast(`${insertadas} importadas, ${errores} fallaron`, errores > 0 && insertadas === 0)
 }
 
 // ─── Health check ────────────────────────────────────────────────────────────
@@ -1056,5 +1069,6 @@ fetch('/api/config')
   Equipo
 </a>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+<script src="/copilot-btn.js"></script>
 </body>
 </html>

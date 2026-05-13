@@ -2,244 +2,381 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<link rel="stylesheet" href="/nova-premium.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Propiedad — Nova Inmobiliario</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Propiedad — PRO LIG Corredora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
+:root {
+  --ink: #07090a;
+  --ink2: #0d1410;
+  --forest: #1a3320;
+  --leaf: #2e7d32;
+  --moss: #4caf50;
+  --cream: #f5f0e8;
+  --cream-dim: rgba(245,240,232,0.55);
+  --gold: #b8973a;
+  --border: rgba(245,240,232,0.08);
+  --border-g: rgba(46,125,50,0.25);
+  --ff-display: 'Playfair Display', Georgia, serif;
+  --ff-body: 'DM Sans', system-ui, sans-serif;
+  --ff-mono: 'DM Mono', monospace;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--ff-body);
+  line-height: 1.6;
+  min-height: 100vh;
+}
 
-/* Header */
-.header{background:#1A3A5C;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
-.header-brand{color:#fff;font-size:16px;font-weight:500;letter-spacing:.3px}
-.header-sub{color:#C9A96E;font-size:12px}
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(7,9,10,0.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  display: flex; align-items: center;
+  text-decoration: none;
+}
+.logo-pro {
+  font-family: var(--ff-display); font-style: italic; font-weight: 700;
+  font-size: 1.25rem; background: var(--cream); color: var(--ink);
+  padding: 2px 7px; line-height: 1.2;
+}
+.logo-lig {
+  font-family: var(--ff-display); font-style: italic; font-weight: 700;
+  font-size: 1.25rem; background: var(--leaf); color: var(--cream);
+  padding: 2px 7px; line-height: 1.2;
+}
+.nav-back {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  color: var(--cream-dim); font-size: 0.82rem; text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-back:hover { color: var(--cream); }
+.nav-back svg { width: 14px; height: 14px; }
 
-/* Contenedor principal */
-.container{max-width:820px;margin:0 auto;padding:1.5rem 1rem 3rem}
+/* CONTAINER */
+.container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
-/* Loading / error */
-.loading{text-align:center;padding:4rem 1rem;color:#888;font-size:15px}
-.not-found{text-align:center;padding:4rem 1rem}
-.not-found h2{color:#1A3A5C;margin-bottom:.5rem}
-.not-found p{color:#888;font-size:14px}
+/* STATES */
+.loading {
+  text-align: center; padding: 5rem 1rem;
+  color: var(--cream-dim); font-size: 0.95rem;
+}
+.loading::after {
+  content: ''; display: block; width: 32px; height: 32px;
+  border: 2px solid var(--border-g); border-top-color: var(--moss);
+  border-radius: 50%; margin: 1.5rem auto 0;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.not-found { text-align: center; padding: 5rem 1rem; }
+.not-found h2 { font-family: var(--ff-display); font-size: 1.8rem; margin-bottom: 0.5rem; }
+.not-found p { color: var(--cream-dim); margin-bottom: 1.5rem; }
+.not-found a {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.7rem 1.5rem; background: var(--leaf);
+  color: var(--cream); text-decoration: none; font-size: 0.85rem;
+  font-weight: 600; letter-spacing: 0.05em;
+  transition: background 0.2s;
+}
+.not-found a:hover { background: var(--moss); }
 
-/* Galería */
-.galeria{background:#000;border-radius:16px;overflow:hidden;margin-bottom:1rem;position:relative}
-.foto-hero{width:100%;max-height:480px;object-fit:cover;display:block;cursor:pointer}
-.foto-hero-placeholder{width:100%;height:300px;background:#e0e0e0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:14px}
-.thumbnails{display:flex;gap:8px;padding:.75rem;background:#111;overflow-x:auto}
-.thumbnails:empty{display:none}
-.thumb{width:70px;height:70px;object-fit:cover;border-radius:8px;cursor:pointer;opacity:.6;border:2px solid transparent;flex-shrink:0;transition:opacity .2s,border-color .2s}
-.thumb.activo{opacity:1;border-color:#C9A96E}
-.thumb:hover{opacity:.9}
+/* GALERÍA */
+.galeria {
+  background: var(--forest);
+  border-radius: 4px; overflow: hidden;
+  margin-bottom: 1.25rem; position: relative;
+}
+.foto-hero {
+  width: 100%; max-height: 500px;
+  object-fit: cover; display: block; cursor: zoom-in;
+  transition: opacity 0.3s;
+}
+.foto-hero.loading { opacity: 0.6; }
+.foto-placeholder {
+  width: 100%; height: 280px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--cream-dim); font-size: 0.9rem;
+  background: var(--forest);
+}
+.thumbnails {
+  display: flex; gap: 6px; padding: 0.6rem;
+  background: rgba(7,9,10,0.7); overflow-x: auto;
+  scrollbar-width: thin; scrollbar-color: var(--leaf) transparent;
+}
+.thumbnails:empty { display: none; }
+.thumb {
+  width: 72px; height: 56px; object-fit: cover; border-radius: 2px;
+  cursor: pointer; flex-shrink: 0;
+  opacity: 0.55; border: 2px solid transparent;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+.thumb.activo { opacity: 1; border-color: var(--moss); }
+.thumb:hover { opacity: 0.85; }
 
-/* Tarjeta de detalles */
-.card{background:#fff;border-radius:16px;border:.5px solid #e0e0e0;padding:1.5rem;margin-bottom:1rem}
-.badges{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
-.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500}
-.badge-venta{background:#E6F1FB;color:#0C447C}
-.badge-arriendo{background:#EEEDFE;color:#3C3489}
-.badge-disponible{background:#EAF3DE;color:#0F6E56}
-.titulo{font-size:22px;font-weight:600;color:#1A3A5C;margin-bottom:.375rem;line-height:1.3}
-.direccion{font-size:14px;color:#888;margin-bottom:1.25rem}
-.precio{font-size:28px;font-weight:700;color:#1A3A5C;margin-bottom:1.25rem}
+/* CARD */
+.card {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  padding: 1.75rem;
+  margin-bottom: 1rem;
+}
+.badges { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.badge {
+  display: inline-block; padding: 0.22rem 0.65rem;
+  font-size: 0.65rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.badge-venta { background: var(--leaf); color: var(--cream); }
+.badge-arriendo { background: var(--gold); color: var(--ink); }
+.badge-disponible { background: rgba(76,175,80,0.15); color: var(--moss); border: 1px solid var(--border-g); }
+.titulo {
+  font-family: var(--ff-display); font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 400; color: var(--cream); line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+.direccion {
+  font-size: 0.85rem; color: var(--cream-dim); margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.direccion a { color: inherit; text-decoration: none; border-bottom: 1px dashed var(--border-g); transition: color 0.2s; }
+.direccion a:hover { color: var(--cream); }
+.precio {
+  font-family: var(--ff-display); font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; color: var(--moss); margin-bottom: 1.5rem;
+}
+.precio-suf { font-size: 1rem; font-weight: 400; color: var(--cream-dim); }
 
-/* Stats */
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1.25rem}
-.stat{background:#f7f8fa;border-radius:10px;padding:.875rem;text-align:center}
-.stat-val{font-size:22px;font-weight:600;color:#1A3A5C}
-.stat-lbl{font-size:11px;color:#999;margin-top:3px}
+/* STATS */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 1.75rem;
+}
+.stat {
+  padding: 1.1rem; text-align: center;
+  background: var(--ink2);
+}
+.stat-val {
+  font-family: var(--ff-display); font-size: 1.8rem;
+  font-weight: 700; color: var(--cream); line-height: 1;
+}
+.stat-lbl {
+  font-size: 0.68rem; color: var(--cream-dim);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-top: 0.3rem;
+}
 
-/* Descripción */
-.desc-titulo{font-size:13px;font-weight:600;color:#555;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
-.descripcion{font-size:14px;color:#555;line-height:1.65}
+/* DESCRIPCIÓN */
+.desc-titulo {
+  font-size: 0.68rem; font-weight: 600; color: var(--moss);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.6rem;
+}
+.descripcion { font-size: 0.92rem; color: var(--cream-dim); line-height: 1.75; }
 
 /* CTA */
-.cta{background:#fff;border-radius:16px;border:.5px solid #e0e0e0;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.875rem}
-.btn-wa{display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;text-decoration:none;padding:14px 24px;border-radius:12px;font-size:15px;font-weight:500;transition:background .2s}
-.btn-wa:hover{background:#1ebe5d}
-.btn-wa svg{width:22px;height:22px;fill:#fff;flex-shrink:0}
-.btn-visita{display:flex;align-items:center;justify-content:center;background:#1A3A5C;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;border:none;width:100%;transition:background .2s}
-.btn-visita:hover{background:#0f2540}
+.cta {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.btn-wa {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: #25d366; color: #fff; text-decoration: none;
+  padding: 0.9rem 1.5rem; font-size: 0.9rem; font-weight: 600;
+  letter-spacing: 0.04em; transition: background 0.2s;
+}
+.btn-wa:hover { background: #1ebe5d; }
+.btn-wa svg { width: 20px; height: 20px; fill: #fff; flex-shrink: 0; }
+.btn-visita {
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border-g);
+  color: var(--cream-dim); padding: 0.85rem 1.5rem;
+  font-size: 0.85rem; font-weight: 500; cursor: pointer;
+  font-family: var(--ff-body); letter-spacing: 0.04em;
+  transition: color 0.2s, border-color 0.2s, background 0.2s; width: 100%;
+}
+.btn-visita:hover { color: var(--cream); border-color: var(--moss); background: rgba(46,125,50,0.08); }
 
-/* Footer */
-.footer{text-align:center;padding:2rem 1rem 1rem;color:#aaa;font-size:12px}
-.footer span{color:#C9A96E;font-weight:500}
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border);
+  text-align: center; padding: 1.5rem;
+  color: rgba(245,240,232,0.2); font-size: 0.72rem;
+}
+footer a { color: var(--moss); text-decoration: none; }
 
-/* Responsive */
-@media(max-width:500px){
-  .stats-grid{grid-template-columns:repeat(3,1fr)}
-  .titulo{font-size:18px}
-  .precio{font-size:22px}
+@media (max-width: 500px) {
+  .container { padding: 1.5rem 1rem 3rem; }
+  .card { padding: 1.25rem; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div>
-    <div class="header-brand" id="header-brand">Nova Inmobiliario</div>
-    <div class="header-sub" id="header-sub">Prolig Propiedades</div>
-  </div>
-</div>
+<nav>
+  <a href="/" class="logo">
+    <span class="logo-pro">PRO</span><span class="logo-lig">LIG</span>
+  </a>
+  <a href="/" class="nav-back">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Volver al inicio
+  </a>
+</nav>
 
 <div class="container">
-  <div class="loading" id="loading">Cargando propiedad...</div>
+  <div class="loading" id="loading">Cargando propiedad</div>
+
   <div id="not-found" style="display:none" class="not-found">
     <h2>Propiedad no encontrada</h2>
-    <p>Es posible que ya no este disponible o el link sea incorrecto.</p>
+    <p>Es posible que ya no esté disponible o el enlace sea incorrecto.</p>
+    <a href="/propiedades">Ver todas las propiedades</a>
   </div>
 
   <div id="contenido" style="display:none">
-
-    <!-- Galería -->
     <div class="galeria" id="galeria">
       <img id="foto-hero" class="foto-hero" src="" alt="Foto de la propiedad">
       <div class="thumbnails" id="thumbnails"></div>
     </div>
 
-    <!-- Detalles -->
     <div class="card">
       <div class="badges" id="badges"></div>
       <div class="titulo" id="titulo"></div>
       <div class="direccion" id="direccion"></div>
       <div class="precio" id="precio"></div>
       <div class="stats-grid" id="stats-grid"></div>
-      <div class="desc-titulo">Descripcion</div>
+      <div class="desc-titulo">Descripción</div>
       <div class="descripcion" id="descripcion"></div>
     </div>
 
-    <!-- CTA -->
     <div class="cta">
-      <a class="btn-wa" id="btn-wa" href="" target="_blank">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
+      <a class="btn-wa" id="btn-wa" href="" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         Consultar por WhatsApp
       </a>
       <button class="btn-visita" id="btn-visita">Agendar visita</button>
     </div>
-
   </div>
 </div>
 
-<div class="footer">Ficha generada por <span id="footer-brand">Nova Inmobiliario</span></div>
+<footer>
+  <a href="/">PRO LIG</a> — Corredora de Propiedades · La Ligua, V Región
+</footer>
 
+<script src="/chat-btn.js"></script>
 <script>
-const WHATSAPP_NUMBER = '14155238886'
-let db
-
-// Obtener ID desde la URL: /propiedad/3
-const propiedadId = window.location.pathname.split('/').filter(Boolean).pop()
+const WA_NUMBER = '56920553288';
+const propiedadId = window.location.pathname.split('/').filter(Boolean).pop();
 
 function formatPrecio(precio, moneda) {
-  if (!precio) return '-'
-  if (moneda === 'UF') return `${Number(precio).toLocaleString('es-CL')} UF`
-  return `$${Number(precio).toLocaleString('es-CL')}`
+  if (!precio) return '-';
+  if (moneda === 'UF') return Number(precio).toLocaleString('es-CL') + ' UF';
+  return '$' + Number(precio).toLocaleString('es-CL');
 }
 
 function cambiarHero(url, thumbEl) {
-  document.getElementById('foto-hero').src = url
-  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('activo'))
-  if (thumbEl) thumbEl.classList.add('activo')
+  const hero = document.getElementById('foto-hero');
+  hero.classList.add('loading');
+  const img = new Image();
+  img.onload = () => { hero.src = url; hero.classList.remove('loading'); };
+  img.onerror = () => { hero.src = url; hero.classList.remove('loading'); };
+  img.src = url;
+  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('activo'));
+  if (thumbEl) thumbEl.classList.add('activo');
 }
 
 async function cargar() {
   if (!propiedadId || isNaN(Number(propiedadId))) {
-    document.getElementById('loading').style.display = 'none'
-    document.getElementById('not-found').style.display = 'block'
-    return
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').style.display = 'block';
+    return;
   }
 
-  const { data: prop, error } = await db.from('propiedades')
-    .select('*').eq('id', Number(propiedadId)).single()
+  try {
+    const res = await fetch('/api/propiedad/' + propiedadId);
+    if (!res.ok) throw new Error('not found');
+    const { propiedad: p, fotos } = await res.json();
 
-  if (error || !prop) {
-    document.getElementById('loading').style.display = 'none'
-    document.getElementById('not-found').style.display = 'block'
-    return
+    document.title = p.tipo + ' en ' + p.direccion + ' — PRO LIG';
+
+    const todasFotos = [];
+    if (p.imagen_url) todasFotos.push(p.imagen_url);
+    if (fotos) fotos.forEach(f => { if (f.url !== p.imagen_url) todasFotos.push(f.url); });
+
+    const heroEl = document.getElementById('foto-hero');
+    const galeriaEl = document.getElementById('galeria');
+
+    if (todasFotos.length > 0) {
+      heroEl.src = todasFotos[0];
+      heroEl.style.display = 'block';
+      heroEl.addEventListener('click', () => window.open(todasFotos[0], '_blank'));
+    } else {
+      heroEl.style.display = 'none';
+      galeriaEl.innerHTML = '<div class="foto-placeholder">Sin fotos disponibles</div>';
+    }
+
+    if (todasFotos.length > 1) {
+      const thumbsEl = document.getElementById('thumbnails');
+      thumbsEl.innerHTML = todasFotos.map((url, i) =>
+        `<img src="${url}" class="thumb ${i === 0 ? 'activo' : ''}" onclick="cambiarHero('${url}', this)" alt="Foto ${i+1}" loading="lazy">`
+      ).join('');
+    }
+
+    const opBadge = p.operacion === 'venta'
+      ? '<span class="badge badge-venta">Venta</span>'
+      : '<span class="badge badge-arriendo">Arriendo</span>';
+    document.getElementById('badges').innerHTML = opBadge +
+      (p.disponible ? '<span class="badge badge-disponible">Disponible</span>' : '');
+
+    document.getElementById('titulo').textContent = p.tipo + ' en ' + p.direccion;
+    const mapsQ = encodeURIComponent(p.direccion + ', ' + p.comuna + ', Chile');
+    document.getElementById('direccion').innerHTML =
+      `<a href="https://maps.google.com/?q=${mapsQ}" target="_blank" rel="noopener">📍 ${p.direccion}, ${p.comuna}</a>`;
+
+    const precioFmt = formatPrecio(p.precio, p.moneda);
+    document.getElementById('precio').innerHTML = precioFmt +
+      (p.operacion === 'arriendo' ? ' <span class="precio-suf">/mes</span>' : '');
+    document.getElementById('descripcion').textContent = p['descripción'] || 'Sin descripción disponible.';
+
+    const stats = [];
+    if (p.dormitorios != null) stats.push({ val: p.dormitorios, lbl: 'Dormitorios' });
+    if (p['baños'] != null) stats.push({ val: p['baños'], lbl: 'Baños' });
+    if (p.metros) stats.push({ val: p.metros + ' m²', lbl: 'Metros' });
+    document.getElementById('stats-grid').innerHTML = stats.map(s =>
+      `<div class="stat"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`
+    ).join('');
+
+    const msg = encodeURIComponent('Hola, vi la ficha: ' + p.tipo + ' en ' + p.direccion + ', ' + p.comuna + '. Precio: ' + precioFmt + '. Me gustaría más información.');
+    document.getElementById('btn-wa').href = 'https://wa.me/' + WA_NUMBER + '?text=' + msg;
+    document.getElementById('btn-visita').addEventListener('click', () => {
+      const msgV = encodeURIComponent('Hola, quiero agendar una visita para: ' + p.tipo + ' en ' + p.direccion + ', ' + p.comuna + '.');
+      window.open('https://wa.me/' + WA_NUMBER + '?text=' + msgV, '_blank', 'noopener');
+    });
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('contenido').style.display = 'block';
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('not-found').style.display = 'block';
   }
-
-  // Cargar fotos de galería
-  const { data: galeria } = await db.from('fotos_propiedades')
-    .select('*').eq('propiedad_id', prop.id).order('orden')
-
-  // Actualizar título de página
-  document.title = `${prop.tipo} en ${prop.direccion} — ${document.getElementById('header-brand').textContent}`
-
-  // Foto hero
-  const todasFotos = []
-  if (prop.imagen_url) todasFotos.push(prop.imagen_url)
-  if (galeria) galeria.forEach(f => { if (f.url !== prop.imagen_url) todasFotos.push(f.url) })
-
-  const heroEl = document.getElementById('foto-hero')
-  const galeriaEl = document.getElementById('galeria')
-
-  if (todasFotos.length > 0) {
-    heroEl.src = todasFotos[0]
-    heroEl.style.display = 'block'
-  } else {
-    heroEl.style.display = 'none'
-    galeriaEl.style.background = '#e0e0e0'
-    galeriaEl.innerHTML = '<div class="foto-hero-placeholder">Sin fotos disponibles</div>'
-  }
-
-  // Thumbnails (solo si hay mas de 1 foto)
-  if (todasFotos.length > 1) {
-    const thumbsEl = document.getElementById('thumbnails')
-    thumbsEl.innerHTML = todasFotos.map((url, i) => `
-      <img src="${url}" class="thumb ${i === 0 ? 'activo' : ''}"
-        onclick="cambiarHero('${url}', this)" alt="Foto ${i+1}">
-    `).join('')
-  }
-
-  // Badges
-  const opBadge = prop.operacion === 'venta'
-    ? `<span class="badge badge-venta">Venta</span>`
-    : `<span class="badge badge-arriendo">Arriendo</span>`
-  document.getElementById('badges').innerHTML = opBadge +
-    (prop.disponible ? '<span class="badge badge-disponible">Disponible</span>' : '')
-
-  // Texto
-  document.getElementById('titulo').textContent = `${prop.tipo} en ${prop.direccion}`
-  const mapsQ = encodeURIComponent(`${prop.direccion}, ${prop.comuna}, Chile`)
-  document.getElementById('direccion').innerHTML = `<a href="https://maps.google.com/?q=${mapsQ}" target="_blank" style="color:#888;text-decoration:none;border-bottom:1px dashed #ccc">${prop.direccion}, ${prop.comuna} 📍</a>`
-  document.getElementById('precio').textContent = formatPrecio(prop.precio, prop.moneda)
-  document.getElementById('descripcion').textContent = prop['descripción'] || 'Sin descripcion disponible.'
-
-  // Stats
-  const stats = []
-  if (prop.dormitorios != null) stats.push({ val: prop.dormitorios, lbl: 'Dormitorios' })
-  if (prop['baños'] != null) stats.push({ val: prop['baños'], lbl: 'Baños' })
-  if (prop.metros) stats.push({ val: prop.metros + ' m²', lbl: 'Metros' })
-  document.getElementById('stats-grid').innerHTML = stats.map(s =>
-    `<div class="stat"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`
-  ).join('')
-
-  // Botones
-  const msg = encodeURIComponent(`Hola, vi la ficha de la propiedad: ${prop.tipo} en ${prop.direccion}, ${prop.comuna}. Precio: ${formatPrecio(prop.precio, prop.moneda)}. Me gustaria mas informacion.`)
-  document.getElementById('btn-wa').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`
-
-  document.getElementById('btn-visita').addEventListener('click', () => {
-    const msgVisita = encodeURIComponent(`Hola, quiero agendar una visita para ver: ${prop.tipo} en ${prop.direccion}, ${prop.comuna}.`)
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msgVisita}`, '_blank')
-  })
-
-  // Mostrar todo
-  document.getElementById('loading').style.display = 'none'
-  document.getElementById('contenido').style.display = 'block'
 }
 
-fetch('/api/config').then(r => r.json()).then(cfg => {
-  db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey)
-  if (cfg.siteName) {
-    document.getElementById('header-brand').textContent = cfg.siteName
-    document.getElementById('header-sub').textContent = 'Ficha de propiedad'
-    document.getElementById('footer-brand').textContent = cfg.siteName
-  }
-  cargar()
-})
+cargar();
 </script>
 </body>
 </html>

@@ -1,57 +1,19 @@
-ANTHROPIC_API_KEY = TU_API_KEY_AQUI Guía: Agregar nuevo cliente Nova
-**Tiempo estimado: 20-30 minutos**
-
----
-# Guía: Agregar nuevo cliente Nova
-
-## Variables de entorno
-
-| Variable | Valor |
-|---------|------|
-| ANTHROPIC_API_KEY | (configurar en Railway) |
-| SUPABASE_URL | (desde Supabase) |
-| SUPABASE_KEY | (anon public key) |
-| RESEND_API_KEY | (configurar en Railway) |
-| TWILIO_ACCOUNT_SID | (configurar en Railway) |
-| TWILIO_AUTH_TOKEN | (configurar en Railway) |
+# Guía: Instalar Nova para nuevo cliente
+**Tiempo estimado: 30-45 minutos**
 
 ---
 
 ## PASO 1 — Crear proyecto Supabase
 
-1. Ir a supabase.com → New project  
-2. Nombre: nova-[cliente]  
-3. Región: São Paulo  
+1. Ir a [supabase.com](https://supabase.com) → **New project**
+2. Nombre: `nova-[nombre-cliente]` (ej: `nova-corredora-valparaiso`)
+3. Región: **South America (São Paulo)**
+4. Esperar ~2 minutos que termine de crear
 
----
+### Crear todas las tablas (SQL Editor → New query → pegar todo junto)
 
-## PASO 2 — Configurar Railway
-
-1. Crear proyecto  
-2. Conectar repo  
-3. Agregar variables de entorno  
-4. Deploy  
-
----
-
-## CHECK FINAL
-
-[ ] Supabase listo  
-[ ] Railway deploy OK  
-[ ] Variables configuradas  
-[ ] Bot respondiendo  
-## PASO 1 — Crear proyecto Supabase
-
-1. Ir a supabase.com → **New project**
-2. Nombre: `nova-[nombre-cliente]` (ej: `nova-corredora-ligua`)
-3. Region: **South America (São Paulo)**
-4. Guardar la contraseña del proyecto (no la necesitarás luego)
-5. Esperar ~2 minutos que termine de crear
-
-### Crear las 3 tablas (SQL Editor → New query)
-
-**Tabla propiedades:**
 ```sql
+-- Propiedades
 create table propiedades (
   id bigint generated always as identity primary key,
   created_at timestamptz default now(),
@@ -68,10 +30,16 @@ create table propiedades (
   disponible boolean default true,
   imagen_url text
 );
-```
 
-**Tabla leads:**
-```sql
+-- Fotos de propiedades
+create table fotos_propiedades (
+  id bigint generated always as identity primary key,
+  propiedad_id bigint references propiedades(id) on delete cascade,
+  url text,
+  orden integer default 0
+);
+
+-- Leads / clientes potenciales
 create table leads (
   id bigint generated always as identity primary key,
   created_at timestamptz default now(),
@@ -82,138 +50,225 @@ create table leads (
   mensaje_inicial text,
   estado text default 'nuevo',
   canal text default 'web',
-  notas text
+  notas text,
+  agente text,
+  tipo_lead text default 'sin_clasificar',
+  fecha_visita timestamptz,
+  calendar_event_id text,
+  cancel_token text,
+  recordatorio_24h_enviado boolean default false,
+  recordatorio_1h_enviado boolean default false,
+  fecha_seguimiento date,
+  tenant_id uuid
 );
-```
 
-**Tabla fotos_propiedades:**
-```sql
-create table fotos_propiedades (
+-- Usuarios del sistema (login CRM)
+create table usuarios (
   id bigint generated always as identity primary key,
-  propiedad_id bigint references propiedades(id) on delete cascade,
-  url text,
-  orden integer default 0
+  created_at timestamptz default now(),
+  nombre text not null,
+  email text unique not null,
+  password_hash text not null,
+  rol text default 'agente',
+  activo boolean default true,
+  google_calendar_id text,
+  tenant_id uuid
 );
-```
 
-**Desactivar RLS en las 3 tablas:**
-```sql
+-- Administraciones de propiedades
+create table administraciones (
+  id bigint generated always as identity primary key,
+  created_at timestamptz default now(),
+  propietario text,
+  rut_propietario text,
+  banco text,
+  tipo_cuenta text,
+  numero_cuenta text,
+  direccion text,
+  arrendatario text,
+  mes text,
+  valor_arriendo numeric,
+  porcentaje_comision numeric default 10,
+  estado text default 'pendiente',
+  notas text,
+  corredor_email text
+);
+
+-- Transacciones cerradas
+create table transacciones (
+  id bigint generated always as identity primary key,
+  created_at timestamptz default now(),
+  fecha_cierre date,
+  tipo text,
+  precio numeric,
+  moneda text default 'CLP',
+  comision_total numeric,
+  agente text,
+  utm_campaign text,
+  propiedad_id bigint,
+  tenant_id uuid
+);
+
+-- Desactivar RLS en todas las tablas
 alter table propiedades disable row level security;
-alter table leads disable row level security;
 alter table fotos_propiedades disable row level security;
+alter table leads disable row level security;
+alter table usuarios disable row level security;
+alter table administraciones disable row level security;
+alter table transacciones disable row level security;
 ```
 
 ### Crear bucket Storage
 
 1. Supabase → **Storage** → **New bucket**
 2. Nombre: `propiedades`
-3. Marcar como **Public**
-4. Crear
+3. Marcar como **Public** → Crear
 
 ### Anotar las credenciales
 
-- Ir a **Settings → API**
-- Copiar **Project URL** → será `SUPABASE_URL`
-- Copiar **anon / public key** → será `SUPABASE_KEY`
+Ir a **Settings → API** y copiar:
+- **Project URL** → `SUPABASE_URL`
+- **anon / public key** → `SUPABASE_ANON_KEY`
+- **service_role key** → `SUPABASE_SERVICE_KEY`
 
 ---
 
-## PASO 2 — Crear proyecto Railway
+## PASO 2 — Fork del repo en GitHub
 
-1. Ir a railway.app → **New project**
+1. Ir a [github.com/felipeconstructor/robot-inmobili](https://github.com/felipeconstructor/robot-inmobili)
+2. Click en **Fork** (arriba a la derecha)
+3. Nombrar el fork: `nova-[nombre-cliente]`
+4. El fork queda en tu cuenta GitHub
+
+---
+
+## PASO 3 — Crear proyecto en Railway
+
+1. Ir a [railway.app](https://railway.app) → **New project**
 2. Elegir **"Deploy from GitHub repo"**
-3. Seleccionar `felipeconstructor/robot-inmobiliario`
-4. Railway empieza a desplegar automáticamente
+3. Seleccionar el fork recién creado
+4. Railway empieza a desplegar
 
 ### Agregar variables de entorno
 
-Railway → proyecto → **Variables** → agregar una por una:
+Railway → proyecto → **Variables** → agregar:
 
 | Variable | Valor |
 |---|---|
-| `ANTHROPIC_API_KEY` |( configurar en railway) |
-| `SUPABASE_URL` | URL del proyecto Supabase recién creado |
-| `SUPABASE_KEY` | Key anon del proyecto Supabase recién creado |
-| `TWILIO_ACCOUNT_SID` | `AC576ce1fa6e074bc53047a3e7319f6bca` |
-| `TWILIO_AUTH_TOKEN` | `c10a0e0a26d00483a0d54cb783499c85` |
+| `ANTHROPIC_API_KEY` | (tu API key de Anthropic) |
+| `SUPABASE_URL` | URL del proyecto Supabase |
+| `SUPABASE_ANON_KEY` | anon key de Supabase |
+| `SUPABASE_SERVICE_KEY` | service_role key de Supabase |
+| `TWILIO_ACCOUNT_SID` | (de twilio.com) |
+| `TWILIO_AUTH_TOKEN` | (de twilio.com) |
 | `TWILIO_WHATSAPP_NUMBER` | `whatsapp:+14155238886` |
-| `GOOGLE_CREDENTIALS` | Pegar el JSON completo de google-credentials.json |
-| `RESEND_API_KEY` | `re_KekDZHkL_4Kca7BP25JXNvbqaEPLgueLS` |
-| `ADMIN_PASSWORD` | Contraseña para el cliente (ej: `cliente2026`) |
-| `NOTIFY_PHONE` | WhatsApp del cliente (ej: `whatsapp:+56912345678`) |
+| `SITE_NAME` | Nombre de la corredora (ej: `Propiedades Valle Central`) |
+| `ADMIN_PASSWORD` | Contraseña para el cliente (ej: `corredora2026`) |
+| `NOTIFY_PHONE` | WhatsApp del admin (ej: `whatsapp:+56912345678`) |
+| `CALENDAR_ID` | Email de Google Calendar del admin |
+| `EMAIL_ADMIN` | Email del admin (para reportes) |
+| `APP_URL` | URL pública del proyecto Railway |
 | `PORT` | `8080` |
-| `APP_URL` | URL del proyecto Railway (ver abajo) |
 
-### Obtener la URL del proyecto
+### Redesplegar
 
-- Railway asigna una URL automáticamente al crear el proyecto
-- Se ve en **Settings → Networking → Public domain**
-- Ejemplo: `https://nombre-produccion.up.railway.app`
-- Esa URL va en la variable `APP_URL`
+Después de agregar todas las variables → **Deploy** para aplicarlos.
 
-### Redesplegar con las variables
+### Obtener la URL pública
 
-- Después de agregar todas las variables → **Deploy** para que tome los cambios
+Railway → **Settings → Networking → Public domain**
+Ejemplo: `https://nova-cliente.up.railway.app`
+→ Esta va en la variable `APP_URL`
 
 ---
 
-## PASO 3 — Personalizar el prompt de Nova
+## PASO 4 — Crear usuario admin inicial
 
-Abrir `server.js` y buscar la línea:
-
-```
-Eres Nova, asistente virtual de Prolig Propiedades
-```
-
-Cambiar el nombre y la descripción por los del cliente nuevo. Ejemplo:
+El sistema no tiene usuarios por defecto. Entrar a:
 
 ```
-Eres Nova, asistente virtual de Corredora La Ligua, corredora de propiedades en La Ligua, V Region de Chile.
+https://tu-url.up.railway.app/login.html
 ```
 
-Hacer push → ambos clientes se actualizan → **problema**: si el prompt es genérico, afecta a todos.
-
-**Solución correcta:** usar variable de entorno `PROMPT_EMPRESA` (pendiente implementar).
+El primer acceso usa la variable `ADMIN_PASSWORD`. Una vez dentro:
+1. Ir a **Usuarios** en el sidebar
+2. Crear el primer usuario admin con email y contraseña
+3. A partir de ahí se usa ese login
 
 ---
 
-## PASO 4 — Entregar al cliente
+## PASO 5 — Google Calendar (opcional)
 
-URLs que le das al cliente:
+Si el cliente quiere que Nova agende visitas automáticamente:
+
+1. El admin va a Google Calendar → **Configuración del calendario** → **Compartir con personas específicas**
+2. Agrega: `nova-calendar@sodium-gateway-490602-p0.iam.gserviceaccount.com`
+3. Permiso: **"Ver todos los detalles"** (para verificar disponibilidad) o **"Hacer cambios"** (para crear eventos)
+4. El ID del calendario es el email del admin → va en la variable `CALENDAR_ID`
+
+---
+
+## PASO 6 — Personalizar el prompt de Nova
+
+En el fork, abrir `server.js` y buscar:
+
+```
+Eres Nova, asistente virtual de Nova CRM
+```
+
+Cambiar por el nombre, ciudad y descripción del cliente:
+
+```
+Eres Nova, asistente virtual de Propiedades Valle Central, corredora especializada en la V Región de Chile.
+```
+
+Push → Railway redespliega automáticamente.
+
+---
+
+## PASO 7 — Entregar al cliente
 
 | Panel | URL |
 |---|---|
-| Chat público | `https://su-url.up.railway.app` |
+| Sitio web público | `https://su-url.up.railway.app` |
+| Workspace / Chat IA | `https://su-url.up.railway.app/workspace.html` |
 | Admin propiedades | `https://su-url.up.railway.app/admin.html` |
 | CRM leads | `https://su-url.up.railway.app/crm.html` |
-| Contraseña | La que pusiste en `ADMIN_PASSWORD` |
+| Administraciones | `https://su-url.up.railway.app/administraciones.html` |
 
 ---
 
-## PASO 5 — Cobrar
+## Costos mensuales por cliente
 
-- Instalación: **$150.000 CLP** (pago único)
-- Mensualidad: **$49.000 CLP/mes**
-- Costo real tuyo: ~$10-15 USD/mes → margen 75%
+| Servicio | Costo |
+|---|---|
+| Railway | ~$5 USD/mes |
+| Supabase | Gratis (plan free) |
+| Anthropic API | ~$5–20 USD/mes según uso |
+| Twilio WhatsApp | ~$15 USD/mes (número dedicado) |
+| **Total tuyo** | **~$25–40 USD/mes** |
+
+Precio sugerido al cliente: **$49.000–$89.000 CLP/mes** → margen 70–80%
 
 ---
 
 ## Checklist rápido
 
 ```
-[ ] Supabase: proyecto creado
-[ ] Supabase: 3 tablas creadas (propiedades, leads, fotos_propiedades)
-[ ] Supabase: RLS desactivado en las 3 tablas
+[ ] Supabase: proyecto creado en São Paulo
+[ ] Supabase: SQL ejecutado (todas las tablas creadas)
+[ ] Supabase: RLS desactivado en todas las tablas
 [ ] Supabase: bucket "propiedades" creado (público)
-[ ] Railway: proyecto creado desde repo robot-inmobiliario
+[ ] GitHub: fork del repo creado
+[ ] Railway: proyecto creado desde el fork
 [ ] Railway: todas las variables de entorno configuradas
 [ ] Railway: redeploy hecho después de las variables
-[ ] Prompt Nova: nombre del cliente actualizado
-[ ] URLs entregadas al cliente
-[ ] Contraseña entregada al cliente
-[ ] Cobro realizado
+[ ] Nova: prompt personalizado con nombre del cliente
+[ ] Google Calendar: compartido con service account (si aplica)
+[ ] Usuario admin: creado desde el panel Usuarios
+[ ] URLs y contraseña entregadas al cliente
 ```
 
 ---
 
-*Actualizado: 29 marzo 2026*
+*Actualizado: Mayo 2026*

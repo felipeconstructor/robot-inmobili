@@ -20,6 +20,8 @@
 .badge-admin{background:rgba(16,185,129,.1)!important;color:#6EE7B7!important;border:1px solid rgba(16,185,129,.2)!important}
 .badge-agente{background:rgba(59,130,246,.1)!important;color:#93C5FD!important;border:1px solid rgba(59,130,246,.2)!important}
 .badge-inactivo{background:rgba(148,163,184,.07)!important;color:var(--text-3)!important;border:1px solid rgba(148,163,184,.14)!important}
+.overlay{display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;padding:1rem}
+.overlay.activo{display:flex}
 @media(max-width:768px){.form-grid{grid-template-columns:1fr}.container{padding:1rem .75rem}}
 </style>
 </head>
@@ -254,5 +256,6 @@ fetch('/api/config').then(r => r.json()).then(cfg => {
 cargarUsuarios()
 </script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+<script src="/copilot-btn.js"></script>
 </body>
 </html>

@@ -784,9 +784,6 @@ async function cargarLeads() {
     const elUpd = document.getElementById('ultimo-update'); if(elUpd) elUpd.textContent = 'Actualizando...'
     const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0)
     let query = db.from('leads').select('*').order('created_at', { ascending: false })
-    if (usuarioActual && usuarioActual.rol === 'agente') {
-      query = query.eq('agente', usuarioActual.nombre)
-    }
     const { data, error } = await query
     if (error) {
       document.getElementById('tabla-leads').innerHTML = '<tr><td colspan="8" class="empty" style="color:#c0392b">Error Supabase: ' + error.message + '</td></tr>'
@@ -1023,5 +1020,6 @@ async function guardarNuevoLead() {
 </script>
 
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js")</script>
+<script src="/copilot-btn.js"></script>
 </body>
 </html>

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propiedades — PRO LIG Corredora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #07090a;
+    --ink2: #0d1410;
+    --ink3: #131c14;
+    --forest: #1a3320;
+    --leaf: #2e7d32;
+    --moss: #4caf50;
+    --cream: #f5f0e8;
+    --cream-dim: rgba(245,240,232,0.55);
+    --gold: #b8973a;
+    --border: rgba(245,240,232,0.08);
+    --border-g: rgba(46,125,50,0.25);
+    --ff-display: 'Playfair Display', Georgia, serif;
+    --ff-body: 'DM Sans', system-ui, sans-serif;
+    --ff-mono: 'DM Mono', monospace;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    /* aliases para compatibilidad */
+    --green: var(--moss);
+    --green-dark: var(--leaf);
+    --green-dim: rgba(46,125,50,0.12);
+    --black: var(--ink);
+    --black2: var(--ink2);
+    --black3: var(--ink3);
+    --white: var(--cream);
+    --muted: var(--cream-dim);
+    --muted2: rgba(245,240,232,0.38);
+    --font-display: var(--ff-display);
+    --font-body: var(--ff-body);
+    --transition: all 0.4s var(--ease);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--ink); color: var(--cream); font-family: var(--ff-body); min-height: 100vh; }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(7,9,10,0.92); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    display: flex; align-items: center;
+    text-decoration: none;
+  }
+  .logo-pro {
+    font-family: var(--ff-display); font-style: italic; font-weight: 700;
+    font-size: 1.25rem; background: var(--cream); color: var(--ink);
+    padding: 2px 7px; line-height: 1.2;
+  }
+  .logo-lig {
+    font-family: var(--ff-display); font-style: italic; font-weight: 700;
+    font-size: 1.25rem; background: var(--leaf); color: var(--cream);
+    padding: 2px 7px; line-height: 1.2;
+  }
+  .nav-back {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: var(--cream-dim); font-size: 0.82rem; text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: var(--cream); }
+  .nav-back svg { width: 14px; height: 14px; }
+
+  /* HERO */
+  .page-hero {
+    padding: 4rem 2rem 2.5rem;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .page-label {
+    font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--moss); font-weight: 500; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .page-label::before { content: ''; display: block; width: 28px; height: 1px; background: var(--leaf); }
+  .page-title {
+    font-family: var(--ff-display); font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 400; line-height: 1.15; margin-bottom: 0.5rem;
+  }
+  .page-title em { font-style: italic; color: var(--moss); }
+  .page-sub { color: var(--cream-dim); font-size: 1rem; }
+
+  /* FILTROS */
+  .filtros-bar {
+    max-width: 1200px; margin: 0 auto; padding: 0 2rem 2rem;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .filtro-btn {
+    padding: 0.45rem 1.2rem; border-radius: 50px; font-size: 0.8rem;
+    font-weight: 600; letter-spacing: 0.04em; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent; color: var(--muted);
+    transition: all 0.2s ease; font-family: inherit;
+  }
+  .filtro-btn:hover { border-color: rgba(34,197,94,0.4); color: var(--green); }
+  .filtro-btn.active { background: rgba(76,175,80,0.15); border-color: var(--moss); color: var(--moss); box-shadow: 0 0 12px rgba(76,175,80,0.2); }
+  .filtros-count { margin-left: auto; color: var(--muted); font-size: 0.82rem; }
+
+  /* GRID */
+  .catalogo {
+    max-width: 1200px; margin: 0 auto; padding: 0 2rem 4rem;
+  }
+  .props-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5px;
+  }
+  .prop-card {
+    background: var(--ink3);
+    overflow: hidden; border: none;
+    transition: transform 0.4s var(--ease); cursor: pointer;
+    opacity: 0; transform: translateY(16px);
+    animation: fadeUp 0.4s var(--ease) forwards;
+    position: relative;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  .prop-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.5); z-index: 1; }
+  .prop-img {
+    position: relative; height: 200px; overflow: hidden;
+    background: var(--forest);
+  }
+  .prop-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease); }
+  .prop-card:hover .prop-img img { transform: scale(1.05); }
+  .prop-badge {
+    position: absolute; top: 0.75rem; left: 0.75rem;
+    font-size: 0.62rem; font-weight: 700;
+    padding: 0.2rem 0.55rem; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .prop-badge:not(.arriendo) { background: var(--leaf); color: var(--cream); }
+  .prop-badge.arriendo { background: var(--gold); color: var(--ink); }
+  .prop-body { padding: 1.1rem; background: var(--ink2); }
+  .prop-price {
+    font-family: var(--ff-display); font-size: 1.4rem; font-weight: 700;
+    color: var(--moss); margin-bottom: 0.3rem;
+  }
+  .prop-price span { font-size: 0.82rem; font-weight: 400; color: var(--cream-dim); }
+  .prop-title { font-size: 0.88rem; font-weight: 500; color: var(--cream); margin-bottom: 0.25rem; }
+  .prop-location {
+    color: var(--cream-dim); font-size: 0.78rem; margin-bottom: 0.85rem;
+    display: flex; align-items: center; gap: 0.3rem;
+  }
+  .prop-location svg { width: 11px; height: 11px; flex-shrink: 0; }
+  .prop-meta {
+    display: flex; gap: 0.85rem; padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  .prop-meta-item {
+    display: flex; align-items: center; gap: 0.3rem;
+    font-size: 0.75rem; color: rgba(245,240,232,0.38);
+  }
+  .prop-meta-item svg { width: 13px; height: 13px; stroke: var(--leaf); }
+  .img-placeholder {
+    width: 100%; height: 100%; display: flex; align-items: center;
+    justify-content: center; color: var(--cream-dim); font-size: 2.5rem; opacity: 0.2;
+    background: var(--forest);
+  }
+  .prop-loading { color: var(--cream-dim); padding: 3rem 0; text-align: center; grid-column: 1/-1; }
+  .prop-sin-resultados {
+    color: var(--cream-dim); padding: 3rem 0; text-align: center;
+    grid-column: 1/-1; font-size: 1rem;
+  }
+
+  /* Grain overlay — consistencia con index */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 9999;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    opacity: 0.6;
+  }
+
+  /* Filtros comunas */
+  .filtros-bar { flex-wrap: wrap; }
+  .filtros-sep { width: 100%; height: 0; margin: 0.15rem 0; }
+  .filtros-label {
+    font-family: var(--ff-mono, monospace); font-size: 0.6rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(245,240,232,0.28); white-space: nowrap;
+    align-self: center; padding-right: 0.1rem;
+  }
+  .filtro-comuna {
+    padding: 0.35rem 0.9rem; border-radius: 50px; font-size: 0.72rem;
+    font-weight: 500; letter-spacing: 0.03em; cursor: pointer;
+    border: 1px solid rgba(184,151,58,0.22);
+    background: transparent; color: rgba(245,240,232,0.4);
+    transition: all 0.2s ease; font-family: inherit;
+  }
+  .filtro-comuna:hover { border-color: rgba(184,151,58,0.55); color: var(--gold); }
+  .filtro-comuna.active { background: rgba(76,175,80,0.15); border-color: var(--moss); color: var(--moss); box-shadow: 0 0 12px rgba(76,175,80,0.2); }
+
+  @media (max-width: 900px) { .props-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 580px) {
+    .props-grid { grid-template-columns: 1fr; }
+    .page-hero, .filtros-bar, .catalogo { padding-left: 1rem; padding-right: 1rem; }
+    .page-hero { padding-top: 2.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <span class="logo-pro">PRO</span><span class="logo-lig">LIG</span>
+  </a>
+  <a href="/" class="nav-back">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Volver al inicio
+  </a>
+</nav>
+
+<div class="page-hero">
+  <div class="page-label">Portafolio completo</div>
+  <h1 class="page-title">Todas nuestras <em>propiedades</em></h1>
+  <p class="page-sub">Encuentra tu próximo hogar o inversión en las 8 comunas de la V Región que cubrimos.</p>
+</div>
+
+<div class="filtros-bar">
+  <button class="filtro-btn active" data-filtro="">Todas</button>
+  <button class="filtro-btn" data-filtro="venta">Venta</button>
+  <button class="filtro-btn" data-filtro="arriendo">Arriendo</button>
+  <div class="filtros-sep"></div>
+  <span class="filtros-label">Zona</span>
+  <button class="filtro-comuna" data-comuna="La Ligua">La Ligua</button>
+  <button class="filtro-comuna" data-comuna="Cabildo">Cabildo</button>
+  <button class="filtro-comuna" data-comuna="Papudo">Papudo</button>
+  <button class="filtro-comuna" data-comuna="Zapallar">Zapallar</button>
+  <button class="filtro-comuna" data-comuna="Petorca">Petorca</button>
+  <button class="filtro-comuna" data-comuna="Los Vilos">Los Vilos</button>
+  <button class="filtro-comuna" data-comuna="Catemu">Catemu</button>
+  <button class="filtro-comuna" data-comuna="Olmué">Olmué</button>
+  <span class="filtros-count" id="contador"></span>
+</div>
+
+<div class="catalogo">
+  <div class="props-grid" id="propiedades-grid">
+    <div class="prop-loading">Cargando propiedades...</div>
+  </div>
+</div>
+
+<script src="/chat-btn.js"></script>
+<script>
+const SVG_PIN  = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+const SVG_DORM = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>';
+const SVG_BANO = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>';
+const SVG_M2   = '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>';
+
+function renderCard(p, delay) {
+  const precio = p.moneda === 'UF'
+    ? p.precio + ' UF'
+    : '$' + Number(p.precio).toLocaleString('es-CL');
+  const sufijo = p.operacion === 'arriendo' ? '/mes' : '';
+  const badgeClass = p.operacion === 'arriendo' ? 'prop-badge arriendo' : 'prop-badge';
+  const badgeLabel = p.operacion === 'arriendo' ? 'Arriendo' : 'Venta';
+  const imgHtml = p.imagen_url
+    ? `<img src="${p.imagen_url}" alt="${p.tipo} en ${p.comuna}" loading="lazy">`
+    : `<div class="img-placeholder">🏠</div>`;
+  const titulo = p.tipo
+    ? (p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1)) + ' en ' + p.comuna
+    : p.comuna;
+  return `<div class="prop-card" style="animation-delay:${delay}s" onclick="window.location='/propiedad/${p.id}'">
+    <div class="prop-img">
+      ${imgHtml}
+      <span class="${badgeClass}">${badgeLabel}</span>
+    </div>
+    <div class="prop-body">
+      <div class="prop-price">${precio}${sufijo ? ' <span>' + sufijo + '</span>' : ''}</div>
+      <div class="prop-title">${titulo}</div>
+      <div class="prop-location">${SVG_PIN} ${p.direccion || p.comuna}</div>
+      <div class="prop-meta">
+        ${p.dormitorios ? `<div class="prop-meta-item">${SVG_DORM} ${p.dormitorios} dorm.</div>` : ''}
+        ${p.baños ? `<div class="prop-meta-item">${SVG_BANO} ${p.baños} baños</div>` : ''}
+        ${p.metros ? `<div class="prop-meta-item">${SVG_M2} ${p.metros} m²</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+let filtroOp = '';
+let filtroComuna = '';
+
+async function cargarPropiedades() {
+  const grid = document.getElementById('propiedades-grid');
+  const contador = document.getElementById('contador');
+  grid.innerHTML = '<div class="prop-loading">Cargando propiedades...</div>';
+  try {
+    let url = '/api/propiedades-publicas?limite=50';
+    if (filtroOp) url += '&operacion=' + filtroOp;
+    if (filtroComuna) url += '&comuna=' + encodeURIComponent(filtroComuna);
+    const res = await fetch(url);
+    const { propiedades } = await res.json();
+    if (!propiedades || !propiedades.length) {
+      grid.innerHTML = '<p class="prop-sin-resultados">No hay propiedades disponibles en este momento.</p>';
+      if (contador) contador.textContent = '';
+      return;
+    }
+    if (contador) contador.textContent = propiedades.length + ' propiedades';
+    grid.innerHTML = propiedades.map((p, i) => renderCard(p, i * 0.05)).join('');
+  } catch (e) {
+    grid.innerHTML = '<p class="prop-sin-resultados">No se pudieron cargar las propiedades.</p>';
+  }
+}
+
+document.querySelectorAll('.filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroOp = btn.dataset.filtro;
+    cargarPropiedades();
+  });
+});
+
+document.querySelectorAll('.filtro-comuna').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.filtro-comuna').forEach(b => b.classList.remove('active'));
+    filtroComuna = wasActive ? '' : btn.dataset.comuna;
+    if (!wasActive) btn.classList.add('active');
+    cargarPropiedades();
+  });
+});
+
+cargarPropiedades();
+</script>
+</body>
+</html>

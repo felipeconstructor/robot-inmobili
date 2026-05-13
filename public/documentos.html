@@ -105,6 +105,11 @@
       <div class="doc-title">Orden de Visita</div>
       <div class="doc-desc">Confirmación de visita a propiedad para cliente</div>
     </div>
+    <div class="doc-card" onclick="abrirModal('arriendo-prolig')">
+      <div class="doc-icon">📄</div>
+      <div class="doc-title">Contrato Arriendo Prolig</div>
+      <div class="doc-desc">Modelo oficial Prolig — 19 cláusulas, con opción de representante</div>
+    </div>
   </div>
 </div>
 
@@ -340,6 +345,199 @@
   </div>
 </div>
 
+<!-- Modal Contrato Arriendo Prolig -->
+<div class="modal" id="modal-arriendo-prolig">
+  <div class="modal-box" style="max-width:640px">
+    <button class="close" onclick="cerrarModal('arriendo-prolig')">✕</button>
+    <div class="modal-title">Contrato de Arrendamiento — Modelo Prolig</div>
+
+    <div class="section-title">Lugar y Fecha</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ciudad</label>
+        <input type="text" id="ap-ciudad" value="La Ligua">
+      </div>
+      <div class="form-group">
+        <label>Fecha del contrato</label>
+        <input type="date" id="ap-fecha">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Fecha entrega material</label>
+        <input type="date" id="ap-fecha-entrega">
+      </div>
+      <div class="form-group"></div>
+    </div>
+
+    <div class="section-title">Arrendador (quien firma)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tratamiento</label>
+        <select id="ap-arr-trato">
+          <option value="doña">doña</option>
+          <option value="don">don</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="ap-arr-nombre" placeholder="Laura Inés Pizarro Muñoz">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nacionalidad</label>
+        <input type="text" id="ap-arr-nac" value="Chileno">
+      </div>
+      <div class="form-group">
+        <label>RUT</label>
+        <input type="text" id="ap-arr-rut" placeholder="12.226.467-k">
+      </div>
+    </div>
+
+    <div class="section-title" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px" onclick="document.getElementById('ap-tiene-rep').click()">
+      <input type="checkbox" id="ap-tiene-rep" onchange="toggleRepresentante()" style="cursor:pointer;width:16px;height:16px;flex-shrink:0">
+      <span>Actúa en representación de propietario real (marcar si aplica)</span>
+    </div>
+    <div id="bloque-representante" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre propietario real</label>
+          <input type="text" id="ap-prop-nombre" placeholder="Leonardo Agustín Pizarro Muñoz">
+        </div>
+        <div class="form-group">
+          <label>RUT propietario</label>
+          <input type="text" id="ap-prop-rut" placeholder="11.515.817-1">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nacionalidad propietario</label>
+          <input type="text" id="ap-prop-nac" value="chileno">
+        </div>
+        <div class="form-group"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Arrendatario/a</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tratamiento</label>
+        <select id="ap-at-trato">
+          <option value="don">don</option>
+          <option value="doña">doña</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="ap-at-nombre" placeholder="Osvaldo Antonio Hevia Pizarro">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nacionalidad</label>
+        <input type="text" id="ap-at-nac" value="chileno">
+      </div>
+      <div class="form-group">
+        <label>RUT</label>
+        <input type="text" id="ap-at-rut" placeholder="9.027.586-0">
+      </div>
+    </div>
+
+    <div class="section-title">Propiedad</div>
+    <div class="form-row full">
+      <div class="form-group">
+        <label>Dirección completa</label>
+        <input type="text" id="ap-direccion" placeholder="villa Juan Pablo II depto. n° 2 block 270, ciudad de la Ligua">
+      </div>
+    </div>
+
+    <div class="section-title">Plazo</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Duración (meses)</label>
+        <input type="number" id="ap-meses" value="12">
+      </div>
+      <div class="form-group">
+        <label>Fecha inicio arriendo</label>
+        <input type="date" id="ap-inicio">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Días aviso no renovación</label>
+        <input type="number" id="ap-aviso" value="30">
+      </div>
+      <div class="form-group"></div>
+    </div>
+
+    <div class="section-title">Renta y Forma de Pago</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Renta mensual ($)</label>
+        <input type="number" id="ap-renta" placeholder="250000">
+      </div>
+      <div class="form-group">
+        <label>Primeros N días para pagar</label>
+        <input type="number" id="ap-dias-pago" value="5">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>N° cuenta</label>
+        <input type="text" id="ap-cuenta" placeholder="21970362239">
+      </div>
+      <div class="form-group">
+        <label>Tipo cuenta / Banco</label>
+        <input type="text" id="ap-tipo-cuenta" placeholder="chequera electrónica Banco Estado">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Titular cuenta</label>
+        <input type="text" id="ap-titular" placeholder="Laura Inés Pizarro Muñoz">
+      </div>
+      <div class="form-group">
+        <label>RUT titular</label>
+        <input type="text" id="ap-titular-rut" placeholder="12.226.467-k">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Email para comprobante</label>
+        <input type="email" id="ap-email" placeholder="prolig@gmail.com">
+      </div>
+      <div class="form-group">
+        <label>% multa por día de atraso</label>
+        <input type="number" id="ap-multa" value="1" step="0.1">
+      </div>
+    </div>
+
+    <div class="section-title">Garantía</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Monto garantía ($)</label>
+        <input type="number" id="ap-garantia" placeholder="250000">
+      </div>
+      <div class="form-group">
+        <label>Días para devolución garantía</label>
+        <input type="number" id="ap-dias-garantia" value="30">
+      </div>
+    </div>
+
+    <div class="section-title">Domicilio Legal</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Ciudad domicilio legal</label>
+        <input type="text" id="ap-ciudad-dom" placeholder="La Ligua">
+      </div>
+      <div class="form-group"></div>
+    </div>
+
+    <button class="btn-generar" onclick="generarArriendoProlig()">Generar documento</button>
+  </div>
+</div>
+
 <!-- Document preview overlay -->
 <div id="doc-overlay" class="doc-overlay" style="display:none">
   <div class="doc-overlay-box">
@@ -360,7 +558,7 @@ function abrirModal(tipo) {
   document.getElementById('modal-' + tipo).classList.add('active')
   // Fecha por defecto hoy
   const hoy = new Date().toISOString().split('T')[0]
-  const campos = ['adm-fecha','arr-fecha','arr-inicio','vis-fecha']
+  const campos = ['adm-fecha','arr-fecha','arr-inicio','vis-fecha','ap-fecha','ap-fecha-entrega','ap-inicio']
   campos.forEach(id => { const el = document.getElementById(id); if(el && !el.value) el.value = hoy })
 }
 function cerrarModal(tipo) {
@@ -444,7 +642,8 @@ function descargarDocWord() {
   const doc = parser.parseFromString(_docHtml, 'text/html')
   doc.querySelectorAll('.no-print,.toolbar,.edit-hint').forEach(el => el.remove())
   const bodyContent = doc.body.innerHTML
-  const wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}p{margin-bottom:.75em;text-align:justify}ul{margin:.5em 0 .75em 1.5em}li{margin-bottom:.25em}.firmas{margin-top:3em}.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}.firma-nombre{font-weight:bold}.firma-rut{font-size:10pt}.doc-logo-header{padding-bottom:6px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}.doc-logo-img{height:36pt;width:auto}</style></head><body>${bodyContent}</body></html>`
+  const wordHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.7;margin:3cm 2.5cm}h1{font-size:16pt;text-align:center;text-transform:uppercase;margin-bottom:1.5em;font-weight:bold}h2{font-size:12pt;font-weight:bold;margin:1.5em 0 .5em}p{margin-bottom:.75em;text-align:justify}ul{margin:.5em 0 .75em 1.5em}li{margin-bottom:.25em}.firmas{margin-top:3em}.firma-box{display:inline-block;width:44%;text-align:center;margin:0 2.5%;vertical-align:top}.firma-linea{border-top:1px solid #000;margin-bottom:.5em;margin-top:3em}.firma-nombre{font-weight:bold}.firma-rut{font-size:10pt}.doc-logo-header{padding-bottom:6px;border-bottom:2pt solid #1A3A5C;margin-bottom:1.5em}.doc-logo-img{height:36pt;width:auto}</style></head><body>${bodyContent}<script src="/copilot-btn.js"><\/script>
+</body></html>`
   const blob = new Blob(['\ufeff', wordHtml], { type: 'application/msword' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
@@ -697,6 +896,171 @@ function generarVisita() {
   </div>
   </body></html>`
   abrirDocumento(html, 'orden-visita')
+}
+
+function toggleRepresentante() {
+  const tiene = document.getElementById('ap-tiene-rep').checked
+  document.getElementById('bloque-representante').style.display = tiene ? '' : 'none'
+}
+
+function generarArriendoProlig() {
+  const ciudad = document.getElementById('ap-ciudad').value || 'La Ligua'
+  const fechaRaw = document.getElementById('ap-fecha').value
+  const fechaEntregaRaw = document.getElementById('ap-fecha-entrega').value
+  const fecha = formatFechaAnio(fechaRaw)
+  const fechaEntrega = formatFecha(fechaEntregaRaw)
+
+  const arrTrato = document.getElementById('ap-arr-trato').value
+  const arrNombre = document.getElementById('ap-arr-nombre').value || '___'
+  const arrNac = document.getElementById('ap-arr-nac').value || 'Chileno'
+  const arrRut = document.getElementById('ap-arr-rut').value || '___'
+
+  const tieneRep = document.getElementById('ap-tiene-rep').checked
+  const propNombre = document.getElementById('ap-prop-nombre').value || '___'
+  const propNac = document.getElementById('ap-prop-nac').value || 'chileno'
+  const propRut = document.getElementById('ap-prop-rut').value || '___'
+
+  const atTrato = document.getElementById('ap-at-trato').value
+  const atNombre = document.getElementById('ap-at-nombre').value || '___'
+  const atNac = document.getElementById('ap-at-nac').value || 'chileno'
+  const atRut = document.getElementById('ap-at-rut').value || '___'
+
+  const direccion = document.getElementById('ap-direccion').value || '___'
+
+  const meses = parseInt(document.getElementById('ap-meses').value) || 12
+  const inicioRaw = document.getElementById('ap-inicio').value
+  const aviso = document.getElementById('ap-aviso').value || '30'
+  const fechaInicio = formatFecha(inicioRaw)
+  let fechaFin = '___'
+  if (inicioRaw) {
+    const d = new Date(inicioRaw + 'T12:00:00')
+    d.setMonth(d.getMonth() + meses)
+    fechaFin = formatFechaAnio(d.toISOString().split('T')[0])
+  }
+
+  const renta = parseInt(document.getElementById('ap-renta').value) || 0
+  const diasPago = document.getElementById('ap-dias-pago').value || '5'
+  const cuenta = document.getElementById('ap-cuenta').value || '___'
+  const tipoCuenta = document.getElementById('ap-tipo-cuenta').value || '___'
+  const titular = document.getElementById('ap-titular').value || '___'
+  const titularRut = document.getElementById('ap-titular-rut').value || '___'
+  const email = document.getElementById('ap-email').value || '___'
+  const multa = document.getElementById('ap-multa').value || '1'
+
+  const garantia = parseInt(document.getElementById('ap-garantia').value) || 0
+  const diasGarantia = document.getElementById('ap-dias-garantia').value || '30'
+  const ciudadDom = document.getElementById('ap-ciudad-dom').value || ciudad
+
+  const rentaTexto = renta ? `$ ${parseInt(renta).toLocaleString('es-CL')} (${numeroALetras(renta)} pesos)` : '___'
+  const garantiaTexto = garantia ? `$ ${parseInt(garantia).toLocaleString('es-CL')}.- ( ${numeroALetras(garantia)} pesos )` : '___'
+
+  const introArrendador = tieneRep
+    ? `${arrTrato} <u><strong>${arrNombre}</strong></u>, ${arrNac} cédula de identidad N° ${arrRut} en representación de <u><strong>${propNombre}</strong></u> ${propNac} cédula de identidad ${propRut} (en adelante, el <u>Arrendador</u>)`
+    : `${arrTrato} <u><strong>${arrNombre}</strong></u>, ${arrNac} cédula de identidad N° ${arrRut} (en adelante, el <u>Arrendador</u>)`
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Contrato de Arrendamiento</title>${estiloDoc}</head><body>
+  ${getLogoHeader()}
+  <h1>Contrato de Arrendamiento</h1>
+  <p style="text-align:center;margin-bottom:.5em"><strong>${arrNombre}</strong></p>
+  <p style="text-align:center;margin-bottom:.5em"><strong>A</strong></p>
+  <p style="text-align:center;margin-bottom:2em"><strong>${atNombre}</strong></p>
+  <p>En ${ciudad} ${fecha}, entre: ${introArrendador}; por una parte y por la otra ${atTrato} <u><strong>${atNombre}</strong></u> ${atNac} cédula identidad ${atRut} en adelante, el "<u>Arrendatario</u>", y conjuntamente con el Arrendador, las "<u>Partes</u>"; exponen que han convenido el siguiente Contrato de Arrendamiento(en adelante, el "<u>Contrato</u>"), de acuerdo a las estipulaciones que a continuación se indican:</p>
+
+  <h2><u>PRIMERO</u>: Objeto.</h2>
+  <p>El Arrendador dueño del inmueble ubicado en ${direccion} , comprenden en el arrendamiento, los artefactos, instalaciones y especies que se individualizan en el inventario suscrito por las partes y que se considerará parte del presente contrato.</p>
+  <p>Por el presente instrumento, el Arrendador, da en arrendamiento al Arrendatario el inmueble individualizado precedentemente (en adelante, la "<u>Propiedad</u>"), quien la toma y acepta para sí.</p>
+  <p>La entrega material de la Propiedad será a la fecha de hoy ${fechaEntrega} a satisfacción del Arrendatario.</p>
+  <ul><li>El Arrendador declara que la Propiedad se encuentra en buen estado de conservación, que no registra deudas pendientes de ningún tipo por consumos domiciliarios o gastos comunes, que no ha sido declarada bien familiar, ni tiene ninguna limitación al dominio que impida la celebración del presente Contrato.</li></ul>
+
+  <h2><u>SEGUNDO</u>: Destino.</h2>
+  <p>La Propiedad arrendada será destinada exclusivamente para fines habitacionales.</p>
+
+  <h2><u>TERCERO</u>: Plazo.</h2>
+  <p>El presente Contrato tiene una vigencia de ${meses} meses a contar del día ${fechaInicio} terminando, en consecuencia, el día ${fechaFin}.<br>
+  Al término del periodo original de vigencia, el Contrato se renovará por un período igual ya ${meses} meses, salvo que alguna de las Partes diere aviso a la otra mediante carta certificada con ${aviso} día(s) de anticipación al término del Contrato o la prórroga que estuviere vigente, de su intención de no renovar el mismo.</p>
+
+  <h2><u>CUARTO</u>: Inventario.</h2>
+  <p>Quedan incluidos en el arrendamiento los artefactos y especies de que dé cuenta el inventario que podrán celebrar las Partes, el cual se tendrá como parte integrante de este Contrato para todos los efectos legales. El Arrendatario declara que recibe la Propiedad y las especies inventariadas a su entera satisfacción y que se obliga a restituir todo en el mismo estado al término del Contrato.<br>
+  El inventario se realizará en terreno posterior a la firma de contrato para ver el funcionamiento de la propiedad el cual tendrá 7 días hábiles para dar avisos de reparos que faltan en el inmueble, posterior a eso la mantención corresponde al arrendatario.<br>
+  <strong>Los reparos pendientes se detallan en el inventario.</strong></p>
+
+  <h2><u>QUINTO</u>: Renta.</h2>
+  <p>La renta mensual de arrendamiento será la suma de <strong>${rentaTexto}</strong>. La suma señalada deberá ser pagada por el Arrendatario anticipadamente dentro de los primeros ${diasPago} días de cada mes del día uno mediante deposito en la cuenta Numero ${cuenta} ${tipoCuenta} Correo electrónico ${email} cuyo titular es ${titular} (${titularRut}) y el Arrendatario deberá enviar el comprobante de depósito o de transferencia electrónica al correo electrónico o al numero celular.</p>
+  <p>En cada oportunidad que se verifique la renovación automática señalada en el párrafo segundo de la cláusula Tercero precedente, la renta mensual de arrendamiento será reajustada en igual porcentaje a la variación positiva que experimente el Índice de Precios al Consumidor (I.P.C) determinado por el Instituto Nacional de Estadísticas o el organismo que lo reemplace. Para efectos de cálculo del reajuste, se considerará la variación positiva del I.P.C. experimentada durante todo el periodo de vigencia original del Contrato o en cada una de sus prórrogas, según sea el caso.</p>
+  <p>El pago de la renta que no se efectuare dentro del plazo estipulado o con atraso, constituirá al Arrendatario en mora por el simple retardo, de pleno derecho y deberá pagar una multa de <strong>${multa} %.</strong> por día de retraso desde el vencimiento. Lo anterior sin perjuicio de la facultad del Arrendador de dar término anticipado al Contrato, conforme se señala en la cláusula Séptimo.]</p>
+
+  <h2><u>SEXTO</u>: Consumos.</h2>
+  <p>El Arrendatario estará obligado a pagar oportunamente y a quien corresponda, los consumos de luz, agua potable, gastos comunes y demás pertinentes, pudiendo el Arrendador en cualquier oportunidad, exigir la presentación de los recibos que acrediten dichos pagos. El atraso de un mes en cualquiera de los pagos indicados, dará derecho al Arrendador para suspender los servicios respectivos.<br>
+  En caso de mora en el pago oportuno de estos gastos, el Arrendador podrá pagarlos por su cuenta con cargo al mes de garantía a que se refiere la cláusula Décimo Cuarto y solicitar su reembolso inmediato al Arrendatario.</p>
+
+  <h2><u>SÉPTIMO</u>: Termino anticipado.</h2>
+  <p>El Arrendador tendrá la facultad de disponer el término anticipado al presente Contrato, sin necesidad de declaración judicial o indemnización alguna, por las siguientes causales:</p>
+  <ul>
+    <li>a) Si el Arrendatario no paga la renta mensual o los servicios dentro de los plazos definidos.</li>
+    <li>b) Si el Arrendatario o cualquier persona a su cargo causare deterioros a la Propiedad o a sus instalaciones, sea directa o indirectamente.</li>
+    <li>c) Si el Arrendatario o cualquier persona a su cargo hiciere variaciones o modificaciones en la Propiedad sin previa autorización escrita del Arrendador.</li>
+    <li>d) Si se cambia el destino de la Propiedad estipulado en la cláusula Segundo del Contrato.</li>
+  </ul>
+  <p>Si el Arrendatario incumpliere las obligaciones o prohibiciones establecidas en el presente Contrato o cualquiera de las normas y prohibiciones contenidas en el respectivo reglamento de copropiedad de la Propiedad.</p>
+  <p>Asimismo, el Arrendatario podrá dar término anticipado al presente Contrato, en los mismos términos señalados precedentemente, si el Arrendador incumpliere grave o reiteradamente sus obligaciones estipuladas en el Contrato.</p>
+
+  <h2><u>OCTAVO</u>: Prohibiciones.</h2>
+  <p>Queda prohibido al Arrendatario:</p>
+  <ul>
+    <li>a) Subarrendar o ceder a cualquier título el presente Contrato, sin previa autorización expresa del Arrendador.</li>
+    <li>b) Crear divisiones o subdivisiones de la Propiedad.</li>
+    <li>c) Materiales explosivos, inflamables o de mal olor en la Propiedad.</li>
+  </ul>
+
+  <h2><u>NOVENO</u>: Mantención de la Propiedad.</h2>
+  <p>El Arrendatario se obliga a mantener la Propiedad en buen estado de aseo y conservación y, en general, se obliga a efectuar oportunamente, y a su costo, todas las reparaciones locativas para la conservación y buen funcionamiento de la Propiedad arrendada. En especial, y sin que la enumeración sea taxativa, el Arrendatario se obliga a mantener en buen estado de funcionamiento las llaves de los artefactos, las llaves de paso, los enchufes, timbres e interruptores de la instalación eléctrica y otras. En caso de desperfecto de alguno de estos elementos, el Arrendatario está obligado a repararlos o cambiarlos por su cuenta, salvo que se produzcan por caso fortuito o fuerza mayor.</p>
+
+  <h2><u>DÉCIMO</u>: Restitución de la Propiedad.</h2>
+  <p>El Arrendatario se obliga a restituir la Propiedad inmediatamente al término de este Contrato, entrega que deberá hacer mediante la desocupación total de la misma, poniéndola a disposición del Arrendador y entregando las llaves. La entrega deberá efectuarse en el mismo estado que el Arrendatario recibió la Propiedad, habida consideración del transcurso del tiempo y de su uso legítimo. Además, el Arrendatario deberá exhibir los recibos que acrediten el pago hasta el último día que ocupó la Propiedad de los gastos comunes, como así también, de los consumos de energía eléctrica, basura, agua, teléfono, internet, tv cable y otros similares no incluidos en la enunciación precedente.</p>
+
+  <h2><u>DÉCIMO PRIMERO</u>: Perjuicios.</h2>
+  <p>El Arrendador no responderá en caso alguno por robos que puedan ocurrir en la Propiedad o por los perjuicios que pueda sufrir el Arrendatario en caso de incendio, inundaciones, filtraciones, roturas de cañerías, efectos de humedad o calor y otros hechos de similar naturaleza, como tampoco del caso fortuito o fuerza mayor.</p>
+
+  <h2><u>DÉCIMO SEGUNDO</u>: Mejoras.</h2>
+  <p>El Arrendador no tendrá obligación de hacer mejoras en la Propiedad. Las mejoras que pueda efectuar el Arrendatario quedarán en beneficio de la Propiedad desde el momento en que sean ejecutadas, sin que el Arrendador deba pagar suma alguna por ellas, cualquiera sea su carácter, naturaleza o monto. Sin perjuicio de lo anterior y con anterioridad a la ejecución de las mejoras, el Arrendatario deberá obtener el consentimiento por escrito del Arrendador para incorporarlas. El Arrendatario podrá llevarse aquellas mejoras que puedan retirarse sin detrimento alguno de la Propiedad.</p>
+
+  <h2><u>DÉCIMO TERCERO</u>: Garantía.</h2>
+  <p>A fin de garantizar la conservación de la Propiedad y su restitución en el mismo estado en que la recibe, la mantención y conservación de las especies y artefactos que se indican en el inventario, el pago de los perjuicios y deterioros que cause el Arrendatario y/o sus dependientes a la Propiedad, sus servicios e instalaciones y, en general, para responder al fiel cumplimiento de las estipulaciones de este Contrato, el Arrendatario entrega en este acto en garantía al Arrendador la suma de <strong>${garantiaTexto}</strong>.<br>
+  En caso de que los daños fueran mayor valor a la garantía entregada por el arrendatario éste quedará obligado a pagar esa diferencia al momento de la restitución de la propiedad.</p>
+  <p>Esta garantía se devolverá al Arrendatario dentro de los <strong>${diasGarantia} días</strong> siguientes a la fecha en que se le haya devuelto al Arrendador a su entera satisfacción la Propiedad y cuando los servicios públicos, consumos y gastos comunes hayan sido pagados, lo que se acreditará con los comprobantes correspondientes y con los estados de los medidores de cada servicio. El Arrendador queda desde ya facultado para descontar de la garantía el valor de los deterioros y perjuicios producidos por el uso indebido, negligencia o dolo del Arrendatario o sus dependientes, como, asimismo, el valor de las cuentas pendientes de servicios u otros, de cargo del Arrendatario. El Arrendatario no podrá en ningún caso imputar la garantía al pago de rentas insolutas, ni al pago del último mes o meses que permanezca en la Propiedad.</p>
+
+  <h2><u>DÉCIMO CUARTO</u>: Visitas.</h2>
+  <p>El Arrendatario se obliga a dar las facilidades necesarias para que el Arrendador o quien lo represente, pueda visitar la Propiedad hasta en dos oportunidades en un periodo de seis meses. La limitación antedicha al derecho de visitas del Arrendador no será aplicable cuando el Arrendador hubiere tomado conocimiento de daños en la Propiedad o de que se están realizando mejoras en ésta (pintura color no autorizado), que no hayan sido autorizadas por él, caso en el cual el Arrendador podrá efectuar las visitas a la Propiedad en la oportunidad que estime conveniente.</p>
+  <p>Asimismo, en el caso que el Arrendador desee vender la Propiedad o arrendarla a otra persona, el Arrendatario se obliga a permitir la visita de los potenciales compradores o arrendatarios durante un día la semana y por al menos una hora en ese día, en fechas y horario a convenir.</p>
+
+  <h2><u>DÉCIMO QUINTO</u>: Gastos.</h2>
+  <p>Los gastos e impuestos, si los hubiere, que deriven del presente Contrato serán de cargo del Arrendatario.</p>
+
+  <h2><u>DÉCIMO SEXTO:</u> Multa.</h2>
+  <p>En el evento que el Arrendatario no restituyera la Propiedad en la fecha de término del arrendamiento, cualquiera sea el plazo del Contrato o la causa de terminación, continuará obligado a pagar mensualmente la suma correspondiente a la renta convenida hasta que efectúe la restitución efectiva de la Propiedad. Sin perjuicio de lo anterior, deberá pagar mensualmente, además, a título de indemnización convencional y anticipada de perjuicios, una cantidad equivalente a 5 % de la renta vigente a esa fecha; En consecuencia, si el Arrendatario no restituyera la Propiedad a la fecha de terminación del Contrato, deberá pagar mes a mes la renta convenida, aumentada en el monto señalado, sin perjuicio de los derechos del Arrendador para exigir el lanzamiento del Arrendatario.</p>
+
+  <h2><u>DÉCIMO SÉPTIMO</u>: Información deudas morosas.</h2>
+  <p>Con objeto de dar cumplimiento a lo dispuesto en la Ley 19.628 sobre Protección de Datos de Carácter Personal, el Arrendatario por el presente acto, otorga su consentimiento libre e informado, para que el Arrendador o su representante, pueda dar a conocer cualquier morosidad, en las rentas, gastos comunes y de cualquier otro cobro que fuere procedente en conformidad al Contrato, a Servicios Equifax Chile Limitada, para ser incorporada en sus registros y bases de datos e informadas a terceros. El Arrendatario exime al Arrendador de cualquier responsabilidad que pudiere originarse a este respecto.</p>
+
+  <h2><u>DÉCIMO OCTAVO</u>: Otorgamiento.</h2>
+  <p>El presente Contrato se firma en dos ejemplares, quedando uno en poder de cada parte.</p>
+
+  <h2><u>DECIMO NOVENO</u>: Domicilio.</h2>
+  <ul><li>Para todos los efectos legales, las Partes fijan su domicilio en la comuna y ciudad de ${ciudadDom} y se someten a la competencia de sus Tribunales Ordinarios de Justicia.</li></ul>
+
+  <div class="firmas">
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${arrNombre}</div>
+    </div>
+    <div class="firma-box">
+      <div class="firma-linea"></div>
+      <div class="firma-nombre">${atNombre}</div>
+    </div>
+  </div>
+</body></html>`
+  abrirDocumento(html, 'Contrato_Arriendo_' + atNombre.replace(/\s+/g, '_'))
 }
 
 // Convierte número a texto simplificado para los montos

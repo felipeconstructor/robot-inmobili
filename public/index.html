@@ -2,204 +2,1678 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<link rel="stylesheet" href="/nova-premium.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nova — Asistente Inmobiliaria</title>
-<script>
-fetch('/api/config').then(r=>r.json()).then(cfg=>{
-  if(cfg.siteName){
-    const esBroker=cfg.siteName.toLowerCase().includes('broker')
-    if(esBroker){const la=document.getElementById('link-administraciones');if(la)la.style.display='none'}
-    document.title=cfg.siteName+' — Asistente Inmobiliaria'
-    const h=document.getElementById('chat-title')
-    if(h)h.textContent=cfg.siteName
-    const sub=document.getElementById('chat-subtitle')
-    if(sub)sub.textContent=esBroker?'Asistente Inmobiliaria':'Asistente de Prolig Propiedades'
-    const m=document.getElementById('msg-bienvenida')
-    if(m)m.innerHTML=esBroker
-      ?'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades en Chile.<br><br>¿En qué te puedo ayudar hoy?'
-      :'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?'
-  }
-}).catch(()=>{})
-fetch('/api/me').then(r=>r.ok?r.json():null).then(me=>{
-  if(me&&me.rol==='admin'){const lf=document.getElementById('link-finanzas');if(lf)lf.style.display=''}
-}).catch(()=>{})
-</script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<title>PRO LIG — Corredora de Propiedades · V Región, Chile</title>
+<meta name="description" content="Corredora de propiedades en la V Región. Cubrimos La Ligua, Cabildo, Papudo, Zapallar, Petorca, Los Vilos, Catemu y Olmué. Venta, arriendo y gestión completa. Respuesta el mismo día.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#f0ede8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
-.app{width:100%;max-width:680px;height:92vh;max-height:820px;background:#fff;border-radius:24px;border:1px solid #e2ddd6;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 48px rgba(0,0,0,0.08)}
-.header{background:#16213e;padding:1.1rem 1.4rem;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.logo{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c9a96e,#f0d49a);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:17px;color:#16213e;flex-shrink:0}
-.header-info h1{font-family:'DM Serif Display',serif;font-size:17px;color:#fff;font-weight:400}
-.header-info p{font-size:11px;color:#c9a96e;margin-top:1px}
-.online{width:8px;height:8px;background:#4ade80;border-radius:50%;margin-left:auto;box-shadow:0 0 8px rgba(74,222,128,0.5);flex-shrink:0}
-.panel-nav{background:#0f1a2e;padding:.4rem 1rem;display:flex;gap:6px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
-.panel-nav a{color:rgba(201,169,110,.7);font-size:11px;text-decoration:none;padding:3px 10px;border:1px solid rgba(201,169,110,.2);border-radius:20px;transition:all .2s;white-space:nowrap}
-.panel-nav a:hover{background:#c9a96e;color:#16213e;border-color:#c9a96e}
-.chips{padding:.6rem 1rem;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid #f0ede8;flex-shrink:0;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
-.chip{white-space:nowrap;padding:5px 12px;border-radius:20px;border:1px solid #e2ddd6;background:#faf8f5;font-size:12px;color:#555;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;flex-shrink:0}
-.chip:hover{background:#16213e;color:#c9a96e;border-color:#16213e}
-.msgs{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:.9rem;scrollbar-width:thin;scrollbar-color:#e2ddd6 transparent}
-.row{display:flex;gap:8px;align-items:flex-end}
-.row.user{flex-direction:row-reverse}
-.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
-.av.nova{background:#16213e;color:#c9a96e;font-family:'DM Serif Display',serif;font-size:13px}
-.av.user{background:#e8e4de;color:#666}
-.burbuja{max-width:78%;padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.65}
-.burbuja.nova{background:#faf8f5;border:1px solid #e8e4de;border-bottom-left-radius:4px;color:#1a1a2e}
-.burbuja.user{background:#16213e;color:#f0f0f0;border-bottom-right-radius:4px}
-.typing{display:flex;gap:4px;padding:13px 15px;background:#faf8f5;border:1px solid #e8e4de;border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
-.dot{width:6px;height:6px;background:#c9a96e;border-radius:50%;animation:boing 1.1s infinite}
-.dot:nth-child(2){animation-delay:.18s}
-.dot:nth-child(3){animation-delay:.36s}
-@keyframes boing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
-.footer{padding:.9rem 1rem;border-top:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-end;background:#fff;flex-shrink:0}
-textarea{flex:1;border:1px solid #e2ddd6;border-radius:12px;padding:10px 13px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;outline:none;min-height:42px;max-height:110px;color:#1a1a2e;background:#faf8f5;line-height:1.5;transition:border-color .2s}
-textarea:focus{border-color:#c9a96e}
-textarea::placeholder{color:#bbb}
-.btn-send{width:42px;height:42px;border-radius:11px;background:#16213e;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .1s}
-.btn-send:hover{background:#c9a96e}
-.btn-send:active{transform:scale(.95)}
-.btn-send:disabled{background:#ddd;cursor:not-allowed}
-.btn-reset{font-size:11px;color:#bbb;background:transparent;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:'DM Sans',sans-serif;white-space:nowrap;align-self:center;transition:color .2s}
-.btn-reset:hover{color:#555;background:#f5f3ef}
-.btn-ficha{display:inline-block;background:#16213e;color:#c9a96e!important;padding:7px 14px;border-radius:8px;text-decoration:none!important;font-size:12px;font-weight:500;margin-top:6px;transition:background .2s}
-.btn-ficha:hover{background:#c9a96e;color:#16213e!important}
-.img-propiedad{max-width:100%;border-radius:10px;display:block;margin-top:4px;cursor:pointer}
-.img-propiedad:hover{opacity:.92}
+/* ═══════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════ */
+:root {
+  --ink:       #07090a;
+  --ink2:      #0d1410;
+  --ink3:      #131c14;
+  --forest:    #1a3320;
+  --leaf:      #2e7d32;
+  --moss:      #4caf50;
+  --cream:     #f5f0e8;
+  --cream-dim: rgba(245,240,232,0.55);
+  --gold:      #b8973a;
+  --gold-dim:  rgba(184,151,58,0.18);
+  --border:    rgba(245,240,232,0.08);
+  --border-g:  rgba(46,125,50,0.25);
+  --ff-display: 'Playfair Display', Georgia, serif;
+  --ff-body:    'DM Sans', system-ui, sans-serif;
+  --ff-mono:    'DM Mono', monospace;
+  --ease:       cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; scroll-padding-top: 80px; }
+body {
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--ff-body);
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+@media (hover: hover) and (pointer: fine) {
+  body { cursor: none; }
+}
+
+/* Grain overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity: 0.6;
+}
+
+/* ─── CURSOR ─── */
+#cur, #cur-ring {
+  position: fixed; border-radius: 50%;
+  pointer-events: none; z-index: 99999;
+  mix-blend-mode: difference;
+}
+#cur {
+  width: 8px; height: 8px;
+  background: var(--cream);
+  transform: translate(-50%,-50%);
+  transition: transform 0.1s, opacity 0.2s;
+}
+#cur-ring {
+  width: 32px; height: 32px;
+  border: 1px solid rgba(245,240,232,0.4);
+  transform: translate(-50%,-50%);
+  transition: transform 0.18s var(--ease), width 0.3s, height 0.3s, border-color 0.3s;
+}
+body:has(a:hover) #cur-ring, body:has(button:hover) #cur-ring {
+  width: 52px; height: 52px;
+  border-color: var(--moss);
+}
+
+/* ═══════════════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.4rem 3rem;
+  transition: background 0.4s, padding 0.4s, backdrop-filter 0.4s;
+}
+nav.scrolled {
+  background: rgba(7,9,10,0.88);
+  backdrop-filter: blur(20px);
+  padding: 0.9rem 3rem;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  display: flex; align-items: center; gap: 0;
+  text-decoration: none; flex-shrink: 0;
+}
+.logo-pro {
+  font-family: var(--ff-display); font-style: italic; font-weight: 700;
+  font-size: 1.4rem; background: var(--cream); color: var(--ink);
+  padding: 3px 8px; letter-spacing: 0.01em; line-height: 1.2;
+}
+.logo-lig {
+  font-family: var(--ff-display); font-style: italic; font-weight: 700;
+  font-size: 1.4rem; background: var(--leaf); color: var(--cream);
+  padding: 3px 8px; letter-spacing: 0.01em; line-height: 1.2;
+}
+.logo-tagline {
+  font-family: var(--ff-mono); font-size: 0.56rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(245,240,232,0.38);
+  margin-left: 10px; line-height: 1.3;
+  display: none;
+}
+@media (min-width: 900px) { .logo-tagline { display: block; } }
+
+.nav-links {
+  display: flex; align-items: center; gap: 2.5rem; list-style: none;
+}
+.nav-links a {
+  font-size: 0.8rem; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(245,240,232,0.55);
+  text-decoration: none; transition: color 0.2s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px;
+  background: var(--moss); transition: width 0.3s var(--ease);
+}
+.nav-links a:hover { color: var(--cream); }
+.nav-links a:hover::after { width: 100%; }
+.nav-cta {
+  color: var(--moss) !important;
+  border: 1px solid rgba(76,175,80,0.5) !important;
+  padding: 0.45rem 1.1rem !important;
+  border-radius: 6px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s !important;
+}
+.nav-cta:hover { background: rgba(76,175,80,0.12) !important; border-color: var(--moss) !important; box-shadow: 0 0 16px rgba(76,175,80,0.25) !important; }
+.nav-cta::after { display: none !important; }
+
+.hamburger {
+  display: none; flex-direction: column; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 4px;
+}
+.hamburger span {
+  display: block; width: 22px; height: 1.5px;
+  background: var(--cream); transition: all 0.3s;
+}
+@media (max-width: 860px) {
+  .hamburger { display: flex; }
+  .nav-links { display: none; }
+  .nav-links.open {
+    display: flex; flex-direction: column; position: fixed;
+    top: 0; right: 0; bottom: 0; width: 75vw; max-width: 300px;
+    background: var(--ink2); padding: 5rem 2rem 2rem;
+    border-left: 1px solid var(--border); gap: 1.5rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 7rem 3rem 4rem;
+  position: relative; overflow: hidden;
+  text-align: center;
+}
+
+.hero-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 80% 60% at 70% 30%, rgba(26,51,32,0.7) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 40% at 20% 80%, rgba(46,125,50,0.12) 0%, transparent 50%),
+              var(--ink);
+}
+.hero-grid {
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(245,240,232,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245,240,232,0.025) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 80%);
+}
+.hero-accent {
+  position: absolute; top: 15%; right: 8%; z-index: 0;
+  width: 420px; height: 420px;
+  border: 1px solid rgba(46,125,50,0.12);
+  border-radius: 50%;
+  animation: spin 30s linear infinite;
+}
+.hero-accent::before {
+  content: ''; position: absolute; inset: 30px;
+  border: 1px solid rgba(184,151,58,0.08);
+  border-radius: 50%;
+}
+.hero-accent::after {
+  content: ''; position: absolute; inset: 60px;
+  border: 1px solid rgba(46,125,50,0.06);
+  border-radius: 50%;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hero-content {
+  position: relative; z-index: 1;
+  max-width: 760px; width: 100%;
+  animation: heroIn 1.2s var(--ease) both;
+}
+@keyframes heroIn {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-eyebrow {
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  animation: heroIn 1.2s 0.1s var(--ease) both;
+}
+.hero-eyebrow-line {
+  width: 40px; height: 1px; background: var(--leaf);
+}
+.hero-eyebrow-text {
+  font-family: var(--ff-mono); font-size: 0.7rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--moss);
+}
+
+.hero-headline {
+  font-family: var(--ff-display);
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  font-weight: 400; line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.75rem;
+  animation: heroIn 1.2s 0.15s var(--ease) both;
+}
+.hero-headline em {
+  font-style: italic; color: var(--moss);
+  display: block;
+}
+.hero-headline strong {
+  font-weight: 900; color: var(--cream);
+}
+.tw-wrap {
+  display: inline-block; min-width: 220px;
+  border-bottom: 2px solid var(--leaf); padding-bottom: 4px;
+}
+.tw-text { transition: opacity 0.35s; }
+.tw-text.fade { opacity: 0; }
+
+.hero-sub {
+  font-size: 1rem; color: var(--cream-dim);
+  max-width: 440px; line-height: 1.7;
+  margin: 0 auto 2.5rem;
+  animation: heroIn 1.2s 0.25s var(--ease) both;
+}
+
+.hero-ctas {
+  display: flex; align-items: center; justify-content: center; gap: 1.5rem; flex-wrap: wrap;
+  animation: heroIn 1.2s 0.35s var(--ease) both;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  padding: 0.85rem 2rem; background: var(--moss);
+  color: var(--ink); font-weight: 700; font-size: 0.85rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  text-decoration: none; border: none; cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 0 22px rgba(76,175,80,0.35);
+  transition: background 0.2s, box-shadow 0.3s, transform 0.2s;
+}
+.btn-primary:hover {
+  background: #5dca60;
+  box-shadow: 0 0 40px rgba(76,175,80,0.55), 0 0 80px rgba(76,175,80,0.15);
+  transform: translateY(-2px);
+}
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.85rem 2rem;
+  color: var(--moss); font-size: 0.85rem; font-weight: 500;
+  letter-spacing: 0.04em; text-decoration: none;
+  border: 1px solid rgba(76,175,80,0.45); cursor: pointer;
+  background: none; border-radius: 8px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.btn-ghost:hover { color: var(--cream); border-color: var(--moss); background: rgba(76,175,80,0.08); }
+
+.hero-scroll {
+  position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%); z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  animation: heroIn 1.2s 0.5s var(--ease) both;
+}
+.hero-scroll span {
+  font-family: var(--ff-mono); font-size: 0.6rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: rgba(245,240,232,0.3);
+  writing-mode: vertical-rl;
+}
+.hero-scroll-line {
+  width: 1px; height: 60px;
+  background: linear-gradient(to bottom, rgba(46,125,50,0.6), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse {
+  0%,100% { transform: scaleY(1); opacity: 0.6; }
+  50%      { transform: scaleY(0.5); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════
+   TICKER
+═══════════════════════════════════════════════════ */
+.ticker-wrap {
+  background: var(--leaf); overflow: hidden;
+  padding: 0.65rem 0; position: relative; z-index: 10;
+  border-top: 1px solid var(--forest);
+  border-bottom: 1px solid rgba(27,94,32,0.8);
+}
+.ticker-track {
+  display: flex; width: max-content;
+  animation: ticker-move 35s linear infinite;
+}
+.ticker-track:hover { animation-play-state: paused; }
+.ticker-item {
+  white-space: nowrap; padding: 0 2rem;
+  font-family: var(--ff-mono); font-size: 0.7rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--cream); display: flex; align-items: center; gap: 0.5rem;
+}
+.ticker-sep { color: rgba(245,240,232,0.35); }
+@keyframes ticker-move {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ═══════════════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════════════ */
+#stats {
+  padding: 5rem 3rem;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.stats-grid {
+  display: grid; grid-template-columns: repeat(5,1fr);
+  gap: 2px; max-width: 1200px; margin: 0 auto;
+}
+.stat-card {
+  padding: 2.5rem 2rem;
+  border-right: 1px solid var(--border);
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.stat-card:last-child { border-right: none; }
+.stat-card.visible { opacity: 1; transform: translateY(0); }
+.stat-num {
+  font-family: var(--ff-display); font-size: clamp(2.8rem, 5vw, 4.5rem);
+  font-weight: 900; color: var(--cream); line-height: 1;
+  letter-spacing: -0.03em; margin-bottom: 0.5rem;
+}
+.stat-suffix {
+  font-size: 0.6em; color: var(--moss); font-weight: 400;
+}
+.stat-label {
+  font-family: var(--ff-mono); font-size: 0.68rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(245,240,232,0.4);
+}
+
+/* ═══════════════════════════════════════════════════
+   PROPIEDADES
+═══════════════════════════════════════════════════ */
+#propiedades {
+  padding: 6rem 3rem;
+  background: var(--ink2);
+  position: relative;
+}
+.section-kicker {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.section-kicker-line { width: 32px; height: 1px; background: var(--leaf); }
+.section-kicker-text {
+  font-family: var(--ff-mono); font-size: 0.68rem;
+  letter-spacing: 0.15em; text-transform: uppercase; color: var(--moss);
+}
+.section-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 2rem; margin-bottom: 3rem; flex-wrap: wrap;
+  max-width: 1200px; margin-left: auto; margin-right: auto;
+}
+.section-title {
+  font-family: var(--ff-display);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 400; line-height: 1.15; letter-spacing: -0.02em;
+}
+.section-title em { font-style: italic; color: var(--moss); }
+.ver-todas {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.8rem; font-weight: 500; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--cream-dim);
+  text-decoration: none; border-bottom: 1px solid var(--border-g);
+  padding-bottom: 3px; white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s, gap 0.2s;
+}
+.ver-todas:hover { color: var(--cream); border-color: var(--moss); gap: 0.75rem; }
+
+.prop-filtros {
+  display: flex; gap: 0.4rem; margin-bottom: 2.5rem;
+  max-width: 1200px; margin-left: auto; margin-right: auto;
+}
+.filtro-btn {
+  padding: 0.4rem 1rem; border: 1px solid var(--border);
+  background: none; color: rgba(245,240,232,0.45);
+  font-size: 0.7rem; letter-spacing: 0.1em;
+  text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  font-family: var(--ff-body); border-radius: 20px;
+}
+.filtro-btn:hover { border-color: var(--border-g); color: var(--cream); }
+.filtro-btn.active {
+  background: rgba(76,175,80,0.15); border-color: var(--moss);
+  color: var(--moss); box-shadow: 0 0 12px rgba(76,175,80,0.2);
+}
+
+.props-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1.5px; max-width: 1200px; margin: 0 auto;
+}
+
+/* Property card */
+.prop-card {
+  position: relative; overflow: hidden;
+  background: var(--ink3);
+  aspect-ratio: 4/3;
+  cursor: pointer;
+  opacity: 0; animation: cardIn 0.5s var(--ease) forwards;
+}
+@keyframes cardIn { to { opacity: 1; } }
+.prop-card-img {
+  position: absolute; inset: 0;
+  background: var(--forest);
+  transition: transform 0.7s var(--ease);
+}
+.prop-card-img img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.7s var(--ease);
+}
+.prop-card:hover .prop-card-img img { transform: scale(1.06); }
+.prop-card-placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--forest);
+}
+.prop-card-placeholder svg { width: 48px; height: 48px; opacity: 0.15; }
+
+.prop-card-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(7,9,10,0.95) 0%, rgba(7,9,10,0.5) 50%, transparent 100%);
+  transition: opacity 0.4s;
+}
+.prop-card-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 1.5rem;
+  transform: translateY(10px); opacity: 0;
+  transition: transform 0.4s var(--ease), opacity 0.4s;
+}
+.prop-card:hover .prop-card-info { transform: translateY(0); opacity: 1; }
+
+.prop-badge {
+  display: inline-block; padding: 0.2rem 0.6rem;
+  font-family: var(--ff-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; background: var(--leaf); color: var(--cream);
+  margin-bottom: 0.6rem;
+}
+.prop-badge.arriendo { background: var(--gold); color: var(--ink); }
+
+.prop-title {
+  font-family: var(--ff-display); font-size: 1.15rem;
+  font-weight: 500; color: var(--cream); line-height: 1.3;
+  margin-bottom: 0.3rem;
+}
+.prop-price {
+  font-family: var(--ff-display); font-size: 1.5rem;
+  font-weight: 700; color: var(--moss);
+  margin-bottom: 0.5rem;
+}
+.prop-price span { font-size: 0.85rem; font-weight: 400; color: var(--cream-dim); }
+.prop-meta {
+  display: flex; gap: 1rem; font-size: 0.78rem;
+  color: rgba(245,240,232,0.6);
+}
+.prop-meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+/* Always-visible bottom strip */
+.prop-card-strip {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 0.85rem 1.25rem;
+  background: linear-gradient(to top, rgba(7,9,10,0.9), transparent);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  pointer-events: none;
+}
+.prop-card:hover .prop-card-strip { opacity: 0; transition: opacity 0.3s; }
+.prop-strip-price {
+  font-family: var(--ff-display); font-size: 1.2rem;
+  font-weight: 700; color: var(--cream);
+}
+.prop-strip-type {
+  font-family: var(--ff-mono); font-size: 0.62rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--moss); background: rgba(46,125,50,0.2);
+  padding: 0.2rem 0.5rem;
+}
+
+.prop-loading { grid-column: 1/-1; padding: 4rem; text-align: center; color: var(--cream-dim); }
+.prop-empty   { grid-column: 1/-1; padding: 4rem; text-align: center; color: var(--cream-dim); }
+
+/* ═══════════════════════════════════════════════════
+   SERVICIOS
+═══════════════════════════════════════════════════ */
+#servicios {
+  padding: 6rem 3rem;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.servicios-inner { max-width: 1200px; margin: 0 auto; }
+.servicios-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 2px; margin-top: 3.5rem;
+}
+.servicio-card {
+  padding: 2.5rem 2rem; border-right: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+.servicio-card.visible { opacity: 1; transform: translateY(0); }
+.servicio-card:last-child { border-right: none; }
+.servicio-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--leaf), var(--moss));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.4s var(--ease);
+}
+.servicio-card:hover::after { transform: scaleX(1); }
+.servicio-num {
+  font-family: var(--ff-display); font-size: 3rem;
+  font-weight: 900; color: rgba(46,125,50,0.15);
+  line-height: 1; margin-bottom: 1rem;
+}
+.servicio-icon {
+  width: 36px; height: 36px; margin-bottom: 1.25rem;
+  color: var(--leaf);
+}
+.servicio-title {
+  font-family: var(--ff-display); font-size: 1.3rem;
+  font-weight: 500; margin-bottom: 0.75rem;
+  color: var(--cream);
+}
+.servicio-desc { font-size: 0.9rem; color: var(--cream-dim); line-height: 1.7; }
+
+/* ═══════════════════════════════════════════════════
+   PROCESO
+═══════════════════════════════════════════════════ */
+#proceso {
+  padding: 6rem 3rem;
+  background: var(--forest);
+  position: relative; overflow: hidden;
+}
+#proceso::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(245,240,232,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(245,240,232,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.proceso-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.proceso-steps {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 0; margin-top: 4rem; position: relative;
+}
+.proceso-steps::before {
+  content: ''; position: absolute; top: 28px; left: 16%; right: 16%; height: 1px;
+  background: linear-gradient(90deg, var(--leaf), rgba(76,175,80,0.3), var(--leaf));
+}
+.proceso-step {
+  padding: 0 2rem; text-align: center;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+.proceso-step.visible { opacity: 1; transform: translateY(0); }
+.proceso-circle {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 2px solid var(--leaf); margin: 0 auto 1.5rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--forest);
+  font-family: var(--ff-display); font-size: 1.3rem;
+  font-weight: 700; color: var(--moss);
+}
+.proceso-title {
+  font-family: var(--ff-display); font-size: 1.3rem;
+  font-weight: 500; color: var(--cream); margin-bottom: 0.75rem;
+}
+.proceso-desc { font-size: 0.9rem; color: rgba(245,240,232,0.6); line-height: 1.7; }
+
+/* ═══════════════════════════════════════════════════
+   POR QUÉ ELEGIRNOS
+═══════════════════════════════════════════════════ */
+#nosotros {
+  padding: 6rem 3rem;
+  background: var(--ink2);
+}
+.nosotros-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center;
+}
+.nosotros-left .section-title { margin-bottom: 1.5rem; }
+.nosotros-left p { color: var(--cream-dim); line-height: 1.8; margin-bottom: 2rem; }
+.nosotros-features { display: flex; flex-direction: column; gap: 1rem; }
+.nosotros-feat {
+  display: flex; gap: 1.25rem; align-items: flex-start;
+  padding: 1.25rem; border: 1px solid var(--border);
+  opacity: 0; transform: translateX(-20px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease), border-color 0.3s, background 0.3s;
+}
+.nosotros-feat.visible { opacity: 1; transform: translateX(0); }
+.nosotros-feat:hover { border-color: var(--border-g); background: rgba(26,51,32,0.4); }
+.nosotros-feat-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  background: var(--gold-dim); border: 1px solid rgba(184,151,58,0.25);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold);
+}
+.nosotros-feat-icon svg { width: 18px; height: 18px; }
+.nosotros-feat h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--cream); }
+.nosotros-feat p  { font-size: 0.82rem; color: var(--cream-dim); line-height: 1.6; }
+
+.nosotros-visual {
+  position: relative; aspect-ratio: 4/5;
+}
+.nosotros-box {
+  position: absolute; border: 1px solid var(--border-g);
+  background: var(--forest);
+}
+.nosotros-box-1 { inset: 0 15% 15% 0; }
+.nosotros-box-2 {
+  bottom: 0; right: 0; width: 50%; height: 50%;
+  background: var(--leaf);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 0.5rem;
+}
+.nosotros-box-2 .big-num {
+  font-family: var(--ff-display); font-size: 3.5rem;
+  font-weight: 900; color: var(--cream); line-height: 1;
+}
+.nosotros-box-2 .big-label {
+  font-family: var(--ff-mono); font-size: 0.65rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(245,240,232,0.7); text-align: center; padding: 0 1rem;
+}
+.nosotros-box-3 {
+  top: 0; right: -8%; width: 45%; height: 45%;
+  background: var(--gold-dim); border-color: rgba(184,151,58,0.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.nosotros-box-3 svg { width: 48px; height: 48px; color: var(--gold); opacity: 0.6; }
+
+/* ═══════════════════════════════════════════════════
+   CONTACTO
+═══════════════════════════════════════════════════ */
+#contacto {
+  padding: 6rem 3rem;
+  position: relative; overflow: hidden;
+}
+.contacto-bg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 50% 100%, rgba(26,51,32,0.6), transparent);
+}
+.contacto-inner {
+  max-width: 680px; margin: 0 auto;
+  position: relative; z-index: 1; text-align: center;
+}
+.contacto-inner .section-kicker { justify-content: center; }
+.contacto-inner .section-title { margin: 0.5rem 0 1rem; }
+.contacto-inner > p { color: var(--cream-dim); margin-bottom: 3rem; }
+
+.contact-form {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  text-align: left;
+}
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group.full { grid-column: 1/-1; }
+.form-group label {
+  font-family: var(--ff-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(245,240,232,0.45);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: rgba(245,240,232,0.04);
+  border: 1px solid var(--border);
+  color: var(--cream); font-family: var(--ff-body);
+  font-size: 0.9rem; padding: 0.75rem 1rem;
+  outline: none; width: 100%; border-radius: 6px;
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--leaf);
+  background: rgba(46,125,50,0.05);
+}
+.form-group select option { background: var(--ink2); }
+.form-group textarea { min-height: 100px; resize: vertical; }
+.form-submit { margin-top: 0.5rem; }
+
+/* ═══════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════ */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem;
+  background: var(--ink);
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 2rem;
+}
+.footer-left { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.footer-copy { font-size: 0.78rem; color: rgba(245,240,232,0.3); }
+.footer-links { display: flex; gap: 1.5rem; }
+.footer-links a {
+  font-size: 0.75rem; color: rgba(245,240,232,0.3);
+  text-decoration: none; transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--cream-dim); }
+.footer-right { font-size: 0.72rem; color: rgba(245,240,232,0.2); font-family: var(--ff-mono); }
+
+/* ═══════════════════════════════════════════════════
+   WHATSAPP FLOTANTE
+═══════════════════════════════════════════════════ */
+#wa-float {
+  position: fixed; bottom: 28px; left: 28px; z-index: 9998;
+  width: 54px; height: 54px; border-radius: 50%;
+  background: #25d366;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 24px rgba(37,211,102,0.4);
+  animation: waPulse 2.5s ease-in-out infinite;
+  transition: transform 0.2s;
+  text-decoration: none;
+}
+#wa-float:hover { transform: scale(1.1); }
+#wa-float svg { width: 28px; height: 28px; fill: white; }
+@keyframes waPulse {
+  0%,100% { box-shadow: 0 4px 24px rgba(37,211,102,0.4), 0 0 0 0 rgba(37,211,102,0.28); }
+  50%      { box-shadow: 0 4px 24px rgba(37,211,102,0.4), 0 0 0 14px rgba(37,211,102,0); }
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 10000;
+  background: var(--ink2); border: 1px solid var(--border-g);
+  border-left: 3px solid var(--leaf);
+  padding: 1rem 1.5rem; max-width: 320px;
+  transform: translateY(20px); opacity: 0;
+  transition: all 0.4s var(--ease);
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast strong { display: block; font-size: 0.9rem; color: var(--cream); margin-bottom: 0.2rem; }
+#toast span   { font-size: 0.8rem; color: var(--cream-dim); }
+
+/* ═══════════════════════════════════════════════════
+   COMUNAS
+═══════════════════════════════════════════════════ */
+#comunas { padding: 6rem 3rem; background: var(--ink); }
+.comunas-inner { max-width: 1200px; margin: 0 auto; }
+.comunas-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 1.5px; margin-top: 3.5rem;
+}
+.comuna-card {
+  padding: 2rem 1.5rem; background: var(--ink3);
+  border: 1px solid var(--border); position: relative;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease), border-color 0.3s, background 0.3s;
+}
+.comuna-card.visible { opacity: 1; transform: translateY(0); }
+.comuna-card:hover { border-color: var(--border-g); background: var(--forest); }
+.comuna-icon {
+  width: 40px; height: 40px; background: var(--gold-dim);
+  border: 1px solid rgba(184,151,58,0.25); border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.25rem; color: var(--gold);
+}
+.comuna-icon svg { width: 18px; height: 18px; }
+.comuna-name {
+  font-family: var(--ff-display); font-size: 1.15rem;
+  font-weight: 500; color: var(--cream); margin-bottom: 0.4rem;
+}
+.comuna-sub {
+  font-family: var(--ff-mono); font-size: 0.6rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--moss); margin-bottom: 0.5rem;
+}
+.comuna-desc { font-size: 0.82rem; color: var(--cream-dim); line-height: 1.6; }
+
+/* ═══════════════════════════════════════════════════
+   CONOCE LA REGIÓN
+═══════════════════════════════════════════════════ */
+#region { padding: 6rem 3rem; background: var(--ink2); }
+.region-inner { max-width: 1200px; margin: 0 auto; }
+.zona-grid {
+  display: grid; grid-template-columns: repeat(2,1fr);
+  gap: 1.5px; margin-top: 3.5rem;
+}
+.zona-card {
+  position: relative; overflow: hidden; min-height: 300px;
+  display: flex; align-items: flex-end;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.zona-card.visible { opacity: 1; transform: translateY(0); }
+.zona-card-bg {
+  position: absolute; inset: 0;
+  transition: transform 0.7s var(--ease);
+}
+.zona-card:hover .zona-card-bg { transform: scale(1.05); }
+.zona-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(7,9,10,0.93) 0%, rgba(7,9,10,0.45) 60%, transparent 100%);
+}
+.zona-content { position: relative; z-index: 1; padding: 2rem; }
+.zona-tag {
+  font-family: var(--ff-mono); font-size: 0.62rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--moss); margin-bottom: 0.5rem; display: block;
+}
+.zona-title {
+  font-family: var(--ff-display); font-size: 1.55rem;
+  font-weight: 500; color: var(--cream); margin-bottom: 0.5rem; line-height: 1.2;
+}
+.zona-desc { font-size: 0.88rem; color: rgba(245,240,232,0.7); line-height: 1.65; }
+
+/* ═══════════════════════════════════════════════════
+   TESTIMONIOS
+═══════════════════════════════════════════════════ */
+#testimonios {
+  padding: 6rem 3rem; background: var(--forest);
+  position: relative; overflow: hidden;
+}
+#testimonios::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(245,240,232,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(245,240,232,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+.testimonios-inner { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+.testimonios-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1.5rem; margin-top: 3.5rem;
+}
+.testimonio-card {
+  padding: 2rem; background: rgba(7,9,10,0.45);
+  border: 1px solid rgba(245,240,232,0.07);
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+.testimonio-card.visible { opacity: 1; transform: translateY(0); }
+.testimonio-mark {
+  font-family: var(--ff-display); font-size: 3rem;
+  color: var(--leaf); line-height: 0.8; margin-bottom: 1rem; display: block;
+}
+.testimonio-text {
+  font-size: 0.92rem; color: var(--cream-dim); line-height: 1.75;
+  margin-bottom: 1.5rem; font-style: italic;
+}
+.testimonio-author {
+  font-family: var(--ff-mono); font-size: 0.68rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--moss);
+}
+
+/* ═══════════════════════════════════════════════════
+   FILTROS OPERACIÓN + COMUNA
+═══════════════════════════════════════════════════ */
+.prop-filtros { flex-wrap: wrap; }
+.filtros-sep {
+  width: 100%; height: 0; margin: 0.1rem 0;
+}
+.filtro-comuna {
+  padding: 0.4rem 1rem; border: 1px solid var(--border);
+  background: none; color: rgba(245,240,232,0.35);
+  font-family: var(--ff-body); font-size: 0.7rem; letter-spacing: 0.08em;
+  text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  border-radius: 20px;
+}
+.filtro-comuna:hover { border-color: var(--border-g); color: var(--cream); }
+.filtro-comuna.active { background: rgba(76,175,80,0.15); border-color: var(--moss); color: var(--moss); box-shadow: 0 0 12px rgba(76,175,80,0.2); }
+
+/* Label "Zona" en fila de filtros */
+.filtros-label {
+  font-family: var(--ff-mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(245,240,232,0.28);
+  white-space: nowrap; align-self: center;
+}
+
+/* Textura topográfica sobre zona-cards */
+.zona-card-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(245,240,232,0.045) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+}
+
+/* Shimmer hover en zona-cards */
+.zona-card::after {
+  content: ''; position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(135deg, rgba(245,240,232,0.04) 0%, transparent 50%);
+  opacity: 0; transition: opacity 0.5s var(--ease);
+  pointer-events: none;
+}
+.zona-card:hover::after { opacity: 1; }
+
+/* Footer cobertura */
+.footer-comunas {
+  font-size: 0.68rem; color: rgba(245,240,232,0.18);
+  font-family: var(--ff-mono); letter-spacing: 0.06em;
+  padding-top: 1.25rem; margin-top: 1.25rem;
+  border-top: 1px solid var(--border); text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .stats-grid { grid-template-columns: repeat(3,1fr); }
+  .stat-card:nth-child(3) { border-right: none; }
+  .stat-card:nth-child(4) { border-right: 1px solid var(--border); border-top: 1px solid var(--border); }
+  .stat-card:nth-child(5) { border-right: none; border-top: 1px solid var(--border); }
+  .servicios-grid { grid-template-columns: repeat(2,1fr); }
+  .servicio-card:nth-child(even) { border-right: none; }
+  .servicio-card:nth-child(n+3) { border-top: 1px solid var(--border); }
+  .nosotros-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .nosotros-visual { display: none; }
+  .comunas-grid { grid-template-columns: repeat(2,1fr); }
+  .testimonios-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 900px) {
+  nav { padding: 1.2rem 1.5rem; }
+  nav.scrolled { padding: 0.8rem 1.5rem; }
+  #hero { padding: 6rem 1.5rem 5rem; }
+  .hero-scroll { display: none; }
+  #stats,#propiedades,#servicios,#proceso,#nosotros,#contacto,
+  #comunas,#region,#testimonios { padding-left: 1.5rem; padding-right: 1.5rem; }
+  footer { padding: 2rem 1.5rem; }
+  .props-grid { grid-template-columns: repeat(2,1fr); }
+  .proceso-steps { grid-template-columns: 1fr; gap: 2rem; }
+  .proceso-steps::before { display: none; }
+  .zona-grid { grid-template-columns: 1fr; }
+  .testimonios-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+  .stat-card:nth-child(2) { border-right: none; }
+  .stat-card:nth-child(3) { border-right: 1px solid var(--border); border-top: 1px solid var(--border); }
+  .stat-card:nth-child(4) { border-right: none; border-top: 1px solid var(--border); }
+  .stat-card:nth-child(5) { border-right: 1px solid var(--border); border-top: 1px solid var(--border); }
+  .servicios-grid { grid-template-columns: 1fr; }
+  .props-grid { grid-template-columns: 1fr; }
+  .contact-form { grid-template-columns: 1fr; }
+  .footer-inner { flex-direction: column; }
+  .comunas-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="header">
-    <div class="logo">N</div>
-    <div class="header-info">
-      <h1 id="chat-title">Nova</h1>
-      <p id="chat-subtitle">Asistente de Prolig Propiedades</p>
+
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="/" class="logo">
+    <span class="logo-pro">PRO</span><span class="logo-lig">LIG</span>
+    <span class="logo-tagline">Corredora<br>de Propiedades</span>
+  </a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="#propiedades">Propiedades</a></li>
+    <li><a href="#comunas">La Región</a></li>
+    <li><a href="#servicios">Servicios</a></li>
+    <li><a href="#nosotros">Nosotros</a></li>
+    <li><a href="#contacto" class="nav-cta">Contáctanos</a></li>
+  </ul>
+  <button class="hamburger" id="ham" onclick="toggleNav()" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-accent"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <span class="hero-eyebrow-text">V Región · Desde Zapallar hasta Los Vilos</span>
     </div>
-    <div class="online"></div>
-  </div>
-  <div class="panel-nav">
-    <a href="/admin.html">Propiedades</a>
-    <a href="/crm.html">CRM</a>
-    <a href="/administraciones.html" id="link-administraciones">Administraciones</a>
-    <a href="/documentos.html">Documentos</a>
-    <a href="/finanzas.html" id="link-finanzas" style="display:none">Finanzas</a>
-  </div>
-  <div class="chips">
-    <div class="chip" onclick="sugerir('¿Qué documentos necesito para vender mi propiedad?')">Vender propiedad</div>
-    <div class="chip" onclick="sugerir('¿Cómo funciona la Ley de Arriendo 18.101?')">Ley de arriendo</div>
-    <div class="chip" onclick="sugerir('¿Cómo calculo la rentabilidad de una propiedad?')">Calcular rentabilidad</div>
-    <div class="chip" onclick="sugerir('¿Cómo funciona el crédito hipotecario?')">Crédito hipotecario</div>
-    <div class="chip" onclick="sugerir('¿Cómo puedo desahuciar a un arrendatario?')">Desahucio</div>
-    <div class="chip" onclick="sugerir('¿Qué es el estudio de títulos y cuánto demora?')">Estudio de títulos</div>
-    <div class="chip" onclick="sugerir('¿Qué subsidios existen para comprar vivienda?')">Subsidios MINVU</div>
-  </div>
-  <div class="msgs" id="msgs">
-    <div class="row">
-      <div class="av nova">N</div>
-      <div class="burbuja nova" id="msg-bienvenida"></div>
+
+    <h1 class="hero-headline">
+      Vende, arrienda o invierte<br>
+      <em><span class="tw-wrap"><span class="tw-text" id="tw">en la V Región</span></span></em><br>
+      <strong>con PRO LIG</strong>
+    </h1>
+
+    <p class="hero-sub">
+      Cubrimos 8 comunas: desde la costa de Papudo y Zapallar hasta los valles de Petorca y Catemu. Gestionamos todo, tú solo firmas.
+    </p>
+
+    <div class="hero-ctas">
+      <a href="#propiedades" class="btn-primary">
+        Ver propiedades
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#contacto" class="btn-ghost">Quiero vender mi propiedad</a>
     </div>
   </div>
-  <div class="footer">
-    <textarea id="txt" placeholder="Escribe tu consulta inmobiliaria..." rows="1" onkeydown="tecla(event)" oninput="crecer(this)"></textarea>
-    <button class="btn-reset" onclick="resetear()">Nueva conversación</button>
-    <button class="btn-send" id="btn" onclick="enviar()">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-      </svg>
-    </button>
+
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <div class="hero-scroll-line"></div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker-track">
+    <span class="ticker-item">La Ligua <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Cabildo <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Papudo <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Zapallar <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Petorca <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Los Vilos <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Catemu <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Olmué <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Venta de Propiedades <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Arriendo <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Solo Interesados Calificados <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Respuesta el Mismo Día <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">La Ligua <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Cabildo <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Papudo <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Zapallar <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Petorca <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Los Vilos <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Catemu <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Olmué <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Venta de Propiedades <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Arriendo <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Solo Interesados Calificados <span class="ticker-sep">◆</span></span>
+    <span class="ticker-item">Respuesta el Mismo Día <span class="ticker-sep">◆</span></span>
   </div>
 </div>
+
+<!-- STATS -->
+<section id="stats">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num"><span class="count" data-target="340">0</span><span class="stat-suffix">+</span></div>
+      <div class="stat-label">Operaciones cerradas</div>
+    </div>
+    <div class="stat-card" style="transition-delay:.1s">
+      <div class="stat-num"><span class="count" data-target="98">0</span><span class="stat-suffix">%</span></div>
+      <div class="stat-label">Clientes satisfechos</div>
+    </div>
+    <div class="stat-card" style="transition-delay:.2s">
+      <div class="stat-num"><span class="count" data-target="12">0</span></div>
+      <div class="stat-label">Años de experiencia</div>
+    </div>
+    <div class="stat-card" style="transition-delay:.3s">
+      <div class="stat-num"><span class="count" data-target="8">0</span></div>
+      <div class="stat-label">Comunas que cubrimos</div>
+    </div>
+    <div class="stat-card" style="transition-delay:.4s">
+      <div class="stat-num" style="font-size:clamp(1.6rem,3vw,2.8rem);letter-spacing:0">Mismo día</div>
+      <div class="stat-label">Tiempo de respuesta</div>
+    </div>
+  </div>
+</section>
+
+<!-- COMUNAS -->
+<section id="comunas">
+  <div class="comunas-inner">
+    <div class="section-kicker">
+      <div class="section-kicker-line"></div>
+      <span class="section-kicker-text">Cobertura regional</span>
+    </div>
+    <h2 class="section-title">Presencia en <em>8 comunas</em></h2>
+    <div class="comunas-grid">
+      <div class="comuna-card">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <div class="comuna-name">La Ligua</div>
+        <div class="comuna-sub">Capital provincial</div>
+        <p class="comuna-desc">Mercado activo y diverso. Centro de operaciones con alta rotación de casas, terrenos y locales.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.05s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+        </div>
+        <div class="comuna-name">Cabildo</div>
+        <div class="comuna-sub">Tradición campesina</div>
+        <p class="comuna-desc">Terrenos y parcelas agrícolas a precios accesibles. Ideal para proyectos de campo y vida tranquila.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.1s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div class="comuna-name">Papudo</div>
+        <div class="comuna-sub">Borde costero</div>
+        <p class="comuna-desc">Balneario histórico con alta demanda turística. Departamentos y casas de veraneo con fuerte plusvalía.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.15s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+        </div>
+        <div class="comuna-name">Zapallar</div>
+        <div class="comuna-sub">Sector exclusivo</div>
+        <p class="comuna-desc">Balneario de elite con fuerte plusvalía. Propiedades de alto estándar en uno de los destinos más codiciados del litoral.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.2s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
+        </div>
+        <div class="comuna-name">Petorca</div>
+        <div class="comuna-sub">Zona cordillerana</div>
+        <p class="comuna-desc">Paisaje de montaña y ruralidad premium. Parcelas de agrado y terrenos con vistas privilegiadas.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.25s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </div>
+        <div class="comuna-name">Los Vilos</div>
+        <div class="comuna-sub">Costa norte chico</div>
+        <p class="comuna-desc">Acceso directo al Pacífico con precios competitivos. Casas de veraneo e inversión en un polo turístico emergente.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.3s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+        </div>
+        <div class="comuna-name">Catemu</div>
+        <div class="comuna-sub">Valle del Aconcagua</div>
+        <p class="comuna-desc">Zona agrícola y vitivinícola con suelos de alto valor. Parcelas y sitios en un entorno de naturaleza y calma.</p>
+      </div>
+      <div class="comuna-card" style="transition-delay:.35s">
+        <div class="comuna-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+        </div>
+        <div class="comuna-name">Olmué</div>
+        <div class="comuna-sub">Naturaleza y cercanía</div>
+        <p class="comuna-desc">A pasos de Valparaíso, rodeada de cerros y quebradas. Alta demanda de parcelas de agrado y casas con jardín.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROPIEDADES -->
+<section id="propiedades">
+  <div class="section-header">
+    <div>
+      <div class="section-kicker">
+        <div class="section-kicker-line"></div>
+        <span class="section-kicker-text">Portafolio</span>
+      </div>
+      <h2 class="section-title">Propiedades <em>destacadas</em></h2>
+    </div>
+    <a href="/propiedades" class="ver-todas">
+      Ver catálogo completo
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </div>
+
+  <div class="prop-filtros">
+    <button class="filtro-btn active" data-filtro="">Todas</button>
+    <button class="filtro-btn" data-filtro="venta">Venta</button>
+    <button class="filtro-btn" data-filtro="arriendo">Arriendo</button>
+    <div class="filtros-sep"></div>
+    <span class="filtros-label">Zona</span>
+    <button class="filtro-comuna" data-comuna="La Ligua">La Ligua</button>
+    <button class="filtro-comuna" data-comuna="Cabildo">Cabildo</button>
+    <button class="filtro-comuna" data-comuna="Papudo">Papudo</button>
+    <button class="filtro-comuna" data-comuna="Zapallar">Zapallar</button>
+    <button class="filtro-comuna" data-comuna="Petorca">Petorca</button>
+    <button class="filtro-comuna" data-comuna="Los Vilos">Los Vilos</button>
+    <button class="filtro-comuna" data-comuna="Catemu">Catemu</button>
+    <button class="filtro-comuna" data-comuna="Olmué">Olmué</button>
+  </div>
+
+  <div class="props-grid" id="props-grid">
+    <div class="prop-loading">Cargando propiedades...</div>
+  </div>
+</section>
+
+<!-- SERVICIOS -->
+<section id="servicios">
+  <div class="servicios-inner">
+    <div class="section-kicker">
+      <div class="section-kicker-line"></div>
+      <span class="section-kicker-text">Qué hacemos</span>
+    </div>
+    <h2 class="section-title">Todo lo que <em>necesitas</em></h2>
+    <div class="servicios-grid">
+      <div class="servicio-card">
+        <div class="servicio-num">01</div>
+        <svg class="servicio-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <div class="servicio-title">Venta de propiedades</div>
+        <p class="servicio-desc">Tasamos, publicamos y gestionamos todo el proceso de venta. Tú defines el precio, nosotros encontramos al comprador.</p>
+      </div>
+      <div class="servicio-card" style="transition-delay:.1s">
+        <div class="servicio-num">02</div>
+        <svg class="servicio-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        <div class="servicio-title">Arriendo</div>
+        <p class="servicio-desc">Filtramos a los candidatos, redactamos el contrato y te acompañamos en la entrega de llaves.</p>
+      </div>
+      <div class="servicio-card" style="transition-delay:.2s">
+        <div class="servicio-num">03</div>
+        <svg class="servicio-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <div class="servicio-title">Contratos y documentos</div>
+        <p class="servicio-desc">Preparamos todos los documentos legales. Promesas de compraventa, contratos de arriendo y más.</p>
+      </div>
+      <div class="servicio-card" style="transition-delay:.3s">
+        <div class="servicio-num">04</div>
+        <svg class="servicio-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+        <div class="servicio-title">Publicación en portales</div>
+        <p class="servicio-desc">Publicamos tu propiedad en los principales portales inmobiliarios con fotos profesionales.</p>
+      </div>
+      <div class="servicio-card" style="transition-delay:.4s">
+        <div class="servicio-num">05</div>
+        <svg class="servicio-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+        <div class="servicio-title">Análisis de mercado</div>
+        <p class="servicio-desc">Te entregamos un informe de precios de la zona para que tomes decisiones informadas.</p>
+      </div>
+      <div class="servicio-card" style="transition-delay:.5s">
+        <div class="servicio-num">06</div>
+        <svg class="servicio-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+        <div class="servicio-title">Atención personalizada</div>
+        <p class="servicio-desc">Un corredor dedicado te acompaña en cada paso. Sin call centers, sin esperas, respuesta el mismo día.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONOCE LA REGIÓN -->
+<section id="region">
+  <div class="region-inner">
+    <div class="section-kicker">
+      <div class="section-kicker-line"></div>
+      <span class="section-kicker-text">Geografía e inversión</span>
+    </div>
+    <h2 class="section-title">Conoce <em>la Región</em></h2>
+    <div class="zona-grid">
+      <div class="zona-card" style="transition-delay:0s">
+        <div class="zona-card-bg" style="background-image:url('/img/zona-litoral.jpg');background-size:cover;background-position:center"></div>
+        <div class="zona-overlay"></div>
+        <div class="zona-content">
+          <span class="zona-tag">Papudo · Zapallar</span>
+          <div class="zona-title">Litoral Costero</div>
+          <p class="zona-desc">Dos de los destinos de playa más exclusivos de Chile. El borde costero concentra propiedades de alta plusvalía con demanda turística permanente y un mercado de segunda vivienda muy activo.</p>
+        </div>
+      </div>
+      <div class="zona-card" style="transition-delay:.1s">
+        <div class="zona-card-bg" style="background:linear-gradient(135deg,#0d1a0a 0%,#1a2e10 40%,#2d4a1e 70%,#3d5c2a 100%)"></div>
+        <div class="zona-overlay"></div>
+        <div class="zona-content">
+          <span class="zona-tag">La Ligua · Cabildo</span>
+          <div class="zona-title">Valles Interiores</div>
+          <p class="zona-desc">El corazón productivo de la provincia. Terrenos agrícolas, parcelas y casas de campo en un entorno de serranías suaves. Mercado diverso con precios accesibles y gran potencial de valorización.</p>
+        </div>
+      </div>
+      <div class="zona-card" style="transition-delay:.2s">
+        <div class="zona-card-bg" style="background:linear-gradient(135deg,#1a1422 0%,#2d2438 40%,#3a3050 70%,#1a1628 100%)"></div>
+        <div class="zona-overlay"></div>
+        <div class="zona-content">
+          <span class="zona-tag">Petorca · Cabildo Alto</span>
+          <div class="zona-title">Zona Cordillerana</div>
+          <p class="zona-desc">Precordillera andina con paisajes de montaña únicos. Parcelas de agrado para quienes buscan naturaleza y tranquilidad a pocas horas de Santiago. Sector en crecimiento y muy cotizado.</p>
+        </div>
+      </div>
+      <div class="zona-card" style="transition-delay:.3s">
+        <div class="zona-card-bg" style="background:linear-gradient(135deg,#0d180a 0%,#1e3010 40%,#354820 60%,#b8973a18 100%)"></div>
+        <div class="zona-overlay"></div>
+        <div class="zona-content">
+          <span class="zona-tag">Catemu · Olmué · Los Vilos</span>
+          <div class="zona-title">Zona Agrícola y Norte</div>
+          <p class="zona-desc">Viñedos, suelos fértiles y acceso al Pacífico. Catemu destaca por su producción vitivinícola; Los Vilos, por su costa emergente; Olmué, por su cercanía a Valparaíso y naturaleza exuberante.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESO -->
+<section id="proceso">
+  <div class="proceso-inner">
+    <div class="section-kicker">
+      <div class="section-kicker-line"></div>
+      <span class="section-kicker-text">Cómo funciona</span>
+    </div>
+    <h2 class="section-title">Solo <em>tres pasos</em></h2>
+    <div class="proceso-steps">
+      <div class="proceso-step">
+        <div class="proceso-circle">1</div>
+        <div class="proceso-title">Nos cuentas</div>
+        <p class="proceso-desc">Cuéntanos sobre tu propiedad o lo que buscas. Sin compromisos, sin formularios complicados.</p>
+      </div>
+      <div class="proceso-step" style="transition-delay:.15s">
+        <div class="proceso-circle">2</div>
+        <div class="proceso-title">Gestionamos</div>
+        <p class="proceso-desc">Nosotros nos encargamos de todo: publicación, visitas, filtrado de candidatos y negociación.</p>
+      </div>
+      <div class="proceso-step" style="transition-delay:.3s">
+        <div class="proceso-circle">3</div>
+        <div class="proceso-title">Tú firmas</div>
+        <p class="proceso-desc">Solo apareces para firmar. Nosotros preparamos todos los documentos y coordinamos la entrega.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POR QUÉ ELEGIRNOS -->
+<section id="nosotros">
+  <div class="nosotros-inner">
+    <div class="nosotros-left">
+      <div class="section-kicker">
+        <div class="section-kicker-line"></div>
+        <span class="section-kicker-text">Por qué elegirnos</span>
+      </div>
+      <h2 class="section-title">Especialistas en <em>toda</em> la V Región</h2>
+      <p>Conocemos cada rincón de la región, desde las playas de Zapallar hasta los valles de Petorca y las costas de Los Vilos. 12 años operando en 8 comunas. No somos una franquicia nacional: somos tus vecinos.</p>
+      <div class="nosotros-features">
+        <div class="nosotros-feat">
+          <div class="nosotros-feat-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <div>
+            <h4>Conocimiento regional</h4>
+            <p>12 años operando en 8 comunas: costa, valles, cordillera y zona agrícola de la V Región.</p>
+          </div>
+        </div>
+        <div class="nosotros-feat" style="transition-delay:.1s">
+          <div class="nosotros-feat-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <h4>Solo interesados calificados</h4>
+            <p>Filtramos previamente a cada candidato. Tus visitas son con personas serias, no curiosos.</p>
+          </div>
+        </div>
+        <div class="nosotros-feat" style="transition-delay:.2s">
+          <div class="nosotros-feat-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <h4>Respuesta el mismo día</h4>
+            <p>Nos comunicamos contigo el mismo día que recibes tu consulta. Sin esperas innecesarias.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nosotros-visual">
+      <div class="nosotros-box nosotros-box-1"></div>
+      <div class="nosotros-box nosotros-box-2">
+        <span class="big-num">98%</span>
+        <span class="big-label">clientes satisfechos</span>
+      </div>
+      <div class="nosotros-box nosotros-box-3">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIOS -->
+<section id="testimonios">
+  <div class="testimonios-inner">
+    <div class="section-kicker">
+      <div class="section-kicker-line"></div>
+      <span class="section-kicker-text">Lo que dicen nuestros clientes</span>
+    </div>
+    <h2 class="section-title">Resultados <em>reales</em></h2>
+    <div class="testimonios-grid">
+      <div class="testimonio-card">
+        <span class="testimonio-mark">"</span>
+        <p class="testimonio-text">Vendimos nuestra parcela en Cabildo en menos de tres meses. El proceso fue simple y el equipo siempre disponible para resolver cualquier duda. Muy profesionales.</p>
+        <div class="testimonio-author">Carlos M. — Cabildo</div>
+      </div>
+      <div class="testimonio-card" style="transition-delay:.1s">
+        <span class="testimonio-mark">"</span>
+        <p class="testimonio-text">Encontramos el departamento de arriendo perfecto en La Ligua. Nova respondió todas nuestras consultas al instante, incluso a las 11 de la noche. Excelente experiencia.</p>
+        <div class="testimonio-author">Valentina R. — La Ligua</div>
+      </div>
+      <div class="testimonio-card" style="transition-delay:.2s">
+        <span class="testimonio-mark">"</span>
+        <p class="testimonio-text">Invertimos en un terreno en Petorca asesorados por PRO LIG. Conocen muy bien la zona, los precios reales del mercado y nos guiaron en todo el proceso legal. Lo recomendamos ampliamente.</p>
+        <div class="testimonio-author">Andrés y Sofía P. — Petorca</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section id="contacto">
+  <div class="contacto-bg"></div>
+  <div class="contacto-inner">
+    <div class="section-kicker">
+      <div class="section-kicker-line"></div>
+      <span class="section-kicker-text">Contáctanos</span>
+    </div>
+    <h2 class="section-title">¿Listo para<br><em>dar el paso</em>?</h2>
+    <p>Escríbenos y un corredor especialista en la V Región te contacta hoy mismo.</p>
+
+    <form class="contact-form" id="contact-form" onsubmit="handleContact(event)">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" name="nombre" placeholder="Tu nombre" required>
+      </div>
+      <div class="form-group">
+        <label>Teléfono</label>
+        <input type="tel" name="telefono" placeholder="+56 9 XXXX XXXX" required>
+      </div>
+      <div class="form-group full">
+        <label>¿Qué necesitas?</label>
+        <select name="necesidad">
+          <option>Comprar propiedad</option>
+          <option>Arrendar propiedad</option>
+          <option>Vender mi propiedad</option>
+          <option>Arrendar mi propiedad</option>
+          <option>Asesoría general</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Mensaje (opcional)</label>
+        <textarea name="mensaje" placeholder="Cuéntanos más sobre lo que necesitas..."></textarea>
+      </div>
+      <div class="form-group full form-submit">
+        <button type="submit" class="btn-primary" style="width:100%;justify-content:center">
+          Quiero que me contacten hoy
+        </button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <a href="/" class="logo">
+        <span class="logo-pro">PRO</span><span class="logo-lig">LIG</span>
+      </a>
+      <span class="footer-copy">© 2026 PRO LIG Corredora de Propiedades · V Región, Chile</span>
+    </div>
+    <div class="footer-links">
+      <a href="/propiedades">Propiedades</a>
+      <a href="#contacto">Contacto</a>
+      <a href="/login.html">Acceso interno</a>
+    </div>
+  </div>
+  <div class="footer-comunas">
+    Operamos en: La Ligua · Cabildo · Papudo · Zapallar · Petorca · Los Vilos · Catemu · Olmué — Provincia de Petorca y comunas limítrofes, V Región de Valparaíso
+  </div>
+</footer>
+
+<!-- WA FLOTANTE -->
+<a id="wa-float" href="https://wa.me/56920553288" target="_blank" rel="noopener" title="WhatsApp PRO LIG">
+  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<!-- TOAST -->
+<div id="toast"><strong id="toast-title"></strong><span id="toast-msg"></span></div>
+
+<script src="/chat-btn.js"></script>
 <script>
-const SID='sid_'+Date.now()+'_'+Math.random().toString(36).slice(2)
-let ocupado=false
-
-function formatearTexto(txt){
-  return txt
-    .replace(/\n/g,'<br>')
-    .replace(/(https?:\/\/[^\s<"]+\/propiedad\/\d+)/g,
-      '<br><a href="$1" target="_blank" class="btn-ficha">📷 Ver ficha y fotos</a>')
-    .replace(/(https?:\/\/(?:maps\.google\.com|www\.google\.com\/maps)[^\s<"]+)/g,
-      '<a href="$1" target="_blank" style="color:#1a73e8;text-decoration:none;font-weight:500">📍 Ver en Google Maps</a>')
-    .replace(/(https?:\/\/wa\.me\/[^\s<"]+)/g,
-      '<a href="$1" target="_blank" style="color:#c9a96e">WhatsApp</a>')
+/* ─── CURSOR (solo en dispositivos con mouse real) ─── */
+const cur = document.getElementById('cur');
+const curRing = document.getElementById('cur-ring');
+const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+if (!isTouch) {
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  (function moveCursor() {
+    rx += (mx - rx) * 0.18; ry += (my - ry) * 0.18;
+    cur.style.left = mx + 'px'; cur.style.top = my + 'px';
+    curRing.style.left = rx + 'px'; curRing.style.top = ry + 'px';
+    requestAnimationFrame(moveCursor);
+  })();
+} else {
+  cur.style.display = 'none';
+  curRing.style.display = 'none';
 }
 
-function agregar(txt,esUser,imgUrl){
-  const c=document.getElementById('msgs')
-  const row=document.createElement('div')
-  row.className='row'+(esUser?' user':'')
-  const av=document.createElement('div')
-  av.className='av '+(esUser?'user':'nova')
-  av.textContent=esUser?'Tú':'N'
-  const b=document.createElement('div')
-  b.className='burbuja '+(esUser?'user':'nova')
-  b.innerHTML=esUser?txt.replace(/\n/g,'<br>'):formatearTexto(txt)
-  row.appendChild(av);row.appendChild(b)
-  c.appendChild(row)
-  // Mostrar imagen si la hay
-  if(imgUrl){
-    const rowImg=document.createElement('div')
-    rowImg.className='row'
-    const avImg=document.createElement('div')
-    avImg.className='av nova';avImg.textContent='N'
-    const bImg=document.createElement('div')
-    bImg.className='burbuja nova';bImg.style.padding='6px'
-    bImg.innerHTML=`<img src="${imgUrl}" class="img-propiedad" alt="Foto propiedad" onclick="window.open('${imgUrl}','_blank')" onerror="this.style.display='none'">`
-    rowImg.appendChild(avImg);rowImg.appendChild(bImg)
-    c.appendChild(rowImg)
+/* ─── NAVBAR ─── */
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+}, { passive: true });
+
+function toggleNav() {
+  document.getElementById('nav-links').classList.toggle('open');
+}
+
+/* Cerrar menú al hacer click en un enlace o fuera del menú */
+document.getElementById('nav-links').addEventListener('click', e => {
+  if (e.target.tagName === 'A') document.getElementById('nav-links').classList.remove('open');
+});
+document.addEventListener('click', e => {
+  const navLinks = document.getElementById('nav-links');
+  const ham = document.getElementById('ham');
+  if (navLinks.classList.contains('open') && !navLinks.contains(e.target) && !ham.contains(e.target)) {
+    navLinks.classList.remove('open');
   }
-  c.scrollTop=c.scrollHeight
+});
+
+/* ─── TYPEWRITER ─── */
+(function() {
+  const frases = [
+    'en la V Región',
+    'en Papudo o Zapallar',
+    'en La Ligua o Cabildo',
+    'sin complicaciones',
+    'con los expertos locales',
+    'tu parcela en Petorca'
+  ];
+  let i = 0;
+  const el = document.getElementById('tw');
+  if (!el) return;
+  setInterval(() => {
+    el.classList.add('fade');
+    setTimeout(() => {
+      i = (i + 1) % frases.length;
+      el.textContent = frases[i];
+      el.classList.remove('fade');
+    }, 350);
+  }, 3500);
+})();
+
+/* ─── SCROLL REVEAL ─── */
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+document.querySelectorAll('.stat-card, .servicio-card, .proceso-step, .nosotros-feat, .comuna-card, .zona-card, .testimonio-card').forEach(el => revealObs.observe(el));
+
+/* ─── COUNTER ANIMATION ─── */
+const countObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    entry.target.querySelectorAll('.count').forEach(el => {
+      const target = +el.dataset.target;
+      const dur = 1800;
+      const step = target / (dur / 16);
+      let cur = 0;
+      const timer = setInterval(() => {
+        cur = Math.min(cur + step, target);
+        el.textContent = Math.floor(cur).toLocaleString('es-CL');
+        if (cur >= target) clearInterval(timer);
+      }, 16);
+    });
+    countObs.unobserve(entry.target);
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('#stats').forEach(el => countObs.observe(el));
+
+/* ─── PROPIEDADES DINÁMICAS ─── */
+const SVG_PIN  = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+const SVG_DORM = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>';
+const SVG_BANO = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>';
+const SVG_M2   = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>';
+
+function propCard(p, delay) {
+  const precio = p.moneda === 'UF'
+    ? p.precio + ' UF'
+    : '$' + Number(p.precio).toLocaleString('es-CL');
+  const badgeClass = p.operacion === 'arriendo' ? 'prop-badge arriendo' : 'prop-badge';
+  const badgeLabel = p.operacion === 'arriendo' ? 'Arriendo' : 'Venta';
+  const titulo = p.tipo
+    ? p.tipo.charAt(0).toUpperCase() + p.tipo.slice(1) + ' en ' + p.comuna
+    : p.comuna;
+  const imgHtml = p.imagen_url
+    ? `<img src="${p.imagen_url}" alt="${titulo}" loading="lazy">`
+    : `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--leaf)"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>`;
+  const meta = [
+    p.dormitorios ? `<span>${SVG_DORM} ${p.dormitorios} dorm.</span>` : '',
+    p.baños       ? `<span>${SVG_BANO} ${p.baños} baños</span>` : '',
+    p.metros      ? `<span>${SVG_M2} ${p.metros} m²</span>` : ''
+  ].filter(Boolean).join('');
+
+  return `<div class="prop-card" style="animation-delay:${delay}s" onclick="location.href='/propiedad/${p.id}'">
+    <div class="prop-card-img">${p.imagen_url ? imgHtml : `<div class="prop-card-placeholder">${imgHtml}</div>`}</div>
+    <div class="prop-card-overlay"></div>
+    <div class="prop-card-strip">
+      <span class="prop-strip-price">${precio}</span>
+      <span class="prop-strip-type">${badgeLabel}</span>
+    </div>
+    <div class="prop-card-info">
+      <span class="${badgeClass}">${badgeLabel}</span>
+      <div class="prop-title">${titulo}</div>
+      <div class="prop-price">${precio}${p.operacion==='arriendo'?'<span>/mes</span>':''}</div>
+      <div style="font-size:.78rem;color:rgba(245,240,232,.55);display:flex;align-items:center;gap:.3rem;margin-bottom:.5rem">${SVG_PIN} ${p.direccion||p.comuna}</div>
+      <div class="prop-meta">${meta}</div>
+    </div>
+  </div>`;
 }
-function mostrarTyping(){
-  const c=document.getElementById('msgs')
-  const row=document.createElement('div')
-  row.className='row';row.id='typing'
-  const av=document.createElement('div')
-  av.className='av nova';av.textContent='N'
-  const t=document.createElement('div')
-  t.className='typing'
-  t.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>'
-  row.appendChild(av);row.appendChild(t)
-  c.appendChild(row);c.scrollTop=c.scrollHeight
+
+let filtroOp = '';
+let filtroComuna = '';
+
+async function cargarProps() {
+  const grid = document.getElementById('props-grid');
+  grid.innerHTML = '<div class="prop-loading">Cargando...</div>';
+  try {
+    let url = '/api/propiedades-publicas?limite=6';
+    if (filtroOp) url += '&operacion=' + filtroOp;
+    if (filtroComuna) url += '&comuna=' + encodeURIComponent(filtroComuna);
+    const { propiedades } = await fetch(url).then(r => r.json());
+    if (!propiedades?.length) { grid.innerHTML = '<div class="prop-empty">No hay propiedades disponibles para este filtro.</div>'; return; }
+    grid.innerHTML = propiedades.map((p, i) => propCard(p, i * 0.07)).join('');
+  } catch { grid.innerHTML = '<div class="prop-empty">Error al cargar propiedades.</div>'; }
 }
-function quitarTyping(){const el=document.getElementById('typing');if(el)el.remove()}
-async function enviar(){
-  if(ocupado)return
-  const txt=document.getElementById('txt')
-  const msg=txt.value.trim()
-  if(!msg)return
-  txt.value='';txt.style.height='auto'
-  ocupado=true;document.getElementById('btn').disabled=true
-  agregar(msg,true);mostrarTyping()
-  try{
-    const r=await fetch('/api/chat',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mensaje:msg,sesionId:SID})
-    })
-    const d=await r.json()
-    quitarTyping()
-    if(d.error) agregar('Hubo un problema, intenta de nuevo.',false)
-    else agregar(d.respuesta,false,d.imagenUrl)
-  }catch(e){
-    quitarTyping()
-    agregar('Error de conexión. Verifica que el servidor esté corriendo.',false)
-  }
-  ocupado=false;document.getElementById('btn').disabled=false
-  txt.focus()
+
+document.querySelectorAll('.filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroOp = btn.dataset.filtro;
+    cargarProps();
+  });
+});
+
+document.querySelectorAll('.filtro-comuna').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.filtro-comuna').forEach(b => b.classList.remove('active'));
+    filtroComuna = wasActive ? '' : btn.dataset.comuna;
+    if (!wasActive) btn.classList.add('active');
+    cargarProps();
+  });
+});
+
+cargarProps();
+
+/* ─── CONTACTO FUNCIONAL ─── */
+async function handleContact(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const r = await fetch('/api/leads', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: fd.get('nombre'), telefono: fd.get('telefono'),
+        necesidad: fd.get('necesidad'), mensaje: fd.get('mensaje') || ''
+      })
+    });
+    if (r.ok) { showToast('¡Mensaje enviado!', 'Te contactamos hoy mismo.'); e.target.reset(); }
+    else throw new Error();
+  } catch { showToast('Error al enviar', 'Escríbenos por WhatsApp.'); }
+  finally { btn.disabled = false; btn.textContent = 'Quiero que me contacten hoy'; }
 }
-function sugerir(t){document.getElementById('txt').value=t;enviar()}
-function tecla(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();enviar()}}
-function crecer(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px'}
-async function resetear(){
-  await fetch('/api/limpiar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sesionId:SID})})
-  document.getElementById('msgs').innerHTML=''
-  agregar('Chat reiniciado. ¿En qué te puedo ayudar?',false)
+
+/* ─── TOAST ─── */
+function showToast(title, msg) {
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-msg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
 }
 </script>
 </body>

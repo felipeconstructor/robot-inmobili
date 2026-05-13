@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="/nova-premium.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova — Asistente Inmobiliaria</title>
+<script>
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  if(cfg.siteName){
+    const esBroker=cfg.siteName.toLowerCase().includes('broker')
+    if(esBroker){const la=document.getElementById('link-administraciones');if(la)la.style.display='none'}
+    document.title=cfg.siteName+' — Asistente Inmobiliaria'
+    const h=document.getElementById('chat-title')
+    if(h)h.textContent=cfg.siteName
+    const sub=document.getElementById('chat-subtitle')
+    if(sub)sub.textContent=esBroker?'Asistente Inmobiliaria':'Asistente de Prolig Propiedades'
+    const m=document.getElementById('msg-bienvenida')
+    if(m)m.innerHTML=esBroker
+      ?'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades en Chile.<br><br>¿En qué te puedo ayudar hoy?'
+      :'Hola, soy Nova, asistente de <strong>'+cfg.siteName+'</strong>. Estoy aquí para ayudarte con compra, venta y arriendo de propiedades, leyes, créditos hipotecarios e inversión inmobiliaria en Chile.<br><br>¿En qué te puedo ayudar hoy?'
+  }
+}).catch(()=>{})
+fetch('/api/me').then(r=>r.ok?r.json():null).then(me=>{
+  if(me&&me.rol==='admin'){const lf=document.getElementById('link-finanzas');if(lf)lf.style.display=''}
+}).catch(()=>{})
+</script>
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','1662180801784663');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1662180801784663&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f0ede8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.app{width:100%;max-width:680px;height:92vh;max-height:820px;background:#fff;border-radius:24px;border:1px solid #e2ddd6;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 48px rgba(0,0,0,0.08)}
+.header{background:#16213e;padding:1.1rem 1.4rem;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c9a96e,#f0d49a);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:17px;color:#16213e;flex-shrink:0}
+.header-info h1{font-family:'DM Serif Display',serif;font-size:17px;color:#fff;font-weight:400}
+.header-info p{font-size:11px;color:#c9a96e;margin-top:1px}
+.online{width:8px;height:8px;background:#4ade80;border-radius:50%;margin-left:auto;box-shadow:0 0 8px rgba(74,222,128,0.5);flex-shrink:0}
+.panel-nav{background:#0f1a2e;padding:.4rem 1rem;display:flex;gap:6px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
+.panel-nav a{color:rgba(201,169,110,.7);font-size:11px;text-decoration:none;padding:3px 10px;border:1px solid rgba(201,169,110,.2);border-radius:20px;transition:all .2s;white-space:nowrap}
+.panel-nav a:hover{background:#c9a96e;color:#16213e;border-color:#c9a96e}
+.chips{padding:.6rem 1rem;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid #f0ede8;flex-shrink:0;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:5px 12px;border-radius:20px;border:1px solid #e2ddd6;background:#faf8f5;font-size:12px;color:#555;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;flex-shrink:0}
+.chip:hover{background:#16213e;color:#c9a96e;border-color:#16213e}
+.msgs{flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:.9rem;scrollbar-width:thin;scrollbar-color:#e2ddd6 transparent}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row.user{flex-direction:row-reverse}
+.av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.av.nova{background:#16213e;color:#c9a96e;font-family:'DM Serif Display',serif;font-size:13px}
+.av.user{background:#e8e4de;color:#666}
+.burbuja{max-width:78%;padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.65}
+.burbuja.nova{background:#faf8f5;border:1px solid #e8e4de;border-bottom-left-radius:4px;color:#1a1a2e}
+.burbuja.user{background:#16213e;color:#f0f0f0;border-bottom-right-radius:4px}
+.typing{display:flex;gap:4px;padding:13px 15px;background:#faf8f5;border:1px solid #e8e4de;border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
+.dot{width:6px;height:6px;background:#c9a96e;border-radius:50%;animation:boing 1.1s infinite}
+.dot:nth-child(2){animation-delay:.18s}
+.dot:nth-child(3){animation-delay:.36s}
+@keyframes boing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+.footer{padding:.9rem 1rem;border-top:1px solid #f0ede8;display:flex;gap:8px;align-items:flex-end;background:#fff;flex-shrink:0}
+textarea{flex:1;border:1px solid #e2ddd6;border-radius:12px;padding:10px 13px;font-size:14px;font-family:'DM Sans',sans-serif;resize:none;outline:none;min-height:42px;max-height:110px;color:#1a1a2e;background:#faf8f5;line-height:1.5;transition:border-color .2s}
+textarea:focus{border-color:#c9a96e}
+textarea::placeholder{color:#bbb}
+.btn-send{width:42px;height:42px;border-radius:11px;background:#16213e;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .1s}
+.btn-send:hover{background:#c9a96e}
+.btn-send:active{transform:scale(.95)}
+.btn-send:disabled{background:#ddd;cursor:not-allowed}
+.btn-reset{font-size:11px;color:#bbb;background:transparent;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:'DM Sans',sans-serif;white-space:nowrap;align-self:center;transition:color .2s}
+.btn-reset:hover{color:#555;background:#f5f3ef}
+.btn-ficha{display:inline-block;background:#16213e;color:#c9a96e!important;padding:7px 14px;border-radius:8px;text-decoration:none!important;font-size:12px;font-weight:500;margin-top:6px;transition:background .2s}
+.btn-ficha:hover{background:#c9a96e;color:#16213e!important}
+.img-propiedad{max-width:100%;border-radius:10px;display:block;margin-top:4px;cursor:pointer}
+.img-propiedad:hover{opacity:.92}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">N</div>
+    <div class="header-info">
+      <h1 id="chat-title">Nova</h1>
+      <p id="chat-subtitle">Asistente de Prolig Propiedades</p>
+    </div>
+    <div class="online"></div>
+  </div>
+  <div class="panel-nav">
+    <a href="/admin.html">Propiedades</a>
+    <a href="/crm.html">CRM</a>
+    <a href="/administraciones.html" id="link-administraciones">Administraciones</a>
+    <a href="/documentos.html">Documentos</a>
+    <a href="/finanzas.html" id="link-finanzas" style="display:none">Finanzas</a>
+  </div>
+  <div class="chips">
+    <div class="chip" onclick="sugerir('¿Qué documentos necesito para vender mi propiedad?')">Vender propiedad</div>
+    <div class="chip" onclick="sugerir('¿Cómo funciona la Ley de Arriendo 18.101?')">Ley de arriendo</div>
+    <div class="chip" onclick="sugerir('¿Cómo calculo la rentabilidad de una propiedad?')">Calcular rentabilidad</div>
+    <div class="chip" onclick="sugerir('¿Cómo funciona el crédito hipotecario?')">Crédito hipotecario</div>
+    <div class="chip" onclick="sugerir('¿Cómo puedo desahuciar a un arrendatario?')">Desahucio</div>
+    <div class="chip" onclick="sugerir('¿Qué es el estudio de títulos y cuánto demora?')">Estudio de títulos</div>
+    <div class="chip" onclick="sugerir('¿Qué subsidios existen para comprar vivienda?')">Subsidios MINVU</div>
+  </div>
+  <div class="msgs" id="msgs">
+    <div class="row">
+      <div class="av nova">N</div>
+      <div class="burbuja nova" id="msg-bienvenida"></div>
+    </div>
+  </div>
+  <div class="footer">
+    <textarea id="txt" placeholder="Escribe tu consulta inmobiliaria..." rows="1" onkeydown="tecla(event)" oninput="crecer(this)"></textarea>
+    <button class="btn-reset" onclick="resetear()">Nueva conversación</button>
+    <button class="btn-send" id="btn" onclick="enviar()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+<script>
+const SID='sid_'+Date.now()+'_'+Math.random().toString(36).slice(2)
+let ocupado=false
+
+function formatearTexto(txt){
+  return txt
+    .replace(/\n/g,'<br>')
+    .replace(/(https?:\/\/[^\s<"]+\/propiedad\/\d+)/g,
+      '<br><a href="$1" target="_blank" class="btn-ficha">📷 Ver ficha y fotos</a>')
+    .replace(/(https?:\/\/(?:maps\.google\.com|www\.google\.com\/maps)[^\s<"]+)/g,
+      '<a href="$1" target="_blank" style="color:#1a73e8;text-decoration:none;font-weight:500">📍 Ver en Google Maps</a>')
+    .replace(/(https?:\/\/wa\.me\/[^\s<"]+)/g,
+      '<a href="$1" target="_blank" style="color:#c9a96e">WhatsApp</a>')
+}
+
+function agregar(txt,esUser,imgUrl){
+  const c=document.getElementById('msgs')
+  const row=document.createElement('div')
+  row.className='row'+(esUser?' user':'')
+  const av=document.createElement('div')
+  av.className='av '+(esUser?'user':'nova')
+  av.textContent=esUser?'Tú':'N'
+  const b=document.createElement('div')
+  b.className='burbuja '+(esUser?'user':'nova')
+  b.innerHTML=esUser?txt.replace(/\n/g,'<br>'):formatearTexto(txt)
+  row.appendChild(av);row.appendChild(b)
+  c.appendChild(row)
+  // Mostrar imagen si la hay
+  if(imgUrl){
+    const rowImg=document.createElement('div')
+    rowImg.className='row'
+    const avImg=document.createElement('div')
+    avImg.className='av nova';avImg.textContent='N'
+    const bImg=document.createElement('div')
+    bImg.className='burbuja nova';bImg.style.padding='6px'
+    bImg.innerHTML=`<img src="${imgUrl}" class="img-propiedad" alt="Foto propiedad" onclick="window.open('${imgUrl}','_blank')" onerror="this.style.display='none'">`
+    rowImg.appendChild(avImg);rowImg.appendChild(bImg)
+    c.appendChild(rowImg)
+  }
+  c.scrollTop=c.scrollHeight
+}
+function mostrarTyping(){
+  const c=document.getElementById('msgs')
+  const row=document.createElement('div')
+  row.className='row';row.id='typing'
+  const av=document.createElement('div')
+  av.className='av nova';av.textContent='N'
+  const t=document.createElement('div')
+  t.className='typing'
+  t.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>'
+  row.appendChild(av);row.appendChild(t)
+  c.appendChild(row);c.scrollTop=c.scrollHeight
+}
+function quitarTyping(){const el=document.getElementById('typing');if(el)el.remove()}
+async function enviar(){
+  if(ocupado)return
+  const txt=document.getElementById('txt')
+  const msg=txt.value.trim()
+  if(!msg)return
+  txt.value='';txt.style.height='auto'
+  ocupado=true;document.getElementById('btn').disabled=true
+  agregar(msg,true);mostrarTyping()
+  try{
+    const r=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mensaje:msg,sesionId:SID})
+    })
+    const d=await r.json()
+    quitarTyping()
+    if(d.error) agregar('Hubo un problema, intenta de nuevo.',false)
+    else {
+      agregar(d.respuesta,false,d.imagenUrl)
+      if(typeof fbq!=='undefined'){
+        if(d.imagenUrl) fbq('track','ViewContent',{content_category:'propiedad'})
+        if(d.leadGuardado) fbq('track','Lead')
+      }
+    }
+  }catch(e){
+    quitarTyping()
+    agregar('Error de conexión. Verifica que el servidor esté corriendo.',false)
+  }
+  ocupado=false;document.getElementById('btn').disabled=false
+  txt.focus()
+}
+function sugerir(t){document.getElementById('txt').value=t;enviar()}
+function tecla(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();enviar()}}
+function crecer(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px'}
+async function resetear(){
+  await fetch('/api/limpiar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sesionId:SID})})
+  document.getElementById('msgs').innerHTML=''
+  agregar('Chat reiniciado. ¿En qué te puedo ayudar?',false)
+}
+</script>
+</body>
+</html>
